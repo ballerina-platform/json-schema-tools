@@ -1,5 +1,5 @@
 [tool]
-id = "jsonschema"
+id = "json-schema"
 
 [[dependency]]
 path = "../json-schema-cli/build/libs/json-schema-cli-1.0.3-SNAPSHOT.jar"
