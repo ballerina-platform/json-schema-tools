@@ -29,8 +29,8 @@ pluginManagement {
         maven {
             url = 'https://maven.pkg.github.com/ballerina-platform/*'
             credentials {
-                username System.getenv("packageUser")
-                password System.getenv("packagePAT")
+                username = System.getenv("packageUser")
+                password = System.getenv("packagePAT")
             }
         }
     }
@@ -42,15 +42,15 @@ plugins {
 
 rootProject.name = 'json-schema-tools'
 
-// include ':checkstyle'
+include ':checkstyle'
 include ':module-ballerina-json-schema'
 include 'json-schema-cli'
-// include ':xsd-core'
+include ':json-schema-core'
 
-// project(':checkstyle').projectDir = file("build-config${File.separator}checkstyle")
+project(':checkstyle').projectDir = file("build-config${File.separator}checkstyle")
 project(':module-ballerina-json-schema').projectDir = file('module-ballerina-json-schema')
 project(':json-schema-cli').projectDir = file('json-schema-cli')
-// project(':xsd-core').projectDir = file('xsd-core')
+project(':json-schema-core').projectDir = file('json-schema-core')
 
 gradleEnterprise {
     buildScan {

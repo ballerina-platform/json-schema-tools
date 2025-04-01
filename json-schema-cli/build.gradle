@@ -16,8 +16,9 @@ dependencies {
     implementation group: 'info.picocli', name: 'picocli', version: "${picocliVersion}"
     testImplementation group: 'junit', name: 'junit', version: "${junitVersion}"
     testImplementation group: 'org.testng', name: 'testng', version: "${testngVersion}"
-    // implementation project(path: ':json-schema-core')
+    implementation project(path: ':json-schema-core')
     implementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: "${junitEngineVersion}"
+    implementation group: 'com.google.code.gson', name: 'gson', version: "${gsonVersion}"
 }
 
-// build.dependsOn ":json-schema-core:build"
+build.dependsOn ":json-schema-core:build"

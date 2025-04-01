@@ -17,12 +17,12 @@
  */
 
 module io.ballerina.jsonschema.cli {
-    // requires io.ballerina.xsd.core;
+    requires io.ballerina.jsonschema.core;
     requires info.picocli;
     requires io.ballerina.cli;
     requires io.ballerina.tools.api;
-    requires java.xml;
     requires io.ballerina.lang;
+    requires com.google.gson;
 
     exports io.ballerina.jsonschema.cli;
 }
