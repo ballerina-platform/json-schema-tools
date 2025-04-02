@@ -20,6 +20,7 @@ module io.ballerina.jsonschema.core {
     requires io.ballerina.parser;
     requires io.ballerina.formatter.core;
     requires io.ballerina.tools.api;
+    requires com.google.gson;
 
     exports io.ballerina.jsonschema.core;
 //    exports io.ballerina.jsonschema.core.visitor;
