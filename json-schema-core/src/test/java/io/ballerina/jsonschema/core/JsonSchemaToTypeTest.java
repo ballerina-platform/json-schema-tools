@@ -27,7 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
-import static io.ballerina.jsonschema.core.Utils.parseJsonSchema;
+import static io.ballerina.jsonschema.core.SchemaUtils.parseJsonSchema;
 
 public class JsonSchemaToTypeTest {
     private static final Path RES_DIR = Paths.get("src/test/resources/").toAbsolutePath();
@@ -37,7 +37,7 @@ public class JsonSchemaToTypeTest {
     private static Stream<Object[]> provideTestPaths() {
         return Stream.of(
                 new Object[] {"1_simple_int_schema.json", "1_simple_int_schema.bal"},
-                new Object[] {"2_simple_string_schema.json", "2_simple_string_schema.bal"}
+                new Object[] {"2_simple_int_schema.json", "2_simple_int_schema.bal"}
         );
     }
 
@@ -51,7 +51,7 @@ public class JsonSchemaToTypeTest {
     private void validate(Path sample, Path expected) throws Exception {
         String jsonSchemaFileContent = Files.readString(sample);
         Object schema = parseJsonSchema(jsonSchemaFileContent);
-        Response result = JsonSchemaToType.convert(schema);
+        Response result = JsonSchemaToType.convertBaseSchema(schema);
         Assert.assertTrue(result.getDiagnostics().isEmpty());
         String expectedValue = Files.readString(expected);
         Assert.assertEquals(result.getTypes(), expectedValue);

@@ -21,10 +21,9 @@ package io.ballerina.jsonschema.cli;
 import io.ballerina.cli.BLauncherCmd;
 import io.ballerina.jsonschema.core.JsonSchemaToType;
 import io.ballerina.jsonschema.core.Response;
-import io.ballerina.jsonschema.core.Utils;
+import io.ballerina.jsonschema.core.SchemaUtils;
 import io.ballerina.projects.util.ProjectUtils;
 import picocli.CommandLine;
-//java/io/ballerina/jsonschema/core/JsonSchemaToTypeTest
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -147,8 +146,8 @@ public class JsonSchemaCmd implements BLauncherCmd {
             return;
         }
         String jsonFileContent = Files.readString(filePath);
-        Object schema = Utils.parseJsonSchema(jsonFileContent);
-        Response result = JsonSchemaToType.convert(schema);
+        Object schema = SchemaUtils.parseJsonSchema(jsonFileContent);
+        Response result = JsonSchemaToType.convertBaseSchema(schema);
         if (!result.getDiagnostics().isEmpty()) {
             result.getDiagnostics().forEach(jsonSchemaDiagnostic -> outStream.println(jsonSchemaDiagnostic.toString()));
             exitOnError();
