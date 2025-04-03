@@ -23,7 +23,5 @@ module io.ballerina.jsonschema.core {
     requires com.google.gson;
 
     exports io.ballerina.jsonschema.core;
-//    exports io.ballerina.jsonschema.core.visitor;
-//    exports io.ballerina.jsonschema.core.component;
     exports io.ballerina.jsonschema.core.diagnostic;
 }
