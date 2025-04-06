@@ -58,6 +58,7 @@ public class JsonSchemaToType {
     }
 
     public static Response convertBaseSchema(Object schemaObject) throws Exception {
+
         String typeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
 
         if (!typeName.equals(DEFAULT_SCHEMA_NAME)) {

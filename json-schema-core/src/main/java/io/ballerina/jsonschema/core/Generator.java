@@ -89,7 +89,8 @@ public class Generator {
             return createInteger(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
                     schema.getExclusiveMaximum(), schema.getMultipleOf());
         }
-        return "HELLO";
+        //TODO: Complete for other data types
+        return "INCOMPLETE";
     }
 
     public static String createInteger(String name, Double minimum,

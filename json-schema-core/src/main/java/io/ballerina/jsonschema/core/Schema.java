@@ -21,11 +21,11 @@ class TypeDeserializer implements JsonDeserializer<ArrayList<String>> {
             throws JsonParseException {
         if (jsonElement.isJsonArray()) {
             return jsonDeserializationContext.deserialize(jsonElement, ArrayList.class);
-        } else if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isString()) {
-            return new ArrayList<>(List.of(jsonElement.getAsString()));
-        } else {
-            throw new JsonParseException("Expected a string or an array of strings");
         }
+        if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isString()) {
+            return new ArrayList<>(List.of(jsonElement.getAsString()));
+        }
+        throw new JsonParseException("Expected a string or an array of strings");
     }
 }
 
@@ -40,9 +40,8 @@ class PropertyNameDeserializer implements JsonDeserializer<Object> {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             jsonObject.addProperty("type", "string");
             return jsonDeserializationContext.deserialize(jsonObject, Schema.class);
-        } else {
-            throw new JsonParseException("Expected a boolean or an object");
         }
+        throw new JsonParseException("Expected a boolean or an object");
     }
 }
 
@@ -55,9 +54,8 @@ class SchemaDeserializer implements JsonDeserializer<Object> {
         }
         if (jsonElement.isJsonObject()) {
             return jsonDeserializationContext.deserialize(jsonElement, Schema.class);
-        } else {
-            throw new JsonParseException("Expected a boolean or an object");
         }
+        throw new JsonParseException("Expected a boolean or an object");
     }
 }
 

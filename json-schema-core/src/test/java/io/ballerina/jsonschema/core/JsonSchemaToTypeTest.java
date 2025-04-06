@@ -37,7 +37,7 @@ public class JsonSchemaToTypeTest {
     private static Stream<Object[]> provideTestPaths() {
         return Stream.of(
                 new Object[] {"1_simple_int_schema.json", "1_simple_int_schema.bal"},
-                new Object[] {"2_simple_int_schema.json", "2_simple_int_schema.bal"}
+                new Object[] {"2_constrained_int_schema.json", "2_constrained_int_schema.bal"}
         );
     }
 

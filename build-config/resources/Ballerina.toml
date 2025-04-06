@@ -1,5 +1,5 @@
 [package]
-org = "charana"
+org = "wso2"
 name = "module_ballerina_json_schema"
 version = "@toml.version@"
 distribution = "2201.12.0"
