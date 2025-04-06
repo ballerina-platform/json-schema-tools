@@ -19,7 +19,7 @@
 package io.ballerina.jsonschema.cli;
 
 import io.ballerina.cli.BLauncherCmd;
-import io.ballerina.jsonschema.core.JsonSchemaToType;
+import io.ballerina.jsonschema.core.Generator;
 import io.ballerina.jsonschema.core.Response;
 import io.ballerina.jsonschema.core.SchemaUtils;
 import io.ballerina.projects.util.ProjectUtils;
@@ -147,9 +147,12 @@ public class JsonSchemaCmd implements BLauncherCmd {
         }
         String jsonFileContent = Files.readString(filePath);
         Object schema = SchemaUtils.parseJsonSchema(jsonFileContent);
-        Response result = JsonSchemaToType.convertBaseSchema(schema);
+
+        Generator generator = new Generator();
+        Response result = generator.convertBaseSchema(schema);
         if (!result.getDiagnostics().isEmpty()) {
-            result.getDiagnostics().forEach(jsonSchemaDiagnostic -> outStream.println(jsonSchemaDiagnostic.toString()));
+            result.getDiagnostics().forEach(jsonSchemaDiagnostic ->
+                    outStream.println(jsonSchemaDiagnostic.toString()));
             exitOnError();
             return;
         }
