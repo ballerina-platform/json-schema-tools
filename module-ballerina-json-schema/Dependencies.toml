@@ -33,13 +33,13 @@ modules = [
 ]
 
 [[package]]
-org = "charana"
+org = "wso2"
 name = "module_ballerina_json_schema"
-version = "1.0.3"
+version = "0.0.0"
 dependencies = [
 	{org = "ballerinai", name = "observe"}
 ]
 modules = [
-	{org = "charana", packageName = "module_ballerina_json_schema", moduleName = "module_ballerina_json_schema"}
+	{org = "wso2", packageName = "module_ballerina_json_schema", moduleName = "module_ballerina_json_schema"}
 ]
 
