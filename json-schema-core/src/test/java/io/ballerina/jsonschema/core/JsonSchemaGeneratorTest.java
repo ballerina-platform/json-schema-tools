@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 
 import static io.ballerina.jsonschema.core.SchemaUtils.parseJsonSchema;
 
-public class JsonSchemaToTypeTest {
+public class JsonSchemaGeneratorTest {
     private static final Path RES_DIR = Paths.get("src/test/resources/").toAbsolutePath();
     private static final String JSON_SCHEMA_DIR = "jsonschema";
     private static final String EXPECTED_DIR = "expected";
@@ -43,15 +43,15 @@ public class JsonSchemaToTypeTest {
 
     @ParameterizedTest
     @MethodSource("provideTestPaths")
-    void testXsdToRecord(String xmlFilePath, String balFilePath) throws Exception {
+    void testJsonSchemaToRecord(String xmlFilePath, String balFilePath) throws Exception {
         validate(RES_DIR.resolve(JSON_SCHEMA_DIR).resolve(xmlFilePath),
-        RES_DIR.resolve(EXPECTED_DIR).resolve(balFilePath));
+                    RES_DIR.resolve(EXPECTED_DIR).resolve(balFilePath), new Generator());
     }
 
-    private void validate(Path sample, Path expected) throws Exception {
+    private void validate(Path sample, Path expected, Generator generator) throws Exception {
         String jsonSchemaFileContent = Files.readString(sample);
         Object schema = parseJsonSchema(jsonSchemaFileContent);
-        Response result = JsonSchemaToType.convertBaseSchema(schema);
+        Response result = generator.convertBaseSchema(schema);
         Assert.assertTrue(result.getDiagnostics().isEmpty());
         String expectedValue = Files.readString(expected);
         Assert.assertEquals(result.getTypes(), expectedValue);

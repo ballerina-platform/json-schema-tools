@@ -8,9 +8,37 @@ dependencies-toml-version = "2"
 distribution-version = "2201.12.2"
 
 [[package]]
+org = "ballerina"
+name = "jballerina.java"
+version = "0.0.0"
+
+[[package]]
+org = "ballerina"
+name = "observe"
+version = "1.5.0"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"}
+]
+
+[[package]]
+org = "ballerinai"
+name = "observe"
+version = "0.0.0"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "observe"}
+]
+modules = [
+	{org = "ballerinai", packageName = "observe", moduleName = "observe"}
+]
+
+[[package]]
 org = "wso2"
 name = "module_ballerina_json_schema"
 version = "0.0.0"
+dependencies = [
+	{org = "ballerinai", name = "observe"}
+]
 modules = [
 	{org = "wso2", packageName = "module_ballerina_json_schema", moduleName = "module_ballerina_json_schema"}
 ]

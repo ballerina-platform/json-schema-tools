@@ -1,157 +1,260 @@
 package io.ballerina.jsonschema.core;
 
+import io.ballerina.compiler.syntax.tree.AbstractNodeFactory;
+import io.ballerina.compiler.syntax.tree.ImportDeclarationNode;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
+import io.ballerina.compiler.syntax.tree.ModulePartNode;
+import io.ballerina.compiler.syntax.tree.NodeFactory;
+import io.ballerina.compiler.syntax.tree.NodeList;
 import io.ballerina.compiler.syntax.tree.NodeParser;
+import io.ballerina.compiler.syntax.tree.Token;
+import io.ballerina.jsonschema.core.diagnostic.JsonSchemaDiagnostic;
+import org.ballerinalang.formatter.core.Formatter;
+import org.ballerinalang.formatter.core.FormatterException;
+import org.ballerinalang.formatter.core.options.ForceFormattingOptions;
+import org.ballerinalang.formatter.core.options.FormattingOptions;
 
-import static io.ballerina.jsonschema.core.JsonSchemaToType.NODES;
-import static io.ballerina.jsonschema.core.JsonSchemaToType.addImports;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static io.ballerina.jsonschema.core.BalCodeGenerator.BOOLEAN;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.DECIMAL;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.FLOAT;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.INTEGER;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.JSON;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.NEVER;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.NULL;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.NUMBER;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.PIPE;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.PUBLIC;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.SEMI_COLON;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.STRING;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.TYPE;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.UNIVERSAL_ARRAY;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.UNIVERSAL_OBJECT;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.WHITESPACE;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.IMPORT;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.createType;
+import static io.ballerina.jsonschema.core.SchemaUtils.ID_TO_TYPE_MAP;
 
 public class Generator {
-    public static final String IMPORT = "import";
-    public static final String PUBLIC = "public";
-    public static final String TYPE = "type";
-    public static final String WHITESPACE = " ";
-    public static final String AT = "@";
-    public static final String OPEN_BRACKET = "(";
-    public static final String CLOSE_BRACKET = ")";
-    public static final String OPEN_BRACES = "{";
-    public static final String CLOSE_BRACES = "}";
-    public static final String COLON = ":";
-    public static final String SEMI_COLON = ";";
-    public static final String COMMA = ",";
-    public static final String NEW_LINE = "\n";
-    public static final String BACK_TICK = "`";
-    public static final String REGEX_PREFIX = "re";
-    public static final String PIPE = "|";
-    public static final String REST = "...";
-    public static final String OPEN_SQUARE_BRACKET = "[";
-    public static final String CLOSE_SQUARE_BRACKET = "]";
-    public static final String ZERO = "0";
-    public static final String RECORD = "record";
-    public static final String QUESTION_MARK = "?";
-    public static final String EQUAL = "=";
-    public static final String DOUBLE_QUOTATION = "\"";
-    public static final String VALUE = "value";
+    static final String DEFAULT_SCHEMA_NAME = "Schema";
+    static final String EOF_TOKEN = "";
+    static final String INVALID_IMPORTS_ERROR = "Invalid imports have been found.";
 
-    public static final String INTEGER = "int";
-    public static final String STRING = "string";
-    public static final String FLOAT = "float";
-    public static final String DECIMAL = "decimal";
-    public static final String NUMBER = "int|float|decimal";
-    public static final String BOOLEAN = "boolean";
-    public static final String NEVER = "never";
-    public static final String NULL = "()";
-    public static final String JSON = "json";
-    public static final String UNIVERSAL_ARRAY = "json[]";
-    public static final String UNIVERSAL_OBJECT = "record{|json...;|}";
-    public static final String DEFAULT_SCHEMA_NAME = "Schema";
-    public static final String DEPENDENT_SCHEMA = "dependentSchema";
-    public static final String DEPENDENT_REQUIRED = "dependentRequired";
+    Map<String, ModuleMemberDeclarationNode> nodes = new LinkedHashMap<>();
+    ArrayList<String> imports = new ArrayList<>();
+    List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
-    public static final String ANNOTATION_MODULE = "jsondata";
-    public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
-    public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
-    public static final String ARRAY_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
-    public static final String OBJECT_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ObjectValidation";
-    public static final String DEPENDENT_SCHEMA_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_SCHEMA;
-    public static final String DEPENDENT_REQUIRED_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_REQUIRED;
-    public static final String ONE_OF_ANNOTATION = AT + "OneOf";
-
-    public static final String MINIMUM = "minimum";
-    public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
-    public static final String MAXIMUM = "maximum";
-    public static final String EXCLUSIVE_MAXIMUM = "exclusiveMaximum";
-    public static final String MULTIPLE_OF = "multipleOf";
-
-    public static final String FORMAT = "format";
-    public static final String MIN_LENGTH = "minLength";
-    public static final String MAX_LENGTH = "maxLength";
-    public static final String PATTERN = "pattern";
-
-    public static final String MIN_ITEMS = "minItems";
-    public static final String MAX_ITEMS = "maxItems";
-    public static final String UNIQUE_ITEMS = "uniqueItems";
-    public static final String CONTAINS = "contains";
-    public static final String MIN_CONTAINS = "minContains";
-    public static final String MAX_CONTAINS = "maxContains";
-    public static final String UNEVALUATED_ITEMS = "unevaluatedItems";
-
-    public static final String MAX_PROPERTIES = "maxProperties";
-    public static final String MIN_PROPERTIES = "minProperties";
-    public static final String PROPERTY_NAMES = "propertyNames";
-
-    private static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
-    private static final String DIGIT_PATTERN = ".*\\d.*";
-    private static final String STARTS_WITH_DIGIT_PATTERN = "^\\d.*";
-
-    public static String createType(String name, Schema schema, Object type) {
-        if (type == Long.class) {
-            return createInteger(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
-                    schema.getExclusiveMaximum(), schema.getMultipleOf());
-        }
-        //TODO: Complete for other data types
-        return "INCOMPLETE";
+    public void addDiagnostic(JsonSchemaDiagnostic diagnostic) {
+        this.diagnostics.add(diagnostic);
     }
 
-    public static String createInteger(String name, Double minimum,
-                               Double exclusiveMinimum, Double maximum, Double exclusiveMaximum, Double multipleOf) {
-        if (minimum == null && maximum == null && exclusiveMaximum == null &&
-                exclusiveMinimum == null && multipleOf == null) {
-            return INTEGER;
+    public Response convertBaseSchema(Object schemaObject) throws Exception {
+
+        String typeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
+
+        if (!typeName.equals(DEFAULT_SCHEMA_NAME)) {
+            String schemaDefinition =
+                    PUBLIC + WHITESPACE + TYPE + WHITESPACE + DEFAULT_SCHEMA_NAME + WHITESPACE + typeName + SEMI_COLON;
+            ModuleMemberDeclarationNode schemaNode = NodeParser.parseModuleMemberDeclaration(schemaDefinition);
+            this.nodes.put(DEFAULT_SCHEMA_NAME, schemaNode);
         }
 
-        if (minimum != null && maximum != null && maximum < minimum) {
+        ModulePartNode modulePartNode = generateModulePartNode();
+        String generatedTypes = formatModuleParts(modulePartNode);
+        return new Response(generatedTypes, this.diagnostics);
+    }
+
+    ModulePartNode generateModulePartNode() throws Exception {
+        NodeList<ModuleMemberDeclarationNode> moduleMembers = AbstractNodeFactory.createNodeList(this.nodes.values());
+        NodeList<ImportDeclarationNode> imports = getImportDeclarations();
+        Token eofToken = AbstractNodeFactory.createIdentifierToken(EOF_TOKEN);
+        return NodeFactory.createModulePartNode(imports, moduleMembers, eofToken);
+    }
+
+    String formatModuleParts(ModulePartNode modulePartNode) throws FormatterException {
+        ForceFormattingOptions forceFormattingOptions = ForceFormattingOptions.builder()
+                .setForceFormatRecordFields(true).build();
+        FormattingOptions formattingOptions = FormattingOptions.builder()
+                .setForceFormattingOptions(forceFormattingOptions).build();
+        return Formatter.format(modulePartNode.syntaxTree(), formattingOptions).toSourceCode();
+    }
+
+    public String convert(Object schemaObject, String name) {
+        if (schemaObject instanceof Boolean) {
+            boolean boolValue = (Boolean) schemaObject;
+            return boolValue ? JSON : NEVER;
+        }
+
+        Schema schema = (Schema) schemaObject;
+
+        ArrayList<Object> schemaType = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(),
+                schema.getType());
+        if (schemaType.isEmpty()) {
+            ID_TO_TYPE_MAP.put(schema.getIdKeyword(), NEVER);
             return NEVER;
+        } else if (schemaType.contains(Class.class)) {
+            //! This is definitely a type
+            schemaType.remove(Class.class);
+            if (schemaType.size() == 1) {
+                // Only a single type.
+                String typeName = createType(name, schema, schemaType.getFirst(), this);
+                ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
+                return typeName;
+            } else {
+                Set<String> unionTypes = new HashSet<>();
+                for (Object element : schemaType) {
+                    String subtypeName = name + getBallerinaType(element);
+                    unionTypes.add(createType(subtypeName, schema, element, this));
+                }
+                if (unionTypes.containsAll(
+                        Set.of(INTEGER, NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
+                    ID_TO_TYPE_MAP.put(schema.getIdKeyword(), JSON);
+                    return JSON;
+                }
+                if (unionTypes.contains(NUMBER)) {
+                    unionTypes.remove(NUMBER);
+                    unionTypes.add(INTEGER);
+                    unionTypes.add(FLOAT);
+                    unionTypes.add(DECIMAL);
+                }
+                String typeName = String.join(PIPE, unionTypes);
+                ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
+                return typeName;
+            }
+        } else {
+            //TODO: Constraints validate to enums too, need to cross check them and return the value
+            String typeName = schemaType.stream().map(String::valueOf).collect(Collectors.joining(PIPE));
+            ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
+            return typeName;
         }
-        //TODO: More logic to be added here.
-
-        addImports(ANNOTATION_MODULE);
-        String finalName = resolveNameConflicts(convertToPascalCase(name));
-
-        StringBuilder annotation = new StringBuilder();
-        annotation.append(NUMBER_ANNOTATION).append(OPEN_BRACES);
-
-        if (minimum != null) {
-            annotation.append(MINIMUM).append(COLON).append(minimum).append(COMMA);
-        }
-        if (exclusiveMinimum != null) {
-            annotation.append(EXCLUSIVE_MINIMUM).append(COLON).append(exclusiveMinimum).append(COMMA);
-        }
-        if (maximum != null) {
-            annotation.append(MAXIMUM).append(COLON).append(maximum).append(COMMA);
-        }
-        if (exclusiveMaximum != null) {
-            annotation.append(EXCLUSIVE_MAXIMUM).append(COLON).append(exclusiveMaximum).append(COMMA);
-        }
-        if (multipleOf != null) {
-            annotation.append(MULTIPLE_OF).append(COLON).append(multipleOf).append(COMMA);
-        }
-
-        annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(NEW_LINE);
-        annotation.append(TYPE).append(WHITESPACE).append(finalName).append(WHITESPACE).append(INTEGER)
-                .append(SEMI_COLON);
-
-        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(annotation.toString());
-        NODES.put(finalName, moduleNode);
-
-        return finalName;
     }
 
-    public static String resolveNameConflicts(String name) {
-        String baseName = name;
-        int counter = 1;
-        while (NODES.containsKey(name)) {
-            name = baseName + counter;
-            counter++;
+    public static ArrayList<Object> getCommonType(ArrayList<Object> enumKeyword, Object constKeyword,
+                                                  ArrayList<String> type) {
+        Set<Object> typeList = new HashSet<>();
+        Set<Object> finalList = new HashSet<>();
+
+        if (type == null || type.isEmpty()) {
+            typeList.add(Long.class);
+            typeList.add(Double.class);
+            typeList.add(Boolean.class);
+            typeList.add(String.class);
+            typeList.add(ArrayList.class);
+            typeList.add(LinkedHashMap.class);
+            typeList.add(null);
+        } else {
+            for (String element : type) {
+                switch (element) {
+                    case "integer":
+                        typeList.add(Long.class);
+                        break;
+                    case "number":
+                        typeList.add(Double.class);
+                        break;
+                    case "boolean":
+                        typeList.add(Boolean.class);
+                        break;
+                    case "string":
+                        typeList.add(String.class);
+                        break;
+                    case "array":
+                        typeList.add(ArrayList.class);
+                        break;
+                    case "object":
+                        typeList.add(LinkedHashMap.class);
+                        break;
+                    case "null":
+                        typeList.add(null);
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
-        return name;
+
+        if (!typeList.isEmpty()) {
+            typeList.add(Class.class);
+        }
+
+        // Absence of enum keyword.
+        if (enumKeyword == null) {
+            if (constKeyword == null) {
+                return new ArrayList<>(typeList);
+            }
+            if (typeList.contains(constKeyword.getClass())) {
+                return new ArrayList<>(List.of(constKeyword));
+            }
+            return new ArrayList<>();
+        }
+
+        // Presence of enum keyword.
+        for (Object element : enumKeyword) {
+            if (typeList.contains(element.getClass())) {
+                finalList.add(element);
+            }
+        }
+
+        if (constKeyword == null) {
+            return new ArrayList<>(finalList);
+        }
+
+        if (finalList.contains(constKeyword)) { // Checked for reference cross check-ins
+            return new ArrayList<>(List.of(constKeyword));
+        }
+        return new ArrayList<>();
     }
 
-    public static String convertToPascalCase(String name) {
-        if (name == null || name.isEmpty()) {
-            return name;
+    public static String getBallerinaType(Object type) {
+        if (type == Long.class) {
+            return "Integer";
         }
-        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        if (type == Double.class) {
+            return "Number";
+        }
+        if (type == String.class) {
+            return "String";
+        }
+        if (type == Boolean.class) {
+            return "Boolean"; // Actually not needed here as there are no keywords for type Boolean
+        }
+        if (type == ArrayList.class) {
+            return "Array";
+        }
+        if (type == LinkedHashMap.class) {
+            return "Object";
+        }
+        return "Null";
     }
 
+    NodeList<ImportDeclarationNode> getImportDeclarations() throws Exception {
+        Collection<ImportDeclarationNode> imports = new ArrayList<>();
+        for (String module : this.getImports()) {
+            ImportDeclarationNode node = NodeParser.parseImportDeclaration(module);
+            if (node.hasDiagnostics()) {
+                throw new Exception(INVALID_IMPORTS_ERROR);
+            }
+            imports.add(node);
+        }
+        return AbstractNodeFactory.createNodeList(imports);
+    }
+
+
+    public void addImports(String module) {
+        String importDeclaration = IMPORT + WHITESPACE + module + SEMI_COLON;
+        if (!this.imports.contains(importDeclaration)) {
+            this.imports.add(importDeclaration);
+        }
+    }
+
+    public ArrayList<String> getImports() {
+        return new ArrayList<>(this.imports);
+    }
 }
