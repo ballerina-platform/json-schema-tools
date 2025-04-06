@@ -80,7 +80,7 @@
      publications {
          mavenJava(MavenPublication) {
              groupId = "io.ballerina"
-             artifactId = "xsd-core"
+             artifactId = "json-schema-core"
              version = project.version
              artifact jar
          }
@@ -89,7 +89,7 @@
      repositories {
          maven {
              name = "GitHubPackages"
-             url = uri("https://maven.pkg.github.com/ballerina-platform/xsd-tools")
+             url = uri("https://maven.pkg.github.com/ballerina-platform/json-schema-tools")
              credentials {
                  username = System.getenv("packageUser")
                  password = System.getenv("packagePAT")

@@ -43,8 +43,8 @@ public class JsonSchemaGeneratorTest {
 
     @ParameterizedTest
     @MethodSource("provideTestPaths")
-    void testJsonSchemaToRecord(String xmlFilePath, String balFilePath) throws Exception {
-        validate(RES_DIR.resolve(JSON_SCHEMA_DIR).resolve(xmlFilePath),
+    void testJsonSchemaToRecord(String jsonFilePath, String balFilePath) throws Exception {
+        validate(RES_DIR.resolve(JSON_SCHEMA_DIR).resolve(jsonFilePath),
                     RES_DIR.resolve(EXPECTED_DIR).resolve(balFilePath), new Generator());
     }
 

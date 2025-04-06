@@ -14,8 +14,6 @@
  * limitations under the License.
  *
  */
-import groovy.xml.XmlParser
-import groovy.xml.XmlUtil
 
 plugins {
     id "de.undercouch.download"
