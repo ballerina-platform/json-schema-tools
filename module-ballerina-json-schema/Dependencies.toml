@@ -14,4 +14,3 @@ version = "0.1.0"
 modules = [
 	{org = "wso2", packageName = "module_ballerina_json_schema", moduleName = "module_ballerina_json_schema"}
 ]
-
