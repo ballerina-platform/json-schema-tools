@@ -6,4 +6,3 @@ path = "../json-schema-cli/build/libs/json-schema-cli-@project.version@.jar"
 
 [[dependency]]
 path = "../json-schema-core/build/libs/json-schema-core-@project.version@.jar"
-
