@@ -2,8 +2,8 @@
 id = "json-schema"
 
 [[dependency]]
-path = "../json-schema-cli/build/libs/json-schema-cli-0.0.0-SNAPSHOT.jar"
+path = "../json-schema-cli/build/libs/json-schema-cli-0.1.0-SNAPSHOT.jar"
 
 [[dependency]]
-path = "../json-schema-core/build/libs/json-schema-core-0.0.0-SNAPSHOT.jar"
+path = "../json-schema-core/build/libs/json-schema-core-0.1.0-SNAPSHOT.jar"
 
