@@ -38,7 +38,7 @@ import static io.ballerina.jsonschema.core.BalCodeGenerator.STRING;
 import static io.ballerina.jsonschema.core.BalCodeGenerator.TYPE;
 import static io.ballerina.jsonschema.core.BalCodeGenerator.UNIVERSAL_ARRAY;
 import static io.ballerina.jsonschema.core.BalCodeGenerator.UNIVERSAL_OBJECT;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.WHITESPACE;
+import static io.ballerina.jsonschema.core.BalCodeGenerator.WHITE_SPACE;
 import static io.ballerina.jsonschema.core.BalCodeGenerator.IMPORT;
 import static io.ballerina.jsonschema.core.BalCodeGenerator.createType;
 import static io.ballerina.jsonschema.core.SchemaUtils.ID_TO_TYPE_MAP;
@@ -52,17 +52,12 @@ public class Generator {
     ArrayList<String> imports = new ArrayList<>();
     List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
-    public void addDiagnostic(JsonSchemaDiagnostic diagnostic) {
-        this.diagnostics.add(diagnostic);
-    }
-
     public Response convertBaseSchema(Object schemaObject) throws Exception {
+        String generatedType = convert(schemaObject, DEFAULT_SCHEMA_NAME);
 
-        String typeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
-
-        if (!typeName.equals(DEFAULT_SCHEMA_NAME)) {
-            String schemaDefinition =
-                    PUBLIC + WHITESPACE + TYPE + WHITESPACE + DEFAULT_SCHEMA_NAME + WHITESPACE + typeName + SEMI_COLON;
+        if (!generatedType.equals(DEFAULT_SCHEMA_NAME)) {
+            String schemaDefinition = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE
+                    + DEFAULT_SCHEMA_NAME + WHITE_SPACE + generatedType + SEMI_COLON;
             ModuleMemberDeclarationNode schemaNode = NodeParser.parseModuleMemberDeclaration(schemaDefinition);
             this.nodes.put(DEFAULT_SCHEMA_NAME, schemaNode);
         }
@@ -70,21 +65,6 @@ public class Generator {
         ModulePartNode modulePartNode = generateModulePartNode();
         String generatedTypes = formatModuleParts(modulePartNode);
         return new Response(generatedTypes, this.diagnostics);
-    }
-
-    ModulePartNode generateModulePartNode() throws Exception {
-        NodeList<ModuleMemberDeclarationNode> moduleMembers = AbstractNodeFactory.createNodeList(this.nodes.values());
-        NodeList<ImportDeclarationNode> imports = getImportDeclarations();
-        Token eofToken = AbstractNodeFactory.createIdentifierToken(EOF_TOKEN);
-        return NodeFactory.createModulePartNode(imports, moduleMembers, eofToken);
-    }
-
-    String formatModuleParts(ModulePartNode modulePartNode) throws FormatterException {
-        ForceFormattingOptions forceFormattingOptions = ForceFormattingOptions.builder()
-                .setForceFormatRecordFields(true).build();
-        FormattingOptions formattingOptions = FormattingOptions.builder()
-                .setForceFormattingOptions(forceFormattingOptions).build();
-        return Formatter.format(modulePartNode.syntaxTree(), formattingOptions).toSourceCode();
     }
 
     public String convert(Object schemaObject, String name) {
@@ -223,7 +203,7 @@ public class Generator {
             return "String";
         }
         if (type == Boolean.class) {
-            return "Boolean"; // Actually not needed here as there are no keywords for type Boolean
+            return "Boolean"; // Redundant
         }
         if (type == ArrayList.class) {
             return "Array";
@@ -234,7 +214,22 @@ public class Generator {
         return "Null";
     }
 
-    NodeList<ImportDeclarationNode> getImportDeclarations() throws Exception {
+    public ModulePartNode generateModulePartNode() throws Exception {
+        NodeList<ModuleMemberDeclarationNode> moduleMembers = AbstractNodeFactory.createNodeList(this.nodes.values());
+        NodeList<ImportDeclarationNode> imports = getImportDeclarations();
+        Token eofToken = AbstractNodeFactory.createIdentifierToken(EOF_TOKEN);
+        return NodeFactory.createModulePartNode(imports, moduleMembers, eofToken);
+    }
+
+    public String formatModuleParts(ModulePartNode modulePartNode) throws FormatterException {
+        ForceFormattingOptions forceFormattingOptions = ForceFormattingOptions.builder()
+                .setForceFormatRecordFields(true).build();
+        FormattingOptions formattingOptions = FormattingOptions.builder()
+                .setForceFormattingOptions(forceFormattingOptions).build();
+        return Formatter.format(modulePartNode.syntaxTree(), formattingOptions).toSourceCode();
+    }
+
+    public NodeList<ImportDeclarationNode> getImportDeclarations() throws Exception {
         Collection<ImportDeclarationNode> imports = new ArrayList<>();
         for (String module : this.getImports()) {
             ImportDeclarationNode node = NodeParser.parseImportDeclaration(module);
@@ -246,12 +241,15 @@ public class Generator {
         return AbstractNodeFactory.createNodeList(imports);
     }
 
-
     public void addImports(String module) {
-        String importDeclaration = IMPORT + WHITESPACE + module + SEMI_COLON;
+        String importDeclaration = IMPORT + WHITE_SPACE + module + SEMI_COLON;
         if (!this.imports.contains(importDeclaration)) {
             this.imports.add(importDeclaration);
         }
+    }
+
+    public void addDiagnostic(JsonSchemaDiagnostic diagnostic) {
+        this.diagnostics.add(diagnostic);
     }
 
     public ArrayList<String> getImports() {

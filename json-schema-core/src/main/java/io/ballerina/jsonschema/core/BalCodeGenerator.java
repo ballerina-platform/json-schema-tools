@@ -7,7 +7,7 @@ public class BalCodeGenerator {
     public static final String IMPORT = "import";
     public static final String PUBLIC = "public";
     public static final String TYPE = "type";
-    public static final String WHITESPACE = " ";
+    public static final String WHITE_SPACE = " ";
     public static final String AT = "@";
     public static final String OPEN_BRACKET = "(";
     public static final String CLOSE_BRACKET = ")";
@@ -97,13 +97,15 @@ public class BalCodeGenerator {
             return INTEGER;
         }
 
-        if (minimum != null && maximum != null && maximum < minimum) {
+        if ((minimum != null && maximum != null && maximum < minimum) ||
+                (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
+                (maximum != null && exclusiveMinimum != null && exclusiveMinimum >= maximum) ||
+                (exclusiveMinimum != null && exclusiveMaximum != null && exclusiveMaximum <= exclusiveMinimum)) {
             return NEVER;
         }
-        //TODO: More logic to be added here.
 
         generator.addImports(ANNOTATION_MODULE);
-        String finalName = resolveNameConflicts(convertToPascalCase(name), generator);
+        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         StringBuilder annotation = new StringBuilder();
         annotation.append(NUMBER_ANNOTATION).append(OPEN_BRACES);
@@ -125,13 +127,13 @@ public class BalCodeGenerator {
         }
 
         annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(NEW_LINE);
-        annotation.append(TYPE).append(WHITESPACE).append(finalName).append(WHITESPACE).append(INTEGER)
-                .append(SEMI_COLON);
+        annotation.append(PUBLIC).append(WHITE_SPACE).append(TYPE).append(WHITE_SPACE).append(finalType)
+                .append(WHITE_SPACE).append(INTEGER).append(SEMI_COLON);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(annotation.toString());
-        generator.nodes.put(finalName, moduleNode);
+        generator.nodes.put(finalType, moduleNode);
 
-        return finalName;
+        return finalType;
     }
 
     public static String resolveNameConflicts(String name, Generator generator) {
