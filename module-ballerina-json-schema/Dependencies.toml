@@ -9,8 +9,8 @@ distribution-version = "2201.12.2"
 
 [[package]]
 org = "wso2"
-name = "module_ballerina_json_schema"
-version = "0.1.0"
+name = "jsonschematool"
+version = "0.0.0"
 modules = [
-	{org = "wso2", packageName = "module_ballerina_json_schema", moduleName = "module_ballerina_json_schema"}
+	{org = "wso2", packageName = "jsonschematool", moduleName = "jsonschematool"}
 ]
