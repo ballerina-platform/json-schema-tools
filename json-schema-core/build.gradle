@@ -31,7 +31,6 @@
      useJUnitPlatform()
  }
 
-
  checkstyle {
      toolVersion = "${project.checkstylePluginVersion}"
      configFile = rootProject.file("build-config/checkstyle/build/checkstyle.xml")
