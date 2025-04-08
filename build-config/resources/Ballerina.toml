@@ -1,5 +1,5 @@
 [package]
-org = "wso2"
+org = "ballerina"
 name = "json_schema_tool"
 version = "@toml.version@"
 distribution = "2201.12.0"
