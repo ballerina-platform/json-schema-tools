@@ -1,6 +1,6 @@
 [package]
 org = "wso2"
-name = "module_ballerina_json_schema"
+name = "jsonschematool"
 version = "@toml.version@"
 distribution = "2201.12.0"
 keywords = ["json", "json schema", "json schema to record", "json-schema-tools"]
