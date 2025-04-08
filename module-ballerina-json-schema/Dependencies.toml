@@ -10,7 +10,8 @@ distribution-version = "2201.12.2"
 [[package]]
 org = "wso2"
 name = "jsonschematool"
-version = "0.0.0"
+version = "0.1.0"
 modules = [
 	{org = "wso2", packageName = "jsonschematool", moduleName = "jsonschematool"}
 ]
+
