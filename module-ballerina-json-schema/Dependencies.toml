@@ -8,10 +8,10 @@ dependencies-toml-version = "2"
 distribution-version = "2201.12.2"
 
 [[package]]
-org = "wso2"
-name = "jsonschematool"
+org = "ballerina"
+name = "json_schema_tool"
 version = "0.1.0"
 modules = [
-	{org = "wso2", packageName = "jsonschematool", moduleName = "jsonschematool"}
+	{org = "ballerina", packageName = "json_schema_tool", moduleName = "json_schema_tool"}
 ]
 
