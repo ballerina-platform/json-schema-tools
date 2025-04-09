@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+}
+
+description = "Ballerina - JSON Schema Tools CLI"
+
+configurations.all {
+    resolutionStrategy.preferProjectModules()
+}
+
+dependencies {
+    implementation group: 'org.ballerinalang', name: 'ballerina-cli', version: "${ballerinaLangVersion}"
+    implementation group: 'org.ballerinalang', name: 'ballerina-tools-api', version: "${ballerinaLangVersion}"
+    implementation group: 'org.ballerinalang', name: 'ballerina-lang', version: "${ballerinaLangVersion}"
+    implementation group: 'org.ballerinalang', name: 'ballerina-runtime', version: "${ballerinaLangVersion}"
+    implementation group: 'info.picocli', name: 'picocli', version: "${picocliVersion}"
+    implementation group: 'com.google.code.gson', name: 'gson', version: "${gsonVersion}"
+    implementation project(path: ':json-schema-core')
+}
+
+build.dependsOn ":json-schema-core:build"
