@@ -83,7 +83,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
         }
         if (this.inputPath == null || this.inputPath.isEmpty()) {
             outStream.println("A JSON schema file path is required to generate the types");
-            outStream.println("e.g: bal json-schema <json schema source file path>");
+            outStream.println("e.g: $ bal json-schema <json schema source file path>");
             exitOnError();
             return;
         }

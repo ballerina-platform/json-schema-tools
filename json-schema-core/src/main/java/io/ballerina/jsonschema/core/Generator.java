@@ -68,14 +68,13 @@ public class Generator {
     }
 
     public String convert(Object schemaObject, String name) {
-        if (schemaObject instanceof Boolean) {
-            boolean boolValue = (Boolean) schemaObject;
+        if (schemaObject instanceof Boolean boolValue) {
             return boolValue ? JSON : NEVER;
         }
 
         Schema schema = (Schema) schemaObject;
 
-        ArrayList<Object> schemaType = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(),
+        List<Object> schemaType = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(),
                 schema.getType());
         if (schemaType.isEmpty()) {
             ID_TO_TYPE_MAP.put(schema.getIdKeyword(), NEVER);
@@ -115,10 +114,9 @@ public class Generator {
         }
     }
 
-    public static ArrayList<Object> getCommonType(ArrayList<Object> enumKeyword, Object constKeyword,
-                                                  ArrayList<String> type) {
-        Set<Object> typeList = new HashSet<>();
-        Set<Object> finalList = new HashSet<>();
+    private static List<Object> getCommonType(List<Object> enumKeyword, Object constKeyword,
+                                              List<String> type) {
+        Set<Class<?>> typeList = new HashSet<>();
 
         if (type == null || type.isEmpty()) {
             typeList.add(Long.class);
@@ -130,30 +128,9 @@ public class Generator {
             typeList.add(null);
         } else {
             for (String element : type) {
-                switch (element) {
-                    case "integer":
-                        typeList.add(Long.class);
-                        break;
-                    case "number":
-                        typeList.add(Double.class);
-                        break;
-                    case "boolean":
-                        typeList.add(Boolean.class);
-                        break;
-                    case "string":
-                        typeList.add(String.class);
-                        break;
-                    case "array":
-                        typeList.add(ArrayList.class);
-                        break;
-                    case "object":
-                        typeList.add(LinkedHashMap.class);
-                        break;
-                    case "null":
-                        typeList.add(null);
-                        break;
-                    default:
-                        break;
+                Class<?> typeClass = getIntermediateJsonType(element);
+                if (!(typeClass == Void.class)) {
+                    typeList.add(typeClass);
                 }
             }
         }
@@ -172,23 +149,38 @@ public class Generator {
             return new ArrayList<>();
         }
 
+        Set<Object> valueList = new HashSet<>();
+
         for (Object element : enumKeyword) {
             if (typeList.contains(element.getClass())) {
-                finalList.add(element);
+                valueList.add(element);
             }
         }
 
         if (constKeyword == null) {
-            return new ArrayList<>(finalList);
+            return new ArrayList<>(valueList);
         }
 
-        if (finalList.contains(constKeyword)) { // Checked for reference cross check-ins
+        if (valueList.contains(constKeyword)) {
             return new ArrayList<>(List.of(constKeyword));
         }
         return new ArrayList<>();
     }
 
-    public static String getBallerinaType(Object type) {
+    private static Class<?> getIntermediateJsonType(String type) {
+        return switch (type) {
+            case "integer" -> Long.class;
+            case "number" -> Double.class;
+            case "boolean" -> Boolean.class;
+            case "string" -> String.class;
+            case "array" -> ArrayList.class;
+            case "object" -> LinkedHashMap.class;
+            case "null" -> null;
+            default -> Void.class;
+        };
+    }
+
+    private static String getBallerinaType(Object type) {
         if (type == Long.class) {
             return "Integer";
         }
@@ -210,14 +202,14 @@ public class Generator {
         return "Null";
     }
 
-    public ModulePartNode generateModulePartNode() throws Exception {
+    private ModulePartNode generateModulePartNode() throws Exception {
         NodeList<ModuleMemberDeclarationNode> moduleMembers = AbstractNodeFactory.createNodeList(this.nodes.values());
         NodeList<ImportDeclarationNode> imports = getImportDeclarations();
         Token eofToken = AbstractNodeFactory.createIdentifierToken(EOF_TOKEN);
         return NodeFactory.createModulePartNode(imports, moduleMembers, eofToken);
     }
 
-    public String formatModuleParts(ModulePartNode modulePartNode) throws FormatterException {
+    private String formatModuleParts(ModulePartNode modulePartNode) throws FormatterException {
         ForceFormattingOptions forceFormattingOptions = ForceFormattingOptions.builder()
                 .setForceFormatRecordFields(true).build();
         FormattingOptions formattingOptions = FormattingOptions.builder()
@@ -225,7 +217,7 @@ public class Generator {
         return Formatter.format(modulePartNode.syntaxTree(), formattingOptions).toSourceCode();
     }
 
-    public NodeList<ImportDeclarationNode> getImportDeclarations() throws Exception {
+    private NodeList<ImportDeclarationNode> getImportDeclarations() throws Exception {
         Collection<ImportDeclarationNode> imports = new ArrayList<>();
         for (String module : this.getImports()) {
             ImportDeclarationNode node = NodeParser.parseImportDeclaration(module);

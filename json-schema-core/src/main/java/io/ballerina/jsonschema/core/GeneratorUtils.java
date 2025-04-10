@@ -3,7 +3,9 @@ package io.ballerina.jsonschema.core;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class GeneratorUtils {
     public static final String IMPORT = "import";
@@ -104,43 +106,44 @@ public class GeneratorUtils {
             return INTEGER;
         }
 
-        if ((minimum != null && maximum != null && maximum < minimum) ||
-                (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
-                (exclusiveMinimum != null && maximum != null && maximum <= exclusiveMinimum) ||
-                (exclusiveMinimum != null && exclusiveMaximum != null && exclusiveMaximum <= exclusiveMinimum)) {
+        if (invalidLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
             return NEVER;
         }
 
         generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
         String finalName = resolveNameConflicts(convertToPascalCase(name), generator);
 
-        StringBuilder annotation = new StringBuilder();
-        annotation.append(NUMBER_ANNOTATION).append(OPEN_BRACES);
+        List<String> annotationParts = new ArrayList<>();
 
-        if (minimum != null) {
-            annotation.append(MINIMUM).append(COLON).append(minimum).append(COMMA);
-        }
-        if (exclusiveMinimum != null) {
-            annotation.append(EXCLUSIVE_MINIMUM).append(COLON).append(exclusiveMinimum).append(COMMA);
-        }
-        if (maximum != null) {
-            annotation.append(MAXIMUM).append(COLON).append(maximum).append(COMMA);
-        }
-        if (exclusiveMaximum != null) {
-            annotation.append(EXCLUSIVE_MAXIMUM).append(COLON).append(exclusiveMaximum).append(COMMA);
-        }
-        if (multipleOf != null) {
-            annotation.append(MULTIPLE_OF).append(COLON).append(multipleOf).append(COMMA);
-        }
+        addIfNotNull(annotationParts, MINIMUM, minimum);
+        addIfNotNull(annotationParts, EXCLUSIVE_MINIMUM, exclusiveMinimum);
+        addIfNotNull(annotationParts, MAXIMUM, maximum);
+        addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
+        addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        annotation.deleteCharAt(annotation.length() - 1).append(CLOSE_BRACES).append(NEW_LINE);
-        annotation.append(PUBLIC).append(WHITE_SPACE).append(TYPE).append(WHITE_SPACE).append(finalName)
-                .append(WHITE_SPACE).append(INTEGER).append(SEMI_COLON);
+        String joinedAnnotations = String.join("," + System.lineSeparator() + "\t", annotationParts);
 
-        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(annotation.toString());
+        String formattedAnnotation = String.format("%s{%n\t%s%n}%npublic type %s int;",
+                NUMBER_ANNOTATION, joinedAnnotations, finalName);
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalName, moduleNode);
 
         return finalName;
+    }
+
+    private static boolean invalidLimits(Double minimum, Double exclusiveMinimum, Double maximum,
+                                         Double exclusiveMaximum) {
+        return (minimum != null && maximum != null && maximum < minimum) ||
+                (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
+                (exclusiveMinimum != null && maximum != null && maximum <= exclusiveMinimum) ||
+                (exclusiveMinimum != null && exclusiveMaximum != null && exclusiveMaximum <= exclusiveMinimum);
+    }
+
+    private static void addIfNotNull(List<String> list, String key, Object value) {
+        if (value != null) {
+            list.add(key + ": " + value);
+        }
     }
 
     public static String resolveNameConflicts(String name, Generator generator) {
