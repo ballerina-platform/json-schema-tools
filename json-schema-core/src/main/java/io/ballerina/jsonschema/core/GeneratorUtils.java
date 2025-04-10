@@ -5,7 +5,7 @@ import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.Arrays;
 
-public class BalCodeGenerator {
+public class GeneratorUtils {
     public static final String IMPORT = "import";
     public static final String PUBLIC = "public";
     public static final String TYPE = "type";

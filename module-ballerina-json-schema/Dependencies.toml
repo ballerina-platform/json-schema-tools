@@ -5,13 +5,41 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.12.2"
+distribution-version = "2201.12.0"
+
+[[package]]
+org = "ballerina"
+name = "jballerina.java"
+version = "0.0.0"
 
 [[package]]
 org = "ballerina"
 name = "json_schema_tool"
 version = "0.1.0"
+dependencies = [
+	{org = "ballerinai", name = "observe"}
+]
 modules = [
 	{org = "ballerina", packageName = "json_schema_tool", moduleName = "json_schema_tool"}
+]
+
+[[package]]
+org = "ballerina"
+name = "observe"
+version = "1.5.0"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"}
+]
+
+[[package]]
+org = "ballerinai"
+name = "observe"
+version = "0.0.0"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "observe"}
+]
+modules = [
+	{org = "ballerinai", packageName = "observe", moduleName = "observe"}
 ]
 

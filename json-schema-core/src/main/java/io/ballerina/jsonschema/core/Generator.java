@@ -23,24 +23,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.ballerina.jsonschema.core.BalCodeGenerator.BOOLEAN;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.DECIMAL;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.FLOAT;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.INTEGER;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.JSON;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.NEVER;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.NULL;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.NUMBER;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.PIPE;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.PUBLIC;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.SEMI_COLON;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.STRING;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.TYPE;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.UNIVERSAL_ARRAY;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.UNIVERSAL_OBJECT;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.WHITE_SPACE;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.IMPORT;
-import static io.ballerina.jsonschema.core.BalCodeGenerator.createType;
+import static io.ballerina.jsonschema.core.GeneratorUtils.BOOLEAN;
+import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
+import static io.ballerina.jsonschema.core.GeneratorUtils.FLOAT;
+import static io.ballerina.jsonschema.core.GeneratorUtils.INTEGER;
+import static io.ballerina.jsonschema.core.GeneratorUtils.JSON;
+import static io.ballerina.jsonschema.core.GeneratorUtils.NEVER;
+import static io.ballerina.jsonschema.core.GeneratorUtils.NULL;
+import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER;
+import static io.ballerina.jsonschema.core.GeneratorUtils.PIPE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.PUBLIC;
+import static io.ballerina.jsonschema.core.GeneratorUtils.SEMI_COLON;
+import static io.ballerina.jsonschema.core.GeneratorUtils.STRING;
+import static io.ballerina.jsonschema.core.GeneratorUtils.TYPE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_ARRAY;
+import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_OBJECT;
+import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.IMPORT;
+import static io.ballerina.jsonschema.core.GeneratorUtils.createType;
 import static io.ballerina.jsonschema.core.SchemaUtils.ID_TO_TYPE_MAP;
 
 public class Generator {
@@ -81,10 +81,8 @@ public class Generator {
             ID_TO_TYPE_MAP.put(schema.getIdKeyword(), NEVER);
             return NEVER;
         } else if (schemaType.contains(Class.class)) {
-            //! This is definitely a type
             schemaType.remove(Class.class);
             if (schemaType.size() == 1) {
-                // Only a single type.
                 String typeName = createType(name, schema, schemaType.getFirst(), this);
                 ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
                 return typeName;
@@ -110,7 +108,7 @@ public class Generator {
                 return typeName;
             }
         } else {
-            //TODO: Constraints validate to enums too, need to cross check them and return the value
+            //TODO: Validate constraints on enums
             String typeName = schemaType.stream().map(String::valueOf).collect(Collectors.joining(PIPE));
             ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
             return typeName;
@@ -164,7 +162,6 @@ public class Generator {
             typeList.add(Class.class);
         }
 
-        // Absence of enum keyword.
         if (enumKeyword == null) {
             if (constKeyword == null) {
                 return new ArrayList<>(typeList);
@@ -175,7 +172,6 @@ public class Generator {
             return new ArrayList<>();
         }
 
-        // Presence of enum keyword.
         for (Object element : enumKeyword) {
             if (typeList.contains(element.getClass())) {
                 finalList.add(element);

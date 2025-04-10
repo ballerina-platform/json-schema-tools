@@ -156,16 +156,32 @@ class Schema {
     private Object content;
 
     // Core
+    @SerializedName("$id")
     private String idKeyword;
+
+    @SerializedName("$schema")
     private String schemaKeyword;
+
+    @SerializedName("$ref")
     private String refKeyword;
+
+    @SerializedName("$anchor")
     private String anchorKeyword;
+
+    @SerializedName("$dynamicRef")
     private String dynamicRefKeyword;
+
+    @SerializedName("$dynamicAnchor")
     private String dynamicAnchorKeyword;
+
+    @SerializedName("$vocabulary")
     private String vocabularyKeyword;
+
+    @SerializedName("$comment")
     private String commentKeyword;
 
     @JsonAdapter(MapStringSchemaDeserializer.class)
+    @SerializedName("$defs")
     private Map<String, Object> defsKeyword;
 
     // Format-annotation/ Format-assertion
