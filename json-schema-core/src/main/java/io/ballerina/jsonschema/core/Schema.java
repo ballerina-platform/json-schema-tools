@@ -14,18 +14,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class TypeDeserializer implements JsonDeserializer<ArrayList<String>> {
+class TypeDeserializer implements JsonDeserializer<List<String>> {
     @Override
-    public ArrayList<String> deserialize(JsonElement jsonElement, Type type,
+    public List<String> deserialize(JsonElement jsonElement, Type type,
                                          JsonDeserializationContext jsonDeserializationContext)
             throws JsonParseException {
         if (jsonElement.isJsonArray()) {
-            return jsonDeserializationContext.deserialize(jsonElement, ArrayList.class);
+            return jsonDeserializationContext.deserialize(jsonElement, List.class);
         }
         if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isString()) {
             return new ArrayList<>(List.of(jsonElement.getAsString()));
         }
-        throw new JsonParseException("Expected a string or an array of strings");
+        throw new JsonParseException("Expected a string or an array of strings, but got: " + jsonElement);
     }
 }
 

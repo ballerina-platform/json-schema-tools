@@ -24,9 +24,9 @@ public class SchemaUtils {
         }
 
         if (jsonString.equals("true")) {
-            schema = (Boolean) true;
+            schema = Boolean.TRUE;
         } else if (jsonString.equals("false")) {
-            schema = (Boolean) false;
+            schema = Boolean.FALSE;
         } else if (jsonString.startsWith("{") && jsonString.endsWith("}")) {
             schema = gson.fromJson(jsonString, Schema.class);
 

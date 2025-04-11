@@ -4,7 +4,6 @@ import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class GeneratorUtils {
@@ -111,7 +110,7 @@ public class GeneratorUtils {
         }
 
         generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
-        String finalName = resolveNameConflicts(convertToPascalCase(name), generator);
+        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         List<String> annotationParts = new ArrayList<>();
 
@@ -122,14 +121,15 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
         String joinedAnnotations = String.join("," + System.lineSeparator() + "\t", annotationParts);
+        String typeDefinition = String.join(WHITE_SPACE, PUBLIC, TYPE, finalType, INTEGER);
 
-        String formattedAnnotation = String.format("%s{%n\t%s%n}%npublic type %s int;",
-                NUMBER_ANNOTATION, joinedAnnotations, finalName);
+        String formattedAnnotation =
+                String.format("%s{%n\t%s%n}%n%s;", NUMBER_ANNOTATION, joinedAnnotations, typeDefinition);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        generator.nodes.put(finalName, moduleNode);
+        generator.nodes.put(finalType, moduleNode);
 
-        return finalName;
+        return finalType;
     }
 
     private static boolean invalidLimits(Double minimum, Double exclusiveMinimum, Double maximum,
@@ -171,7 +171,7 @@ public class GeneratorUtils {
         if (input.matches(STARTS_WITH_DIGIT_PATTERN)) {
             input = UNDERSCORE + input;
         }
-        for (String placeholder : Arrays.asList(SLASH_PATTERN, WHITESPACE_PATTERN, SPECIAL_CHARS_PATTERN)) {
+        for (String placeholder : List.of(SLASH_PATTERN, WHITESPACE_PATTERN, SPECIAL_CHARS_PATTERN)) {
             input = input.replaceAll(placeholder, UNDERSCORE);
         }
         return input;

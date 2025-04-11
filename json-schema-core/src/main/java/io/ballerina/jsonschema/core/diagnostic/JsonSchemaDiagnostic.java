@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Represents an error diagnostic message specific to JSON schema processing.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 public class JsonSchemaDiagnostic extends Diagnostic {
     private final DiagnosticInfo diagnosticInfo;

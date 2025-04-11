@@ -76,6 +76,7 @@ public class Generator {
 
         List<Object> schemaType = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(),
                 schema.getType());
+
         if (schemaType.isEmpty()) {
             ID_TO_TYPE_MAP.put(schema.getIdKeyword(), NEVER);
             return NEVER;
@@ -128,16 +129,11 @@ public class Generator {
             typeList.add(null);
         } else {
             for (String element : type) {
-                Class<?> typeClass = getIntermediateJsonType(element);
-                if (!(typeClass == Void.class)) {
-                    typeList.add(typeClass);
-                }
+                typeList.add(getIntermediateJsonClassType(element));
             }
         }
 
-        if (!typeList.isEmpty()) {
-            typeList.add(Class.class);
-        }
+        typeList.add(Class.class);
 
         if (enumKeyword == null) {
             if (constKeyword == null) {
@@ -167,7 +163,7 @@ public class Generator {
         return new ArrayList<>();
     }
 
-    private static Class<?> getIntermediateJsonType(String type) {
+    private static Class<?> getIntermediateJsonClassType(String type) {
         return switch (type) {
             case "integer" -> Long.class;
             case "number" -> Double.class;
@@ -176,7 +172,7 @@ public class Generator {
             case "array" -> ArrayList.class;
             case "object" -> LinkedHashMap.class;
             case "null" -> null;
-            default -> Void.class;
+            default -> throw new RuntimeException("Unsupported type: " + type);
         };
     }
 

@@ -19,6 +19,6 @@ EXAMPLE
        in the same directory where the command is executed.
            $ bal json-schema schema.json
 
-       Generate types from a JSON schema with a specified relative path of the output file. The output will be saved
+       Generate types from a JSON schema with a specified module name for the output file. The output will be saved
        to the 'custom' submodule in the Ballerina project.
            $ bal json-schema schema.json --module custom

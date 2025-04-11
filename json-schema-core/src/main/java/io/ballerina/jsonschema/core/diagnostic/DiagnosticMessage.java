@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * Represents an error diagnostic message with a unique code, description, severity, and arguments.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 public class DiagnosticMessage {
     private final String code;
