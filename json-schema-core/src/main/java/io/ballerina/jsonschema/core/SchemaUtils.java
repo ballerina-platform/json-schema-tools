@@ -35,8 +35,6 @@ public class SchemaUtils {
     static final Map<String, String> ID_TO_TYPE_MAP = new HashMap<>();
 
     public static Object parseJsonSchema(String jsonString) throws Exception {
-        Object schema = null;
-
         Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
         jsonString = jsonString.trim();
 
@@ -45,19 +43,20 @@ public class SchemaUtils {
         }
 
         if (jsonString.equals("true")) {
-            schema = Boolean.TRUE;
-        } else if (jsonString.equals("false")) {
-            schema = Boolean.FALSE;
-        } else if (jsonString.startsWith("{") && jsonString.endsWith("}")) {
-            schema = gson.fromJson(jsonString, Schema.class);
+            return Boolean.TRUE;
+        }
+        if (jsonString.equals("false")) {
+            return Boolean.FALSE;
+        }
+        if (jsonString.startsWith("{") && jsonString.endsWith("}")) {
+            Schema tmpschema = gson.fromJson(jsonString, Schema.class);
 
-            if (((Schema) schema).getSchemaKeyword() == null ||
-                    !SUPPORTED_DRAFTS.contains(((Schema) schema).getSchemaKeyword())) {
+            if (tmpschema.getSchemaKeyword() == null ||
+                    !SUPPORTED_DRAFTS.contains(tmpschema.getSchemaKeyword())) {
                 throw new RuntimeException("Schema draft not supported");
             }
-        } else {
-            throw new Exception("JSON schema is not valid");
+            return tmpschema;
         }
-        return schema;
+        throw new Exception("JSON schema is not valid");
     }
 }

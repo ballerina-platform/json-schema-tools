@@ -117,7 +117,6 @@ class MapStringSchemaDeserializer implements JsonDeserializer<Map<String, Object
 
 
 class Schema {
-
     // Applicator
     @JsonAdapter(ListSchemaDeserializer.class)
     private List<Object> prefixItems;

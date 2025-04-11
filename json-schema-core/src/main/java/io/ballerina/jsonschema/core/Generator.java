@@ -70,6 +70,12 @@ public class Generator {
     ArrayList<String> imports = new ArrayList<>();
     List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
+    private record BalTypes(
+            List<Object> typeList,
+            boolean types
+    ) {
+    };
+
     public Response convertBaseSchema(Object schemaObject) throws Exception {
         String generatedTypeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
 
@@ -85,7 +91,7 @@ public class Generator {
         return new Response(generatedTypes, this.diagnostics);
     }
 
-    public String convert(Object schemaObject, String name) {
+    String convert(Object schemaObject, String name) {
         // Handle boolean schemas
         if (schemaObject instanceof Boolean boolValue) {
             return boolValue ? JSON : NEVER;
@@ -93,16 +99,15 @@ public class Generator {
 
         Schema schema = (Schema) schemaObject;
 
-        List<Object> schemaType = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(),
-                schema.getType());
+        BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
+        List<Object> schemaType = balTypes.typeList();
 
         if (schemaType.isEmpty()) {
             ID_TO_TYPE_MAP.put(schema.getIdKeyword(), NEVER);
             return NEVER;
         }
 
-        if (schemaType.contains(Class.class)) {
-            schemaType.remove(Class.class);
+        if (balTypes.types()) {
             if (schemaType.size() == 1) {
                 String typeName = createType(name, schema, schemaType.getFirst(), this);
                 ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
@@ -135,8 +140,8 @@ public class Generator {
         return typeName;
     }
 
-    private static List<Object> getCommonType(List<Object> enumKeyword, Object constKeyword,
-                                              List<String> type) {
+    private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
+                                          List<String> type) {
         Set<Class<?>> typeList = new HashSet<>();
 
         if (type == null || type.isEmpty()) {
@@ -153,16 +158,14 @@ public class Generator {
             }
         }
 
-        typeList.add(Class.class);
-
         if (enumKeyword == null) {
             if (constKeyword == null) {
-                return new ArrayList<>(typeList);
+                return new BalTypes(new ArrayList<>(typeList), true);
             }
             if (typeList.contains(constKeyword.getClass())) {
-                return new ArrayList<>(List.of(constKeyword));
+                return new BalTypes(new ArrayList<>(List.of(constKeyword)), false);
             }
-            return new ArrayList<>();
+            return new BalTypes(new ArrayList<>(), false);
         }
 
         Set<Object> valueList = new HashSet<>();
@@ -174,13 +177,13 @@ public class Generator {
         }
 
         if (constKeyword == null) {
-            return new ArrayList<>(valueList);
+            return new BalTypes(new ArrayList<>(valueList), false);
         }
 
         if (valueList.contains(constKeyword)) {
-            return new ArrayList<>(List.of(constKeyword));
+            return new BalTypes(new ArrayList<>(List.of(constKeyword)), false);
         }
-        return new ArrayList<>();
+        return new BalTypes(new ArrayList<>(), false);
     }
 
     private static Class<?> getIntermediateJsonClassType(String type) {
