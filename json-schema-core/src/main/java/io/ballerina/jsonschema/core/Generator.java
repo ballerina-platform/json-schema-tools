@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com)
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package io.ballerina.jsonschema.core;
 
 import io.ballerina.compiler.syntax.tree.AbstractNodeFactory;
@@ -53,11 +71,11 @@ public class Generator {
     List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
     public Response convertBaseSchema(Object schemaObject) throws Exception {
-        String generatedType = convert(schemaObject, DEFAULT_SCHEMA_NAME);
+        String generatedTypeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
 
-        if (!generatedType.equals(DEFAULT_SCHEMA_NAME)) {
+        if (!generatedTypeName.equals(DEFAULT_SCHEMA_NAME)) {
             String schemaDefinition = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE
-                    + DEFAULT_SCHEMA_NAME + WHITE_SPACE + generatedType + SEMI_COLON;
+                    + DEFAULT_SCHEMA_NAME + WHITE_SPACE + generatedTypeName + SEMI_COLON;
             ModuleMemberDeclarationNode schemaNode = NodeParser.parseModuleMemberDeclaration(schemaDefinition);
             this.nodes.put(DEFAULT_SCHEMA_NAME, schemaNode);
         }
@@ -68,6 +86,7 @@ public class Generator {
     }
 
     public String convert(Object schemaObject, String name) {
+        // Handle boolean schemas
         if (schemaObject instanceof Boolean boolValue) {
             return boolValue ? JSON : NEVER;
         }
@@ -80,39 +99,40 @@ public class Generator {
         if (schemaType.isEmpty()) {
             ID_TO_TYPE_MAP.put(schema.getIdKeyword(), NEVER);
             return NEVER;
-        } else if (schemaType.contains(Class.class)) {
+        }
+
+        if (schemaType.contains(Class.class)) {
             schemaType.remove(Class.class);
             if (schemaType.size() == 1) {
                 String typeName = createType(name, schema, schemaType.getFirst(), this);
                 ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
                 return typeName;
-            } else {
-                Set<String> unionTypes = new HashSet<>();
-                for (Object element : schemaType) {
-                    String subtypeName = name + getBallerinaType(element);
-                    unionTypes.add(createType(subtypeName, schema, element, this));
-                }
-                if (unionTypes.containsAll(
-                        Set.of(INTEGER, NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
-                    ID_TO_TYPE_MAP.put(schema.getIdKeyword(), JSON);
-                    return JSON;
-                }
-                if (unionTypes.contains(NUMBER)) {
-                    unionTypes.remove(NUMBER);
-                    unionTypes.add(INTEGER);
-                    unionTypes.add(FLOAT);
-                    unionTypes.add(DECIMAL);
-                }
-                String typeName = String.join(PIPE, unionTypes);
-                ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
-                return typeName;
             }
-        } else {
-            //TODO: Validate constraints on enums
-            String typeName = schemaType.stream().map(String::valueOf).collect(Collectors.joining(PIPE));
+            Set<String> unionTypes = new HashSet<>();
+            for (Object element : schemaType) {
+                String subtypeName = name + getBallerinaType(element);
+                unionTypes.add(createType(subtypeName, schema, element, this));
+            }
+            if (unionTypes.containsAll(
+                    Set.of(INTEGER, NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
+                ID_TO_TYPE_MAP.put(schema.getIdKeyword(), JSON);
+                return JSON;
+            }
+            if (unionTypes.contains(NUMBER)) {
+                unionTypes.remove(NUMBER);
+                unionTypes.add(INTEGER);
+                unionTypes.add(FLOAT);
+                unionTypes.add(DECIMAL);
+            }
+            String typeName = String.join(PIPE, unionTypes);
             ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
             return typeName;
         }
+
+        //TODO: Validate constraints on enums
+        String typeName = schemaType.stream().map(String::valueOf).collect(Collectors.joining(PIPE));
+        ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
+        return typeName;
     }
 
     private static List<Object> getCommonType(List<Object> enumKeyword, Object constKeyword,

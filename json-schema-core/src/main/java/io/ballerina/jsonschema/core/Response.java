@@ -21,6 +21,7 @@ package io.ballerina.jsonschema.core;
 import io.ballerina.jsonschema.core.diagnostic.JsonSchemaDiagnostic;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Response {
@@ -41,7 +42,7 @@ public class Response {
     }
 
     public List<JsonSchemaDiagnostic> getDiagnostics() {
-        return new ArrayList<>(diagnostics);
+        return Collections.unmodifiableList(diagnostics);
     }
 
     public void setDiagnostics(List<JsonSchemaDiagnostic> diagnostics) {
