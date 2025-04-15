@@ -26,6 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Util methods to handle Schema keywords.
+ *
+ * @since 0.1.0
+ */
 public class SchemaUtils {
     private static final String DRAFT2020_12 = "https://json-schema.org/draft/2020-12/schema";
 

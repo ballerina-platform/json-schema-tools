@@ -61,6 +61,11 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.IMPORT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.createType;
 import static io.ballerina.jsonschema.core.SchemaUtils.ID_TO_TYPE_MAP;
 
+/**
+ * Ballerina code generation handler.
+ *
+ * @since 0.1.0
+ */
 public class Generator {
     static final String DEFAULT_SCHEMA_NAME = "Schema";
     static final String EOF_TOKEN = "";

@@ -34,7 +34,8 @@ public class JsonSchemaGeneratorTest {
     @DataProvider(name = "jsonSchemaProvider")
     public Object[][] provideTestPaths() {
         return new Object[][]{{"1_simple_int_schema.json", "1_simple_int_schema.bal"},
-                {"2_constrained_int_schema.json", "2_constrained_int_schema.bal"}};
+                {"2_constrained_int_schema.json", "2_constrained_int_schema.bal"},
+                {"3_true_schema.json", "3_true_schema.bal"}};
     }
 
     @Test(dataProvider = "jsonSchemaProvider")

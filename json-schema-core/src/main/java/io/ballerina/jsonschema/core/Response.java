@@ -24,6 +24,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Represents the Response.
+ *
+ * @since 0.1.0
+ */
 public class Response {
     private String types;
     private List<JsonSchemaDiagnostic> diagnostics;

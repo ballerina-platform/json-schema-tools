@@ -24,6 +24,11 @@ import io.ballerina.compiler.syntax.tree.NodeParser;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Code Generator Utils for the Generator class.
+ *
+ * @since 0.1.0
+ */
 public class GeneratorUtils {
     public static final String IMPORT = "import";
     public static final String PUBLIC = "public";

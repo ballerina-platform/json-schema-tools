@@ -18,158 +18,72 @@
 
 package io.ballerina.jsonschema.core;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class TypeDeserializer implements JsonDeserializer<List<String>> {
-    @Override
-    public List<String> deserialize(JsonElement jsonElement, Type type,
-                                         JsonDeserializationContext jsonDeserializationContext)
-            throws JsonParseException {
-        if (jsonElement.isJsonArray()) {
-            return jsonDeserializationContext.deserialize(jsonElement, List.class);
-        }
-        if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isString()) {
-            return new ArrayList<>(List.of(jsonElement.getAsString()));
-        }
-        throw new JsonParseException("Expected a string or an array of strings, but got: " + jsonElement);
-    }
-}
-
-class PropertyNameDeserializer implements JsonDeserializer<Object> {
-    @Override
-    public Object deserialize(JsonElement jsonElement, Type type,
-                              JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-        if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isBoolean()) {
-            return jsonElement.getAsBoolean();
-        }
-        if (jsonElement.isJsonObject()) {
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
-            jsonObject.addProperty("type", "string");
-            return jsonDeserializationContext.deserialize(jsonObject, Schema.class);
-        }
-        throw new JsonParseException("Expected a boolean or an object");
-    }
-}
-
-class SchemaDeserializer implements JsonDeserializer<Object> {
-    @Override
-    public Object deserialize(JsonElement jsonElement, Type type,
-                              JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-        if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isBoolean()) {
-            return jsonElement.getAsBoolean();
-        }
-        if (jsonElement.isJsonObject()) {
-            return jsonDeserializationContext.deserialize(jsonElement, Schema.class);
-        }
-        throw new JsonParseException("Expected a boolean or an object");
-    }
-}
-
-class ListSchemaDeserializer implements JsonDeserializer<List<Object>> {
-    @Override
-    public List<Object> deserialize(JsonElement jsonElement, Type type,
-                                    JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-        if (!jsonElement.isJsonArray()) {
-            throw new JsonParseException("Expected an array");
-        }
-        List<Object> list = new ArrayList<>();
-        for (JsonElement element : jsonElement.getAsJsonArray()) {
-            if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()) {
-                list.add(element.getAsBoolean());
-            } else {
-                list.add(jsonDeserializationContext.deserialize(element, Schema.class));
-            }
-        }
-        return list;
-    }
-}
-
-class MapStringSchemaDeserializer implements JsonDeserializer<Map<String, Object>> {
-    @Override
-    public Map<String, Object> deserialize(JsonElement jsonElement, Type type,
-                                           JsonDeserializationContext jsonDeserializationContext)
-            throws JsonParseException {
-        JsonObject jsonObject = jsonElement.getAsJsonObject();
-        Map<String, Object> resultMap = new HashMap<>();
-        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-            if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isBoolean()) {
-                resultMap.put(entry.getKey(), entry.getValue().getAsBoolean());
-            } else {
-                Schema schema = jsonDeserializationContext.deserialize(entry.getValue(), Schema.class);
-                resultMap.put(entry.getKey(), schema);
-            }
-        }
-        return resultMap;
-    }
-}
-
-
+/**
+ * Represents the deserialized Schema object corresponding to a JSON schema.
+ *
+ * @since 0.1.0
+ */
 class Schema {
     // Applicator
-    @JsonAdapter(ListSchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.ListSchemaDeserializer.class)
     private List<Object> prefixItems;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object items;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object contains;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object additionalProperties;
 
-    @JsonAdapter(MapStringSchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.MapStringSchemaDeserializer.class)
     private Map<String, Object> properties;
 
-    @JsonAdapter(MapStringSchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.MapStringSchemaDeserializer.class)
     private Map<String, Object> patternProperties;
 
-    @JsonAdapter(MapStringSchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.MapStringSchemaDeserializer.class)
     private Map<String, Object> dependentSchema;
 
-    @JsonAdapter(PropertyNameDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.PropertyNameDeserializer.class)
     private Object propertyNames;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     @SerializedName("if")
     private Object ifKeyword;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object then;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     @SerializedName("else")
     private Object elseKeyword;
 
-    @JsonAdapter(ListSchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.ListSchemaDeserializer.class)
     private List<Object> allOf;
 
-    @JsonAdapter(ListSchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.ListSchemaDeserializer.class)
     private List<Object> oneOf;
 
-    @JsonAdapter(ListSchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.ListSchemaDeserializer.class)
     private List<Object> anyOf;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object not;
 
     // Content
     private String contentEncoding;
     private String contentMediaType;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object content;
 
     // Core
@@ -197,7 +111,7 @@ class Schema {
     @SerializedName("$comment")
     private String commentKeyword;
 
-    @JsonAdapter(MapStringSchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.MapStringSchemaDeserializer.class)
     @SerializedName("$defs")
     private Map<String, Object> defsKeyword;
 
@@ -218,14 +132,14 @@ class Schema {
     private List<Object> examples;
 
     // Unevaluated
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object unevaluatedItems;
 
-    @JsonAdapter(SchemaDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object unevaluatedProperties;
 
     // Validation
-    @JsonAdapter(TypeDeserializer.class)
+    @JsonAdapter(SchemaDeserializers.TypeDeserializer.class)
     private ArrayList<String> type;
 
     @SerializedName("const")

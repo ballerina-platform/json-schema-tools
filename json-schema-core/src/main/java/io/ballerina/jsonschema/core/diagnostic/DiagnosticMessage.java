@@ -19,6 +19,7 @@
 package io.ballerina.jsonschema.core.diagnostic;
 
 import io.ballerina.tools.diagnostics.DiagnosticSeverity;
+import io.ballerina.tools.diagnostics.Location;
 
 import java.util.Objects;
 
@@ -56,20 +57,14 @@ public class DiagnosticMessage {
         return Objects.requireNonNullElse(this.args, new Object[0]).clone();
     }
 
-    public static JsonSchemaDiagnostic jsonSchemaToBallerinaError100(Object[] args) {
-        return new JsonSchemaDiagnostic("JSON_SCHEMA_TO_BALLERINA_100",
-                "Invalid JSON schema. Provided JSON schema is invalid.", DiagnosticSeverity.ERROR, null, args);
-    }
-
-    public static JsonSchemaDiagnostic jsonSchemaToBallerinaError101(Exception e, Object[] args) {
-        return new JsonSchemaDiagnostic("JSON_SCHEMA_TO_BALLERINA_101",
-                String.format("The content of the JSON schema is not supported. %s", e.getMessage()),
-                DiagnosticSeverity.ERROR, null, args);
-    }
-
-    public static JsonSchemaDiagnostic jsonSchemaToBallerinaError102(String attribute, Object[] args) {
-        return new JsonSchemaDiagnostic("JSON_SCHEMA_TO_BALLERINA_102",
-                String.format(String.format("The expected attribute is not provided: %s", attribute)),
-                DiagnosticSeverity.ERROR, null, args);
+    public static JsonSchemaDiagnostic from(DiagnosticErrorCode errorCode, DiagnosticSeverity severity,
+                                            Location location, Object[] args) {
+        return new JsonSchemaDiagnostic(
+                errorCode.name(),
+                errorCode.messageKey(),
+                severity,
+                location,
+                args
+        );
     }
 }
