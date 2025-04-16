@@ -56,6 +56,7 @@ public class GeneratorUtils {
     public static final String DOUBLE_QUOTATION = "\"";
     public static final String VALUE = "value";
     public static final String UNDERSCORE = "_";
+    public static final String TAB = "\t";
 
     public static final String INTEGER = "int";
     public static final String STRING = "string";
@@ -81,6 +82,12 @@ public class GeneratorUtils {
     public static final String DEPENDENT_SCHEMA_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_SCHEMA;
     public static final String DEPENDENT_REQUIRED_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_REQUIRED;
     public static final String ONE_OF_ANNOTATION = AT + "OneOf";
+
+    public static final String STRING_FORMAT_SPECIFIER = "%s";
+    public static final String NEW_LINE_FORMAT_SPECIFIER = "%n";
+    public static final String ANNOTATION_FORMAT = STRING_FORMAT_SPECIFIER + OPEN_BRACES + NEW_LINE_FORMAT_SPECIFIER +
+            TAB + STRING_FORMAT_SPECIFIER + NEW_LINE_FORMAT_SPECIFIER + CLOSE_BRACES + NEW_LINE_FORMAT_SPECIFIER +
+            STRING_FORMAT_SPECIFIER + SEMI_COLON;
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -143,11 +150,11 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        String joinedAnnotations = String.join("," + System.lineSeparator() + "\t", annotationParts);
+        String joinedAnnotations = String.join("," + System.lineSeparator() + TAB, annotationParts);
         String typeDefinition = String.join(WHITE_SPACE, PUBLIC, TYPE, finalType, INTEGER);
 
         String formattedAnnotation =
-                String.format("%s{%n\t%s%n}%n%s;", NUMBER_ANNOTATION, joinedAnnotations, typeDefinition);
+                String.format(ANNOTATION_FORMAT, NUMBER_ANNOTATION, joinedAnnotations, typeDefinition);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
