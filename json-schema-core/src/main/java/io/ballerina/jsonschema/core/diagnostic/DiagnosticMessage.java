@@ -28,43 +28,32 @@ import java.util.Objects;
  *
  * @since 0.1.0
  */
-public class DiagnosticMessage {
-    private final String code;
-    private final String description;
-    private final DiagnosticSeverity severity;
-    private final Object[] args;
-
-    private DiagnosticMessage(String code, String description, DiagnosticSeverity severity, Object[] args) {
-        this.code = code;
-        this.description = description;
-        this.severity = severity;
-        this.args = args;
+public record DiagnosticMessage(
+        String code,
+        String description,
+        DiagnosticSeverity severity,
+        Object[] args
+) {
+    public DiagnosticMessage {
+        args = Objects.requireNonNullElse(args, new Object[0]).clone();
     }
 
-    public String getCode() {
-        return this.code;
+    @Override
+    public Object[] args() {
+        return args.clone();
     }
 
-    public String getDescription() {
-        return this.description;
-    }
-
-    public DiagnosticSeverity getSeverity() {
-        return this.severity;
-    }
-
-    public Object[] getArgs() {
-        return Objects.requireNonNullElse(this.args, new Object[0]).clone();
-    }
-
-    public static JsonSchemaDiagnostic from(DiagnosticErrorCode errorCode, DiagnosticSeverity severity,
-                                            Location location, Object[] args) {
+    public static JsonSchemaDiagnostic from(DiagnosticErrorCode errorCode,
+                                            DiagnosticSeverity severity,
+                                            Location location,
+                                            Object[] args) {
         return new JsonSchemaDiagnostic(
                 errorCode.name(),
                 errorCode.messageKey(),
                 severity,
                 location,
-                args
+                Objects.requireNonNullElse(args, new Object[0]).clone()
         );
     }
 }
+
