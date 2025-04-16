@@ -26,6 +26,11 @@ import java.util.Objects;
 /**
  * Represents an error diagnostic message with a unique code, description, severity, and arguments.
  *
+ * @param code        The unique diagnostic code.
+ * @param description The diagnostic message description.
+ * @param severity    The severity level of the diagnostic.
+ * @param args        Optional arguments to format the diagnostic message.
+ *
  * @since 0.1.0
  */
 public record DiagnosticMessage(
