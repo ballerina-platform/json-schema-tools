@@ -8,11 +8,8 @@ DESCRIPTION
        The 'bal json-schema' command is used to generate ballerina types for a given JSON schema file.
 
 OPTIONS
-       <source-file-path>
-           Path to the JSON Schema file. This is a mandatory input.
-
        -m, --module <output-module-name>
-           The name of the module in which the Ballerina client and record types are generated.
+           The name of the module in which the Ballerina types are generated.
 
 EXAMPLE
        Generate types from a JSON schema. The output will be saved to the types.bal file

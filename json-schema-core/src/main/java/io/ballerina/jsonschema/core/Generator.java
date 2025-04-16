@@ -72,8 +72,8 @@ public class Generator {
     static final String INVALID_IMPORTS_ERROR = "Invalid imports have been found.";
 
     Map<String, ModuleMemberDeclarationNode> nodes = new LinkedHashMap<>();
-    ArrayList<String> imports = new ArrayList<>();
-    List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
+    private final ArrayList<String> imports = new ArrayList<>();
+    private final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
     private record BalTypes(List<Object> typeList, boolean types) {
     }
