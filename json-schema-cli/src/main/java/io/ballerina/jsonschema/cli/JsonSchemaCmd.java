@@ -59,11 +59,11 @@ public class JsonSchemaCmd implements BLauncherCmd {
     private static final String MODULES = "modules";
 
     private final PrintStream outStream;
-    private final boolean exitWhenFinish;
+    private final boolean exitOnError;
 
     public JsonSchemaCmd() {
         this.outStream = System.err;
-        this.exitWhenFinish = true;
+        this.exitOnError = true;
     }
 
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true)
@@ -244,7 +244,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
     }
 
     private void exitOnError() {
-        if (exitWhenFinish) {
+        if (exitOnError) {
             Runtime.getRuntime().exit(1);
         }
     }
