@@ -75,11 +75,8 @@ public class Generator {
     ArrayList<String> imports = new ArrayList<>();
     List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
-    private record BalTypes(
-            List<Object> typeList,
-            boolean types
-    ) {
-    };
+    private record BalTypes(List<Object> typeList, boolean types) {
+    }
 
     public Response convertBaseSchema(Object schemaObject) throws Exception {
         String generatedTypeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
@@ -97,7 +94,8 @@ public class Generator {
     }
 
     String convert(Object schemaObject, String name) {
-        // Handle boolean schemas
+        // JSON Schema allows a schema to be a boolean: `true` allows any value, `false` allows none.
+        // It is handled here before processing object-based schemas.
         if (schemaObject instanceof Boolean boolValue) {
             return boolValue ? JSON : NEVER;
         }
