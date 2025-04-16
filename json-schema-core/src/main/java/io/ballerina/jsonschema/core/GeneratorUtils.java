@@ -150,7 +150,7 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        String joinedAnnotations = String.join("," + System.lineSeparator() + TAB, annotationParts);
+        String joinedAnnotations = String.join("," + NEW_LINE + TAB, annotationParts);
         String typeDefinition = String.join(WHITE_SPACE, PUBLIC, TYPE, finalType, INTEGER);
 
         String formattedAnnotation =

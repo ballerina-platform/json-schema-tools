@@ -44,7 +44,7 @@ public class SchemaUtils {
         jsonString = jsonString.trim();
 
         if (jsonString.isEmpty()) {
-            throw new SchemaExceptions.EmptyJsonSchemaException("JSON schema is empty");
+            throw new EmptyJsonSchemaException("JSON schema is empty");
         }
 
         if (jsonString.equals("true")) {
@@ -62,6 +62,26 @@ public class SchemaUtils {
             }
             return tmpschema;
         }
-        throw new SchemaExceptions.InvalidJsonSchemaException("JSON schema is not valid");
+        throw new InvalidJsonSchemaException("JSON schema is not valid");
+    }
+
+    public static class InvalidJsonSchemaException extends Exception {
+        public InvalidJsonSchemaException(String message) {
+            super(message);
+        }
+
+        public InvalidJsonSchemaException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static class EmptyJsonSchemaException extends Exception {
+        public EmptyJsonSchemaException(String message) {
+            super(message);
+        }
+
+        public EmptyJsonSchemaException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

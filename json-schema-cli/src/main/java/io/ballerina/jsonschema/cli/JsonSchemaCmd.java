@@ -21,7 +21,6 @@ package io.ballerina.jsonschema.cli;
 import io.ballerina.cli.BLauncherCmd;
 import io.ballerina.jsonschema.core.Generator;
 import io.ballerina.jsonschema.core.Response;
-import io.ballerina.jsonschema.core.SchemaExceptions;
 import io.ballerina.jsonschema.core.SchemaUtils;
 import io.ballerina.projects.util.ProjectUtils;
 import picocli.CommandLine;
@@ -128,7 +127,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
             }
         } catch (IOException e) {
             outStream.println("Error occurred while accessing the file. " + e.getLocalizedMessage());
-        } catch (SchemaExceptions.InvalidJsonSchemaException | SchemaExceptions.EmptyJsonSchemaException e) {
+        } catch (SchemaUtils.InvalidJsonSchemaException | SchemaUtils.EmptyJsonSchemaException e) {
             outStream.println("Error: " + e.getLocalizedMessage());
         } catch (Exception e) {
             outStream.println("Error: " + e.getLocalizedMessage());
