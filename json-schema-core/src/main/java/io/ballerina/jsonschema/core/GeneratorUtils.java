@@ -125,7 +125,7 @@ public class GeneratorUtils {
                     schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
         }
         //TODO: Complete for other data types
-        return "INCOMPLETE";
+        throw new RuntimeException("Type currently not supported");
     }
 
     public static String createInteger(String name, Double minimum, Double exclusiveMinimum, Double maximum,
