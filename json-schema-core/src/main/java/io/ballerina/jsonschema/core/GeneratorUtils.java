@@ -83,7 +83,7 @@ public class GeneratorUtils {
     public static final String DEPENDENT_REQUIRED_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_REQUIRED;
     public static final String ONE_OF_ANNOTATION = AT + "OneOf";
 
-    public static final String ANNOTATION_FORMAT = "%s{%n\t%s%n}%n%s;";
+    public static final String ANNOTATION_FORMAT = "%s {%n\t%s%n}%npublic type %s %s;";
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -146,7 +146,7 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, INTEGER, NUMBER_ANNOTATION, finalType);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_ANNOTATION, finalType, INTEGER);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
@@ -161,10 +161,9 @@ public class GeneratorUtils {
     }
 
     private static String getFormattedAnnotation(List<String> annotationParts,
-                                                 String typeName, String annotationType, String type) {
+                                                 String annotationType, String typeName, String type) {
         String annotation = String.join("," + NEW_LINE + TAB, annotationParts);
-        String typeDefinition = String.join(WHITE_SPACE, PUBLIC, TYPE, type, typeName);
-        return String.format(ANNOTATION_FORMAT, annotationType, annotation, typeDefinition);
+        return String.format(ANNOTATION_FORMAT, annotationType, annotation, typeName, type);
     }
 
     private static boolean invalidLimits(Double minimum, Double exclusiveMinimum, Double maximum,
