@@ -34,6 +34,7 @@ import org.ballerinalang.formatter.core.options.FormattingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -262,7 +263,7 @@ public class Generator {
         this.diagnostics.add(diagnostic);
     }
 
-    public ArrayList<String> getImports() {
-        return new ArrayList<>(this.imports);
+    public List<String> getImports() {
+        return Collections.unmodifiableList(this.imports);
     }
 }
