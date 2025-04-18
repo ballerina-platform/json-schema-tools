@@ -36,7 +36,8 @@ public class JsonSchemaGeneratorTest {
         return new Object[][]{{"1_simple_int_schema.json", "1_simple_int_schema.bal"},
                 {"2_constrained_int_schema.json", "2_constrained_int_schema.bal"},
                 {"3_true_schema.json", "3_true_schema.bal"},
-                {"4_false_schema.json", "4_false_schema.bal"}};
+                {"4_false_schema.json", "4_false_schema.bal"},
+                {"5_invalid_int_schema.json", "5_invalid_int_schema.bal"}};
     }
 
     @Test(dataProvider = "jsonSchemaProvider")
