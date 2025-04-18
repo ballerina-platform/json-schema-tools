@@ -83,11 +83,7 @@ public class GeneratorUtils {
     public static final String DEPENDENT_REQUIRED_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_REQUIRED;
     public static final String ONE_OF_ANNOTATION = AT + "OneOf";
 
-    public static final String STRING_FORMAT_SPECIFIER = "%s";
-    public static final String NEW_LINE_FORMAT_SPECIFIER = "%n";
-    public static final String ANNOTATION_FORMAT = STRING_FORMAT_SPECIFIER + OPEN_BRACES + NEW_LINE_FORMAT_SPECIFIER +
-            TAB + STRING_FORMAT_SPECIFIER + NEW_LINE_FORMAT_SPECIFIER + CLOSE_BRACES + NEW_LINE_FORMAT_SPECIFIER +
-            STRING_FORMAT_SPECIFIER + SEMI_COLON;
+    public static final String ANNOTATION_FORMAT = "%s{%n\t%s%n}%n%s;";
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -150,16 +146,25 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        String joinedAnnotations = String.join("," + NEW_LINE + TAB, annotationParts);
-        String typeDefinition = String.join(WHITE_SPACE, PUBLIC, TYPE, finalType, INTEGER);
-
-        String formattedAnnotation =
-                String.format(ANNOTATION_FORMAT, NUMBER_ANNOTATION, joinedAnnotations, typeDefinition);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, INTEGER, NUMBER_ANNOTATION, finalType);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
 
         return finalType;
+    }
+
+    private static void addIfNotNull(List<String> list, String key, Object value) {
+        if (value != null) {
+            list.add(key + ": " + value);
+        }
+    }
+
+    private static String getFormattedAnnotation(List<String> annotationParts,
+                                                 String typeName, String annotationType, String type) {
+        String annotation = String.join("," + NEW_LINE + TAB, annotationParts);
+        String typeDefinition = String.join(WHITE_SPACE, PUBLIC, TYPE, type, typeName);
+        return String.format(ANNOTATION_FORMAT, annotationType, annotation, typeDefinition);
     }
 
     private static boolean invalidLimits(Double minimum, Double exclusiveMinimum, Double maximum,
@@ -168,12 +173,6 @@ public class GeneratorUtils {
                 (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
                 (exclusiveMinimum != null && maximum != null && maximum <= exclusiveMinimum) ||
                 (exclusiveMinimum != null && exclusiveMaximum != null && exclusiveMaximum <= exclusiveMinimum);
-    }
-
-    private static void addIfNotNull(List<String> list, String key, Object value) {
-        if (value != null) {
-            list.add(key + ": " + value);
-        }
     }
 
     public static String resolveNameConflicts(String name, Generator generator) {
