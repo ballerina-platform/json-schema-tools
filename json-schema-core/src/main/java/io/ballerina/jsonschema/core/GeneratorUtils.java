@@ -23,6 +23,7 @@ import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Code Generator Utils for the Generator class.
@@ -120,6 +121,9 @@ public class GeneratorUtils {
         if (type == null) {
             return NULL;
         }
+        if (type == Boolean.class) {
+            return BOOLEAN;
+        }
         if (type == Long.class) {
             return createInteger(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
                     schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
@@ -127,6 +131,9 @@ public class GeneratorUtils {
         if (type == Double.class) {
             return createNumber(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
                     schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
+        }
+        if (type == String.class) {
+            return createString(name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(), schema.getPattern(), generator);
         }
         //TODO: Complete for other data types
         throw new RuntimeException("Type currently not supported");
@@ -190,6 +197,26 @@ public class GeneratorUtils {
         generator.nodes.put(finalType, moduleNode);
 
         return finalType;
+    }
+
+    public static String createString(String name, String format, Long minLength, Long maxLength, String pattern, Generator generator) {
+        if (format == null && minLength == null && maxLength == null && pattern == null) {
+            return STRING;
+        }
+
+        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
+
+        List<String> annotationParts = new ArrayList<>();
+
+        if (format != null) {
+            if (!isValidFormat(format)) {
+                throw new IllegalArgumentException("Invalid format: " + format);
+            }
+            annotationParts.add(FORMAT + COLON + format);
+        }
+
+        return "HELLO";
     }
 
     private static void addIfNotNull(List<String> list, String key, Object value) {
@@ -261,5 +288,10 @@ public class GeneratorUtils {
             input = input.replaceAll(placeholder, UNDERSCORE);
         }
         return input;
+    }
+
+    public static boolean isValidFormat(String format) {
+        //TODO: Return true if the format is a valid JSON format.
+        return true;
     }
 }
