@@ -57,6 +57,7 @@ public class GeneratorUtils {
     public static final String VALUE = "value";
     public static final String UNDERSCORE = "_";
     public static final String TAB = "\t";
+    public static final String CONST = "const";
 
     public static final String INTEGER = "int";
     public static final String STRING = "string";
@@ -116,6 +117,9 @@ public class GeneratorUtils {
     private static final String SPECIAL_CHARS_PATTERN = "[!@$%^&*()_\\-|]";
 
     public static String createType(String name, Schema schema, Object type, Generator generator) {
+        if (type == null) {
+            return NULL;
+        }
         if (type == Long.class) {
             return createInteger(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
                     schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
@@ -123,9 +127,6 @@ public class GeneratorUtils {
         if (type == Double.class) {
             return createNumber(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
                     schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
-        }
-        if (type == Void.class) {
-            return NULL;
         }
         //TODO: Complete for other data types
         throw new RuntimeException("Type currently not supported");
@@ -213,12 +214,32 @@ public class GeneratorUtils {
 
     public static String resolveNameConflicts(String name, Generator generator) {
         String baseName = sanitizeName(name);
+        String resolvedName = baseName;
         int counter = 1;
-        while (generator.nodes.containsKey(name)) {
-            name = baseName + counter;
+
+        while (generator.nodes.containsKey(resolvedName)) {
+            StringBuilder sb = new StringBuilder(baseName);
+            sb.append(counter);
+            resolvedName = sb.toString();
             counter++;
         }
-        return name;
+        return resolvedName;
+    }
+
+    public static String resolveNameConflictsWithSuffix(String name, Generator generator) {
+        String baseName = sanitizeName(name);
+        StringBuilder sb = new StringBuilder(baseName);
+        sb.append(1);
+        String resolvedName = sb.toString();
+        int counter = 2;
+
+        while (generator.nodes.containsKey(resolvedName)) {
+            sb = new StringBuilder(baseName);
+            sb.append(counter);
+            resolvedName = sb.toString();
+            counter++;
+        }
+        return resolvedName;
     }
 
     public static String convertToPascalCase(String name) {

@@ -27,6 +27,7 @@ import io.ballerina.compiler.syntax.tree.NodeFactory;
 import io.ballerina.compiler.syntax.tree.NodeList;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 import io.ballerina.compiler.syntax.tree.Token;
+import io.ballerina.jsonschema.core.SchemaUtils.InvalidDataTypeException;
 import io.ballerina.jsonschema.core.diagnostic.JsonSchemaDiagnostic;
 import org.ballerinalang.formatter.core.Formatter;
 import org.ballerinalang.formatter.core.FormatterException;
@@ -43,15 +44,19 @@ import java.util.Map;
 import java.util.Set;
 
 import static io.ballerina.jsonschema.core.GeneratorUtils.BOOLEAN;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_BRACES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_SQUARE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COMMA;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CONST;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
+import static io.ballerina.jsonschema.core.GeneratorUtils.EQUAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.FLOAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.INTEGER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.JSON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NEVER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NULL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER;
+import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_BRACES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_SQUARE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PIPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PUBLIC;
@@ -63,6 +68,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_OBJECT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.IMPORT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.createType;
+import static io.ballerina.jsonschema.core.GeneratorUtils.resolveNameConflictsWithSuffix;
 import static io.ballerina.jsonschema.core.SchemaUtils.ID_TO_TYPE_MAP;
 
 /**
@@ -152,7 +158,7 @@ public class Generator {
         return typeName;
     }
 
-    private String generateStringType(Object obj) throws SchemaUtils.InvalidDataTypeException {
+    private String generateStringType(Object obj) throws InvalidDataTypeException {
         if (obj == null) {
             return NULL;
         }
@@ -169,11 +175,24 @@ public class Generator {
             }
             return OPEN_SQUARE_BRACKET + String.join(COMMA, result) + CLOSE_SQUARE_BRACKET;
         }
-        if (obj instanceof LinkedHashMap) {
-            // TODO: Complete this
-            return UNIVERSAL_OBJECT;
+        if (obj instanceof LinkedTreeMap) {
+            String objName = resolveNameConflictsWithSuffix("enumObject", this);
+            this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(""));
+
+            List<String> result = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : ((LinkedTreeMap<String, Object>) obj).entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                result.add("\"" + key + "\"" + ":" + generateStringType(value));
+            }
+            String enumObject = OPEN_BRACES + String.join(COMMA, result) + CLOSE_BRACES;
+            String constDefinition = PUBLIC + WHITE_SPACE + CONST + WHITE_SPACE + objName + WHITE_SPACE + EQUAL +
+                    WHITE_SPACE + enumObject + SEMI_COLON;
+
+            this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(constDefinition));
+            return objName;
         }
-        throw new SchemaUtils.InvalidDataTypeException("Type not supported");
+        throw new InvalidDataTypeException("Type not supported");
     }
 
     private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
@@ -186,8 +205,8 @@ public class Generator {
             typeList.add(Boolean.class);
             typeList.add(String.class);
             typeList.add(ArrayList.class);
-            typeList.add(LinkedHashMap.class);
-            typeList.add(Void.class);
+            typeList.add(LinkedTreeMap.class);
+            typeList.add(null);
         } else {
             for (String element : type) {
                 typeList.add(getIntermediateJsonClassType(element));
@@ -207,13 +226,7 @@ public class Generator {
         Set<Object> valueList = new HashSet<>();
 
         for (Object element : enumKeyword) {
-            Class<?> elementClass = (element == null) ? Void.class : element.getClass();
-
-            if (element instanceof LinkedTreeMap) {
-                elementClass = LinkedHashMap.class;
-                element = new LinkedHashMap<>((LinkedTreeMap<?, ?>) element);
-            }
-
+            Class<?> elementClass = (element == null) ? null : element.getClass();
             if (typeList.contains(elementClass)) {
                 valueList.add(element);
             }
@@ -236,8 +249,8 @@ public class Generator {
             case "boolean" -> Boolean.class;
             case "string" -> String.class;
             case "array" -> ArrayList.class;
-            case "object" -> LinkedHashMap.class;
-            case "null" -> Void.class;
+            case "object" -> LinkedTreeMap.class;
+            case "null" -> null;
             default -> throw new RuntimeException("Unsupported type: " + type);
         };
     }
