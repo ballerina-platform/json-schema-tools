@@ -22,8 +22,8 @@ import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Code Generator Utils for the Generator class.
@@ -75,7 +75,9 @@ public class GeneratorUtils {
     public static final String DEPENDENT_SCHEMA = "dependentSchema";
     public static final String DEPENDENT_REQUIRED = "dependentRequired";
 
+    public static final String BAL_REGEX_MODULE = "ballerina/lang.regexp";
     public static final String BAL_JSON_SCHEMA_DATA_MODULE = "ballerina/data.jsondata";
+
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
     public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
@@ -117,6 +119,12 @@ public class GeneratorUtils {
     private static final String WHITESPACE_PATTERN = "\\s";
     private static final String SPECIAL_CHARS_PATTERN = "[!@$%^&*()_\\-|]";
 
+    private static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
+            Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
+                    "idn-hostname", "ipv4", "ipv6", "json-pointer", "relative-json-pointer", "uri",
+                    "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
+    );
+
     public static String createType(String name, Schema schema, Object type, Generator generator) {
         if (type == null) {
             return NULL;
@@ -133,7 +141,8 @@ public class GeneratorUtils {
                     schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
         }
         if (type == String.class) {
-            return createString(name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(), schema.getPattern(), generator);
+            return createString(name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(),
+                    schema.getPattern(), generator);
         }
         //TODO: Complete for other data types
         throw new RuntimeException("Type currently not supported");
@@ -199,7 +208,8 @@ public class GeneratorUtils {
         return finalType;
     }
 
-    public static String createString(String name, String format, Long minLength, Long maxLength, String pattern, Generator generator) {
+    public static String createString(String name, String format, Long minLength, Long maxLength,
+                                      String pattern, Generator generator) {
         if (format == null && minLength == null && maxLength == null && pattern == null) {
             return STRING;
         }
@@ -210,13 +220,26 @@ public class GeneratorUtils {
         List<String> annotationParts = new ArrayList<>();
 
         if (format != null) {
-            if (!isValidFormat(format)) {
+            if (!STRING_FORMATS.contains(format)) {
                 throw new IllegalArgumentException("Invalid format: " + format);
             }
-            annotationParts.add(FORMAT + COLON + format);
+            annotationParts.add(FORMAT + COLON + DOUBLE_QUOTATION + format + DOUBLE_QUOTATION);
         }
 
-        return "HELLO";
+        addIfNotNull(annotationParts, MIN_LENGTH, minLength);
+        addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
+
+        if (pattern != null) {
+            generator.addImports(BAL_REGEX_MODULE);
+            annotationParts.add(PATTERN + COLON + REGEX_PREFIX + BACK_TICK + pattern + BACK_TICK);
+        }
+
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, STRING_ANNOTATION, finalType, STRING);
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
+        generator.nodes.put(finalType, moduleNode);
+
+        return finalType;
     }
 
     private static void addIfNotNull(List<String> list, String key, Object value) {
@@ -288,10 +311,5 @@ public class GeneratorUtils {
             input = input.replaceAll(placeholder, UNDERSCORE);
         }
         return input;
-    }
-
-    public static boolean isValidFormat(String format) {
-        //TODO: Return true if the format is a valid JSON format.
-        return true;
     }
 }
