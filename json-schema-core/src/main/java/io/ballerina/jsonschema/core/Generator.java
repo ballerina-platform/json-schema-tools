@@ -18,6 +18,7 @@
 
 package io.ballerina.jsonschema.core;
 
+import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.AbstractNodeFactory;
 import io.ballerina.compiler.syntax.tree.ImportDeclarationNode;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
@@ -40,9 +41,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.ballerina.jsonschema.core.GeneratorUtils.BOOLEAN;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_SQUARE_BRACKET;
+import static io.ballerina.jsonschema.core.GeneratorUtils.COMMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.FLOAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.INTEGER;
@@ -50,6 +52,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.JSON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NEVER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NULL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER;
+import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_SQUARE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PIPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PUBLIC;
 import static io.ballerina.jsonschema.core.GeneratorUtils.SEMI_COLON;
@@ -94,7 +97,7 @@ public class Generator {
         return new Response(generatedTypes, this.diagnostics);
     }
 
-    String convert(Object schemaObject, String name) {
+    String convert(Object schemaObject, String name) throws Exception {
         // JSON Schema allows a schema to be a boolean: `true` allows any value, `false` allows none.
         // It is handled here before processing object-based schemas.
         if (schemaObject instanceof Boolean boolValue) {
@@ -139,9 +142,38 @@ public class Generator {
         }
 
         //TODO: Validate constraints on enums
-        String typeName = schemaType.stream().map(String::valueOf).collect(Collectors.joining(PIPE));
+        List<String> result = new ArrayList<>();
+        for (Object element : schemaType) {
+            result.add(generateStringType(element));
+        }
+        String typeName = String.join(PIPE, result);
+
         ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
         return typeName;
+    }
+
+    private String generateStringType(Object obj) throws SchemaUtils.InvalidDataTypeException {
+        if (obj == null) {
+            return NULL;
+        }
+        if (obj instanceof String) {
+            return "\"" + obj + "\"";
+        }
+        if (obj instanceof Double || obj instanceof Boolean || obj instanceof Long) {
+            return String.valueOf(obj);
+        }
+        if (obj instanceof ArrayList) {
+            List<String> result = new ArrayList<>();
+            for (Object element : (ArrayList<?>) obj) {
+                result.add(generateStringType(element));
+            }
+            return OPEN_SQUARE_BRACKET + String.join(COMMA, result) + CLOSE_SQUARE_BRACKET;
+        }
+        if (obj instanceof LinkedHashMap) {
+            // TODO: Complete this
+            return UNIVERSAL_OBJECT;
+        }
+        throw new SchemaUtils.InvalidDataTypeException("Type not supported");
     }
 
     private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
@@ -155,7 +187,7 @@ public class Generator {
             typeList.add(String.class);
             typeList.add(ArrayList.class);
             typeList.add(LinkedHashMap.class);
-            typeList.add(null);
+            typeList.add(Void.class);
         } else {
             for (String element : type) {
                 typeList.add(getIntermediateJsonClassType(element));
@@ -175,7 +207,14 @@ public class Generator {
         Set<Object> valueList = new HashSet<>();
 
         for (Object element : enumKeyword) {
-            if (typeList.contains(element.getClass())) {
+            Class<?> elementClass = (element == null) ? Void.class : element.getClass();
+
+            if (element instanceof LinkedTreeMap) {
+                elementClass = LinkedHashMap.class;
+                element = new LinkedHashMap<>((LinkedTreeMap<?, ?>) element);
+            }
+
+            if (typeList.contains(elementClass)) {
                 valueList.add(element);
             }
         }
@@ -198,7 +237,7 @@ public class Generator {
             case "string" -> String.class;
             case "array" -> ArrayList.class;
             case "object" -> LinkedHashMap.class;
-            case "null" -> null;
+            case "null" -> Void.class;
             default -> throw new RuntimeException("Unsupported type: " + type);
         };
     }

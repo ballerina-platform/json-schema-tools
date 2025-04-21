@@ -120,6 +120,13 @@ public class GeneratorUtils {
             return createInteger(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
                     schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
         }
+        if (type == Double.class) {
+            return createNumber(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
+                    schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
+        }
+        if (type == Void.class) {
+            return NULL;
+        }
         //TODO: Complete for other data types
         throw new RuntimeException("Type currently not supported");
     }
@@ -147,6 +154,36 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
         String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_ANNOTATION, finalType, INTEGER);
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
+        generator.nodes.put(finalType, moduleNode);
+
+        return finalType;
+    }
+
+    public static String createNumber(String name, Double minimum, Double exclusiveMinimum, Double maximum,
+                                      Double exclusiveMaximum, Double multipleOf, Generator generator) {
+        if (minimum == null && maximum == null && exclusiveMaximum == null &&
+                exclusiveMinimum == null && multipleOf == null) {
+            return NUMBER;
+        }
+
+        if (invalidLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
+            return NEVER;
+        }
+
+        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
+
+        List<String> annotationParts = new ArrayList<>();
+
+        addIfNotNull(annotationParts, MINIMUM, minimum);
+        addIfNotNull(annotationParts, EXCLUSIVE_MINIMUM, exclusiveMinimum);
+        addIfNotNull(annotationParts, MAXIMUM, maximum);
+        addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
+        addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
+
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_ANNOTATION, finalType, NUMBER);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);

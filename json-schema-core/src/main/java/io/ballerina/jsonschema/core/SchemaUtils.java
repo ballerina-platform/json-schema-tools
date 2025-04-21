@@ -84,4 +84,14 @@ public class SchemaUtils {
             super(message, cause);
         }
     }
+
+    public static class InvalidDataTypeException extends Exception {
+        public InvalidDataTypeException(String message) {
+            super(message);
+        }
+
+        public InvalidDataTypeException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }

@@ -37,7 +37,11 @@ public class JsonSchemaGeneratorTest {
                 {"2_constrained_int_schema.json", "2_constrained_int_schema.bal"},
                 {"3_true_schema.json", "3_true_schema.bal"},
                 {"4_false_schema.json", "4_false_schema.bal"},
-                {"5_invalid_int_schema.json", "5_invalid_int_schema.bal"}};
+                {"5_invalid_int_schema.json", "5_invalid_int_schema.bal"},
+                {"6_constrained_number_schema.json", "6_constrained_number_schema.bal"},
+                {"7_enum_with_string_schema.json", "7_enum_with_string_schema.bal"},
+                {"8_enum_with_integer_schema.json", "8_enum_with_integer_schema.bal"},
+                {"9_null_schema.json", "9_null_schema.bal"}};
     }
 
     @Test(dataProvider = "jsonSchemaProvider")

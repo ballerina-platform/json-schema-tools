@@ -47,6 +47,7 @@
      doFirst {
          options.compilerArgs = [
                  '--module-path', classpath.asPath,
+                 '--add-exports', 'com.google.gson/com.google.gson.internal=io.ballerina.jsonschema.core'
          ]
          classpath = files()
      }
