@@ -41,7 +41,14 @@ public class JsonSchemaGeneratorTest {
                 {"6_constrained_number_schema.json", "6_constrained_number_schema.bal"},
                 {"7_enum_with_string_schema.json", "7_enum_with_string_schema.bal"},
                 {"8_enum_with_integer_schema.json", "8_enum_with_integer_schema.bal"},
-                {"9_null_schema.json", "9_null_schema.bal"}};
+                {"9_null_schema.json", "9_null_schema.bal"},
+                {"10_nested_enum_schema.json", "10_nested_enum_schema.bal"},
+                {"11_nested_enum_with_type_schema.json", "11_nested_enum_with_type_schema.bal"},
+                {"12_nested_enum_with_multiple_types.json", "12_nested_enum_with_multiple_types.bal"},
+                {"13_enum_with_number_type.json", "13_enum_with_number_type.bal"},
+                {"14_enum_with_const.json", "14_enum_with_const.bal"},
+                {"15_invalid_enum_with_const.json", "15_invalid_enum_with_const.bal"}
+        };
     }
 
     @Test(dataProvider = "jsonSchemaProvider")

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    42,
+    null,
+    3.14,
+    4.13,
+    52,
+    100,
+    "exampleString",
+    true,
+    [1, 2, "sample"]
+  ],
+  "type": ["number", "string"],
+  "const": 3.14
+}
