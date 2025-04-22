@@ -218,6 +218,7 @@ public class Generator {
             }
         }
 
+        // "integer" represented by "Long" is a subtype of "number" represented by "Double"
         if (typeList.contains(Double.class)) {
             typeList.add(Long.class);
         }

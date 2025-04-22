@@ -78,7 +78,7 @@ public class GeneratorUtils {
     public static final String DEPENDENT_REQUIRED = "dependentRequired";
 
     public static final String BAL_REGEX_MODULE = "ballerina/lang.regexp";
-    public static final String BAL_JSON_SCHEMA_DATA_MODULE = "ballerina/data.jsondata";
+    public static final String BAL_JSON_DATA_MODULE = "ballerina/data.jsondata";
 
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
@@ -165,8 +165,7 @@ public class GeneratorUtils {
 
     public static String createInteger(String name, Double minimum, Double exclusiveMinimum, Double maximum,
                                        Double exclusiveMaximum, Double multipleOf, Generator generator) {
-        if (minimum == null && maximum == null && exclusiveMaximum == null &&
-                exclusiveMinimum == null && multipleOf == null) {
+        if (customTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
 
@@ -174,7 +173,7 @@ public class GeneratorUtils {
             return NEVER;
         }
 
-        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        generator.addImports(BAL_JSON_DATA_MODULE);
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         List<String> annotationParts = new ArrayList<>();
@@ -195,8 +194,7 @@ public class GeneratorUtils {
 
     public static String createNumber(String name, Double minimum, Double exclusiveMinimum, Double maximum,
                                       Double exclusiveMaximum, Double multipleOf, Generator generator) {
-        if (minimum == null && maximum == null && exclusiveMaximum == null &&
-                exclusiveMinimum == null && multipleOf == null) {
+        if (customTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return NUMBER;
         }
 
@@ -204,7 +202,7 @@ public class GeneratorUtils {
             return NEVER;
         }
 
-        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        generator.addImports(BAL_JSON_DATA_MODULE);
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         List<String> annotationParts = new ArrayList<>();
@@ -225,11 +223,11 @@ public class GeneratorUtils {
 
     public static String createString(String name, String format, Long minLength, Long maxLength,
                                       String pattern, Generator generator) {
-        if (format == null && minLength == null && maxLength == null && pattern == null) {
+        if (customTypeNotRequired(format, minLength, maxLength, pattern)) {
             return STRING;
         }
 
-        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        generator.addImports(BAL_JSON_DATA_MODULE);
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         List<String> annotationParts = new ArrayList<>();
@@ -243,11 +241,7 @@ public class GeneratorUtils {
 
         addIfNotNull(annotationParts, MIN_LENGTH, minLength);
         addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
-
-        if (pattern != null) {
-            generator.addImports(BAL_REGEX_MODULE);
-            annotationParts.add(PATTERN + COLON + REGEX_PREFIX + BACK_TICK + pattern + BACK_TICK);
-        }
+        addIfNotNull(annotationParts, PATTERN, REGEX_PREFIX + WHITE_SPACE + BACK_TICK + pattern + BACK_TICK);
 
         String formattedAnnotation = getFormattedAnnotation(annotationParts, STRING_ANNOTATION, finalType, STRING);
 
@@ -342,5 +336,14 @@ public class GeneratorUtils {
             input = input.replaceAll(placeholder, UNDERSCORE);
         }
         return input;
+    }
+
+    private static boolean customTypeNotRequired(Object... objects) {
+        for (Object obj : objects) {
+            if (obj != null) {
+                return false;
+            }
+        }
+        return true;
     }
 }
