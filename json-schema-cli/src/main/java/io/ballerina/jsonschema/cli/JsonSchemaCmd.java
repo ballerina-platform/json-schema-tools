@@ -48,7 +48,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
 
     private static final String INVALID_BALLERINA_DIRECTORY =
             "Invalid Ballerina package directory: %s, cannot find 'Ballerina.toml' file.";
-    private static final String INVALID_DIRECTORY_PATH = "Invalid directory path has been provided. "
+    private static final String INVALID_DIRECTORY_PATH = "Invalid directory path. "
             + "Output path '%s' is a file";
     private static final String OUTPUT_FILE_NAME = "types.bal";
     private static final String FILE_OVERWRITE_PROMPT = "The file '%s' already exists at %s. Overwrite? (Y/N): ";

@@ -25,6 +25,7 @@ import io.ballerina.compiler.syntax.tree.NodeParser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Code Generator Utils for the Generator class.
@@ -120,13 +121,16 @@ public class GeneratorUtils {
     private static final String WHITESPACE_PATTERN = "\\s";
     private static final String SPECIAL_CHARS_PATTERN = "[!@$%^&*()_\\-|]";
 
+    private static final String ITEM_SUFFIX = "Item";
+    private static final String NAME_REST_ITEM = "RestItem";
+
     private static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
                     "idn-hostname", "ipv4", "ipv6", "json-pointer", "relative-json-pointer", "uri",
                     "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
     );
 
-    public static String createType(String name, Schema schema, Object type, Generator generator) {
+    public static String createType(String name, Schema schema, Object type, Generator generator) throws Exception {
         if (type == null) {
             return NULL;
         }
@@ -145,12 +149,16 @@ public class GeneratorUtils {
             return createString(name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(),
                     schema.getPattern(), generator);
         }
-        //TODO: Complete for other data types
         if (type == ArrayList.class) {
-            return UNIVERSAL_ARRAY;
+            return createArray(name, schema.getPrefixItems(), schema.getItems(), schema.getContains(),
+                    schema.getMinItems(), schema.getMaxItems(), schema.getUniqueItems(), schema.getMaxContains(),
+                    schema.getMinContains(), schema.getUnevaluatedItems(), generator);
         }
         if (type == LinkedTreeMap.class) {
-            return UNIVERSAL_OBJECT;
+            return createObject(name, schema.getAdditionalProperties(), schema.getProperties(),
+                    schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(),
+                    schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(),
+                    schema.getDependentRequired(), schema.getRequired(), generator);
         }
         throw new RuntimeException("Type currently not supported");
     }
@@ -247,6 +255,22 @@ public class GeneratorUtils {
         generator.nodes.put(finalType, moduleNode);
 
         return finalType;
+    }
+
+    public static String createArray(String name, List<Object> prefixItems, Object items, Object contains,
+                                     Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains,
+                                     Long minContains, Object unevaluatedItems, Generator generator) throws Exception {
+        // TODO: Implement array type generation
+        return UNIVERSAL_ARRAY;
+    }
+
+    public static String createObject(String name, Object additionalProperties, Map<String, Object> properties,
+                                      Map<String, Object> patternProperties, Map<String, Object> dependentSchema,
+                                      Object propertyNames, Object unevaluatedProperties, Long maxProperties,
+                                      Long minProperties, Map<String, List<String>> dependentRequired,
+                                      List<String> required, Generator generator) {
+        // TODO: Implement object type generation
+        return UNIVERSAL_OBJECT;
     }
 
     private static void addIfNotNull(List<String> list, String key, Object value) {

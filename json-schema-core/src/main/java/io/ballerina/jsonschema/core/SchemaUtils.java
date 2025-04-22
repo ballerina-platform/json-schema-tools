@@ -32,9 +32,9 @@ import java.util.Map;
  * @since 0.1.0
  */
 public class SchemaUtils {
-    private static final String DRAFT2020_12 = "https://json-schema.org/draft/2020-12/schema";
+    private static final String DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema";
 
-    private static final List<String> SUPPORTED_DRAFTS = List.of(DRAFT2020_12);
+    private static final List<String> SUPPORTED_DRAFTS = List.of(DRAFT_2020_12);
 
     // Reference Ballerina types through schema ID.
     static final Map<String, String> ID_TO_TYPE_MAP = new HashMap<>();
