@@ -121,18 +121,23 @@ public class Generator {
         }
 
         if (balTypes.types()) {
+            if (schemaType.contains(Double.class)) {
+                schemaType.remove(Long.class);
+            }
             if (schemaType.size() == 1) {
                 String typeName = createType(name, schema, schemaType.getFirst(), this);
                 ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
                 return typeName;
             }
+
             Set<String> unionTypes = new HashSet<>();
+
             for (Object element : schemaType) {
                 String subtypeName = name + getBallerinaType(element);
                 unionTypes.add(createType(subtypeName, schema, element, this));
             }
             if (unionTypes.containsAll(
-                    Set.of(INTEGER, NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
+                    Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
                 ID_TO_TYPE_MAP.put(schema.getIdKeyword(), JSON);
                 return JSON;
             }
@@ -211,6 +216,10 @@ public class Generator {
             for (String element : type) {
                 typeList.add(getIntermediateJsonClassType(element));
             }
+        }
+
+        if (typeList.contains(Double.class)) {
+            typeList.add(Long.class);
         }
 
         if (enumKeyword == null) {

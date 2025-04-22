@@ -33,7 +33,8 @@ public class JsonSchemaGeneratorTest {
 
     @DataProvider(name = "jsonSchemaProvider")
     public Object[][] provideTestPaths() {
-        return new Object[][]{{"1_simple_int.json", "1_simple_int.bal"},
+        return new Object[][]{
+                {"1_simple_int.json", "1_simple_int.bal"},
                 {"2_constrained_int.json", "2_constrained_int.bal"},
                 {"3_true.json", "3_true.bal"},
                 {"4_false.json", "4_false.bal"},
@@ -49,7 +50,8 @@ public class JsonSchemaGeneratorTest {
                 {"14_enum_with_const.json", "14_enum_with_const.bal"},
                 {"15_invalid_enum_with_const.json", "15_invalid_enum_with_const.bal"},
                 {"16_object_const.json", "16_object_const.bal"},
-                {"17_constrained_string.json", "17_constrained_string.bal"}
+                {"17_constrained_string.json", "17_constrained_string.bal"},
+                {"18_no_type.json", "18_no_type.bal"},
         };
     }
 

@@ -18,6 +18,7 @@
 
 package io.ballerina.jsonschema.core;
 
+import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
@@ -145,6 +146,12 @@ public class GeneratorUtils {
                     schema.getPattern(), generator);
         }
         //TODO: Complete for other data types
+        if (type == ArrayList.class) {
+            return UNIVERSAL_ARRAY;
+        }
+        if (type == LinkedTreeMap.class) {
+            return UNIVERSAL_OBJECT;
+        }
         throw new RuntimeException("Type currently not supported");
     }
 
