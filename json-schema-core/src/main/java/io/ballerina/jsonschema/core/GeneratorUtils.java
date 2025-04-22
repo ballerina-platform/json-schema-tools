@@ -260,8 +260,89 @@ public class GeneratorUtils {
     public static String createArray(String name, List<Object> prefixItems, Object items, Object contains,
                                      Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains,
                                      Long minContains, Object unevaluatedItems, Generator generator) throws Exception {
-        // TODO: Implement array type generation
-        return UNIVERSAL_ARRAY;
+        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
+        generator.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
+
+        ArrayList<String> arrayItems = new ArrayList<>();
+
+        if (prefixItems != null) {
+            for (int i = 0; i < prefixItems.size(); i++) {
+                Object item = prefixItems.get(i);
+                arrayItems.add(generator.convert(item, finalType + ITEM_SUFFIX + i));
+            }
+        }
+
+        if (items != null) {
+            String itemsType = generator.convert(items, finalType + NAME_REST_ITEM);
+            if (itemsType.contains("|")) {
+                itemsType = OPEN_BRACKET + itemsType + CLOSE_BRACKET;
+            }
+            arrayItems.add(itemsType + REST);
+        } else {
+            arrayItems.add(JSON + REST);
+        }
+
+        long min = (minItems == null) ? 0L : minItems;
+        long max = (maxItems == null) ? Long.MAX_VALUE : maxItems;
+
+        ArrayList<String> tupleList = new ArrayList<>();
+        for (int i = 1; i < arrayItems.size() + 1; i++) {
+            if (i >= min && i <= max) {
+                tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) +
+                        CLOSE_SQUARE_BRACKET);
+            }
+        }
+
+        if ((minItems == null) && (maxItems == null) && (uniqueItems == null) && (contains == null)) {
+            generator.nodes.remove(finalType);
+            return String.join(PIPE, tupleList);
+        }
+
+        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        List<String> annotationParts = new ArrayList<>();
+
+        addIfNotNull(annotationParts, MIN_ITEMS, minItems);
+        addIfNotNull(annotationParts, MAX_ITEMS, maxItems);
+        addIfNotNull(annotationParts, UNIQUE_ITEMS, uniqueItems);
+
+        if (contains != null) {
+            String containsRecordName = resolveNameConflicts(finalType +
+                    convertToPascalCase(CONTAINS), generator);
+            String newType = generator.convert(contains, containsRecordName);
+
+            if (newType.contains(PIPE)) {
+                // Ballerina typedesc doesn't allow union types. Hence, we need to create a new type definition
+                String typeDef = TYPE + WHITE_SPACE + containsRecordName + WHITE_SPACE + newType + SEMI_COLON;
+                ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDef);
+                generator.nodes.put(containsRecordName, moduleNode);
+                newType = containsRecordName;
+            }
+
+            List<String> containsAnnotationParts = new ArrayList<>();
+
+            containsAnnotationParts.add(CONTAINS + COLON + WHITE_SPACE + newType);
+            if (minContains == null) {
+                containsAnnotationParts.add(MIN_CONTAINS + COLON + WHITE_SPACE + ZERO);
+            } else {
+                containsAnnotationParts.add(MIN_CONTAINS + COLON + WHITE_SPACE + minContains);
+            }
+
+            addIfNotNull(containsAnnotationParts, MAX_CONTAINS, maxContains);
+
+            String combined = String.join(COMMA, containsAnnotationParts);
+            annotationParts.add(CONTAINS + COLON + WHITE_SPACE + OPEN_BRACES + combined + CLOSE_BRACES);
+        }
+
+        if (unevaluatedItems != null) {
+            throw new IllegalArgumentException("unevaluatedItems is currently not supported for array type");
+        }
+
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_ANNOTATION, finalType, STRING);
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
+        generator.nodes.put(finalType, moduleNode);
+
+        return finalType;
     }
 
     public static String createObject(String name, Object additionalProperties, Map<String, Object> properties,
