@@ -65,6 +65,8 @@ public class JsonSchemaGeneratorTest {
                 {"29_array_with_multiple_elements.json", "29_array_with_multiple_elements.bal"},
                 {"30_array_with_multiple_elements.json", "30_array_with_multiple_elements.bal"},
                 {"31_array_with_unique_items.json", "31_array_with_unique_items.bal"},
+                {"32_array_with_contains.json", "32_array_with_contains.bal"},
+                {"33_array_with_contains.json", "33_array_with_contains.bal"},
         };
     }
 
