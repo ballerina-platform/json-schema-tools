@@ -130,6 +130,8 @@ public class GeneratorUtils {
                     "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
     );
 
+    private static final int ARRAY_LIMIT = 5;
+
     public static String createType(String name, Schema schema, Object type, Generator generator) throws Exception {
         if (type == null) {
             return NULL;
@@ -264,6 +266,7 @@ public class GeneratorUtils {
         generator.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
 
         ArrayList<String> arrayItems = new ArrayList<>();
+        ArrayList<String> tupleList = new ArrayList<>();
 
         if (prefixItems != null) {
             for (int i = 0; i < prefixItems.size(); i++) {
@@ -272,28 +275,59 @@ public class GeneratorUtils {
             }
         }
 
-        if (items != null) {
-            String itemsType = generator.convert(items, finalType + NAME_REST_ITEM);
-            if (itemsType.contains("|")) {
-                itemsType = OPEN_BRACKET + itemsType + CLOSE_BRACKET;
-            }
-            arrayItems.add(itemsType + REST);
-        } else {
-            arrayItems.add(JSON + REST);
-        }
-
         long min = (minItems == null) ? 0L : minItems;
         long max = (maxItems == null) ? Long.MAX_VALUE : maxItems;
+        long limit = min + ARRAY_LIMIT;
 
-        ArrayList<String> tupleList = new ArrayList<>();
-        for (int i = 1; i < arrayItems.size() + 1; i++) {
-            if (i >= min && i <= max) {
-                tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) +
-                        CLOSE_SQUARE_BRACKET);
+        String restItem = "";
+        if (items != null) {
+            restItem = generator.convert(items, finalType + NAME_REST_ITEM);
+            if (restItem.contains("|")) {
+                restItem = OPEN_BRACKET + restItem + CLOSE_BRACKET;
             }
+        } else {
+            restItem = JSON;
+        }
+
+        //! restItem will always be a type string.
+
+        // TODO: Create sub-schemas before all of these early return types.
+        //! Invalid limits or the size of the array list is less than the minimum with "never" rest type.
+        if ((max < min) || (restItem.equals(NEVER) && arrayItems.size() < min)) {
+            generator.nodes.remove(finalType);
+            return NEVER;
+        }
+
+        if (!restItem.equals(NEVER)) {
+            if (arrayItems.size() < min) {
+                for (int i = arrayItems.size(); i < min; i++) {
+                    arrayItems.add(restItem);
+                }
+                minItems = null;
+            }
+            if (max < limit) {
+                for (int i = arrayItems.size(); i < max; i++) {
+                    arrayItems.add(restItem);
+                }
+                maxItems = null;
+            } else {
+                arrayItems.add(restItem + REST);
+            }
+        }
+
+        //! The arrayItems list is at least the size of "min"
+
+        long upperBound = Math.min(Math.min(limit, max), arrayItems.size());
+        for (int i = (int) min; i <= upperBound; i++) {
+            tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) + CLOSE_SQUARE_BRACKET);
+        }
+
+        if (tupleList.getLast().contains(REST) && tupleList.size() >= 2) {
+            tupleList.remove(tupleList.size() - 2);
         }
 
         if ((minItems == null) && (maxItems == null) && (uniqueItems == null) && (contains == null)) {
+            //! Don't we need to consider the minContains and maxContains for this condition? Read the docs.
             generator.nodes.remove(finalType);
             return String.join(PIPE, tupleList);
         }
@@ -337,7 +371,8 @@ public class GeneratorUtils {
             throw new IllegalArgumentException("unevaluatedItems is currently not supported for array type");
         }
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_ANNOTATION, finalType, STRING);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_ANNOTATION, finalType,
+                String.join(PIPE, tupleList));
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
