@@ -279,9 +279,9 @@ public class GeneratorUtils {
             }
         }
 
-        long min = (minItems == null) ? 0L : minItems;
-        long max = (maxItems == null) ? Long.MAX_VALUE : maxItems;
-        long limit = min + ARRAY_ANNOTATION_SIZE_LIMIT;
+        long startPosition = (minItems == null) ? 0L : minItems;
+        long endPosition = (maxItems == null) ? Long.MAX_VALUE : maxItems;
+        long annotationLimit = startPosition + ARRAY_ANNOTATION_SIZE_LIMIT;
 
         String restItem = "";
         if (items != null) {
@@ -296,34 +296,38 @@ public class GeneratorUtils {
         // TODO: Create sub-schemas before all of these early return types.
         //  Reference implementation depends on this feature.
 
-        if ((max < min) || (restItem.equals(NEVER) && arrayItems.size() < min)) {
+        if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
             generator.nodes.remove(finalType);
             return NEVER;
         }
 
+        // Presence of a rest type.
         if (!restItem.equals(NEVER)) {
-            if (arrayItems.size() < min) {
-                if (min < ARRAY_ANNOTATION_MIN_LIMIT) {
-                    for (int i = arrayItems.size(); i < min; i++) {
+            if (arrayItems.size() < startPosition) {
+                if (startPosition < ARRAY_ANNOTATION_MIN_LIMIT) {
+                    for (int i = arrayItems.size(); i < startPosition; i++) {
                         arrayItems.add(restItem);
                     }
+                    // Avoids further annotation on minItems
                     minItems = null;
                 } else {
-                    min = arrayItems.size() + 1;
+                    // Accommodates the startPosition including the rest Item type
+                    startPosition = arrayItems.size() + 1;
                 }
             }
-            if (max < limit) {
-                for (int i = arrayItems.size(); i < max; i++) {
+            if (endPosition < annotationLimit) {
+                for (int i = arrayItems.size(); i < endPosition; i++) {
                     arrayItems.add(restItem);
                 }
+                // Avoids further annotation on maxItems
                 maxItems = null;
             } else {
                 arrayItems.add(restItem + REST);
             }
         }
 
-        long upperBound = Math.min(Math.min(limit, max), arrayItems.size());
-        for (int i = (int) min; i <= upperBound; i++) {
+        long upperBound = Math.min(Math.min(annotationLimit, endPosition), arrayItems.size());
+        for (int i = (int) startPosition; i <= upperBound; i++) {
             tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) + CLOSE_SQUARE_BRACKET);
         }
 
