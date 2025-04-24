@@ -71,7 +71,7 @@ public class GeneratorUtils {
     public static final String NEVER = "never";
     public static final String NULL = "()";
     public static final String JSON = "json";
-    public static final String UNIVERSAL_ARRAY = "json[]";
+    public static final String UNIVERSAL_ARRAY = "[json...]";
     public static final String BLANK_ARRAY = "json[0]";
     public static final String UNIVERSAL_OBJECT = "record{|json...;|}";
     public static final String DEFAULT_SCHEMA_NAME = "Schema";
@@ -400,9 +400,18 @@ public class GeneratorUtils {
                                       Map<String, Object> patternProperties, Map<String, Object> dependentSchema,
                                       Object propertyNames, Object unevaluatedProperties, Long maxProperties,
                                       Long minProperties, Map<String, List<String>> dependentRequired,
-                                      List<String> required, Generator generator) {
+                                      List<String> required, Generator generator) throws Exception {
         // TODO: Implement object type generation
-        return UNIVERSAL_OBJECT;
+        if (Boolean.FALSE.equals(propertyNames)) {
+            return NEVER;
+        }
+
+        if (customTypeNotRequired(additionalProperties, properties, patternProperties, dependentSchema, propertyNames,
+                unevaluatedProperties, maxProperties, minProperties, dependentRequired, required)) {
+            return UNIVERSAL_OBJECT;
+        }
+
+        throw new Exception("");
     }
 
     private static void addIfNotNull(List<String> list, String key, Object value) {
@@ -474,5 +483,14 @@ public class GeneratorUtils {
             input = input.replaceAll(placeholder, UNDERSCORE);
         }
         return input;
+    }
+
+    private static boolean customTypeNotRequired(Object... objects) {
+        for (Object obj : objects) {
+            if (obj != null) {
+                return false;
+            }
+        }
+        return true;
     }
 }
