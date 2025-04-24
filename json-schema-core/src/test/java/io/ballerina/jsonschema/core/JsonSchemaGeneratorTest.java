@@ -51,10 +51,15 @@ public class JsonSchemaGeneratorTest {
                 {"15_invalid_enum_with_const.json", "15_invalid_enum_with_const.bal"},
                 {"16_object_const.json", "16_object_const.bal"},
                 {"17_constrained_string.json", "17_constrained_string.bal"},
-//                {"18_no_type.json", "18_no_type.bal"},
+//                {"18_no_type.json", "18_no_type.bal"},  // Invalid test until object type support implementation
                 {"19_universal_array.json", "19_universal_array.bal"},
                 {"20_array_with_multiple_types.json", "20_array_with_multiple_types.bal"},
                 {"21_array_with_constrained_types.json", "21_array_with_constrained_types.bal"},
+                {"22_array_with_multiple_elements_1.json", "22_array_with_multiple_elements_1.bal"},
+                {"23_array_with_multiple_elements_2.json", "23_array_with_multiple_elements_2.bal"},
+                {"24_array_with_multiple_elements_3.json", "24_array_with_multiple_elements_3.bal"},
+                {"25_array_with_multiple_elements_4.json", "25_array_with_multiple_elements_4.bal"},
+                {"26_array_with_multiple_elements_5.json", "26_array_with_multiple_elements_5.bal"},
         };
     }
 

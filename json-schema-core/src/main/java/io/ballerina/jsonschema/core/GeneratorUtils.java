@@ -72,6 +72,7 @@ public class GeneratorUtils {
     public static final String NULL = "()";
     public static final String JSON = "json";
     public static final String UNIVERSAL_ARRAY = "json[]";
+    public static final String BLANK_ARRAY = "json[0]";
     public static final String UNIVERSAL_OBJECT = "record{|json...;|}";
     public static final String DEFAULT_SCHEMA_NAME = "Schema";
     public static final String DEPENDENT_SCHEMA = "dependentSchema";
@@ -130,7 +131,10 @@ public class GeneratorUtils {
                     "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
     );
 
-    private static final int ARRAY_LIMIT = 5;
+    // The Union concatenated no. of Tuples will be denoted by annotations beyond this limit
+    private static final int ARRAY_ANNOTATION_SIZE_LIMIT = 5;
+    // The Tuple size will be denoted by annotations beyond this limit
+    private static final int ARRAY_ANNOTATION_MIN_LIMIT = 10;
 
     public static String createType(String name, Schema schema, Object type, Generator generator) throws Exception {
         if (type == null) {
@@ -277,7 +281,7 @@ public class GeneratorUtils {
 
         long min = (minItems == null) ? 0L : minItems;
         long max = (maxItems == null) ? Long.MAX_VALUE : maxItems;
-        long limit = min + ARRAY_LIMIT;
+        long limit = min + ARRAY_ANNOTATION_SIZE_LIMIT;
 
         String restItem = "";
         if (items != null) {
@@ -289,10 +293,9 @@ public class GeneratorUtils {
             restItem = JSON;
         }
 
-        //! restItem will always be a type string.
-
         // TODO: Create sub-schemas before all of these early return types.
-        //! Invalid limits or the size of the array list is less than the minimum with "never" rest type.
+        //  Reference implementation depends on this feature.
+
         if ((max < min) || (restItem.equals(NEVER) && arrayItems.size() < min)) {
             generator.nodes.remove(finalType);
             return NEVER;
@@ -300,10 +303,14 @@ public class GeneratorUtils {
 
         if (!restItem.equals(NEVER)) {
             if (arrayItems.size() < min) {
-                for (int i = arrayItems.size(); i < min; i++) {
-                    arrayItems.add(restItem);
+                if (min < ARRAY_ANNOTATION_MIN_LIMIT) {
+                    for (int i = arrayItems.size(); i < min; i++) {
+                        arrayItems.add(restItem);
+                    }
+                    minItems = null;
+                } else {
+                    min = arrayItems.size() + 1;
                 }
-                minItems = null;
             }
             if (max < limit) {
                 for (int i = arrayItems.size(); i < max; i++) {
@@ -315,19 +322,22 @@ public class GeneratorUtils {
             }
         }
 
-        //! The arrayItems list is at least the size of "min"
-
         long upperBound = Math.min(Math.min(limit, max), arrayItems.size());
         for (int i = (int) min; i <= upperBound; i++) {
             tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) + CLOSE_SQUARE_BRACKET);
         }
 
+        // Replace [] with json[] if present.
+        if (tupleList.getFirst().equals(OPEN_SQUARE_BRACKET + CLOSE_SQUARE_BRACKET)) {
+            tupleList.set(0, BLANK_ARRAY);
+        }
+
+        // If the last item is a rest item, the previous array element is redundant.
         if (tupleList.getLast().contains(REST) && tupleList.size() >= 2) {
             tupleList.remove(tupleList.size() - 2);
         }
 
         if ((minItems == null) && (maxItems == null) && (uniqueItems == null) && (contains == null)) {
-            //! Don't we need to consider the minContains and maxContains for this condition? Read the docs.
             generator.nodes.remove(finalType);
             return String.join(PIPE, tupleList);
         }
@@ -368,6 +378,8 @@ public class GeneratorUtils {
         }
 
         if (unevaluatedItems != null) {
+            // TODO: Depends upon the object implementation.
+            //  Implement this after the object type support for JSON schema.
             throw new IllegalArgumentException("unevaluatedItems is currently not supported for array type");
         }
 
