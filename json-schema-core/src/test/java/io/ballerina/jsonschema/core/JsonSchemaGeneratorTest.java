@@ -51,7 +51,6 @@ public class JsonSchemaGeneratorTest {
                 {"15_invalid_enum_with_const.json", "15_invalid_enum_with_const.bal"},
                 {"16_object_const.json", "16_object_const.bal"},
                 {"17_constrained_string.json", "17_constrained_string.bal"},
-//                {"18_no_type.json", "18_no_type.bal"},
         };
     }
 
