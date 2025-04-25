@@ -24,6 +24,7 @@ import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -401,7 +402,6 @@ public class GeneratorUtils {
                                       Object propertyNames, Object unevaluatedProperties, Long maxProperties,
                                       Long minProperties, Map<String, List<String>> dependentRequired,
                                       List<String> required, Generator generator) throws Exception {
-        // TODO: Implement object type generation
         if (Boolean.FALSE.equals(propertyNames)) {
             return NEVER;
         }
@@ -411,6 +411,22 @@ public class GeneratorUtils {
             return UNIVERSAL_OBJECT;
         }
 
+        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
+        generator.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+
+        Map<String, String> recordFields = new HashMap<>();
+        if (properties != null) {
+            properties.forEach((key, value) -> {
+                String fieldName = resolveNameConflicts(key, generator);
+                try {
+                    recordFields.put(key, generator.convert(value, fieldName));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        // TODO: Implement object type generation
         throw new Exception("");
     }
 
