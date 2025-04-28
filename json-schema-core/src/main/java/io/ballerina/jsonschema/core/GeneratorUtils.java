@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Code Generator Utils for the Generator class.
@@ -75,23 +76,21 @@ public class GeneratorUtils {
     public static final String UNIVERSAL_ARRAY = "[json...]";
     public static final String BLANK_ARRAY = "json[0]";
     public static final String UNIVERSAL_OBJECT = "record{|json...;|}";
+    public static final String EMPTY_RECORD = "record{||}";
     public static final String DEFAULT_SCHEMA_NAME = "Schema";
-    public static final String DEPENDENT_SCHEMA = "dependentSchema";
-    public static final String DEPENDENT_REQUIRED = "dependentRequired";
 
     public static final String BAL_REGEX_MODULE = "ballerina/lang.regexp";
-    public static final String BAL_JSON_SCHEMA_DATA_MODULE = "ballerina/data.jsondata";
+    public static final String BAL_JSON_DATA_MODULE = "ballerina/data.jsondata";
 
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
     public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
     public static final String ARRAY_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
     public static final String OBJECT_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ObjectValidation";
-    public static final String DEPENDENT_SCHEMA_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_SCHEMA;
-    public static final String DEPENDENT_REQUIRED_ANNOTATION = AT + ANNOTATION_MODULE + COLON + DEPENDENT_REQUIRED;
     public static final String ONE_OF_ANNOTATION = AT + "OneOf";
 
     public static final String ANNOTATION_FORMAT = "%s {%n\t%s%n}%npublic type %s %s;";
+    public static final String FIELD_ANNOTATION_FORMAT = "@%s:%s{%n\tvalue: %s%n}";
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -125,6 +124,10 @@ public class GeneratorUtils {
 
     private static final String ITEM_SUFFIX = "Item";
     private static final String NAME_REST_ITEM = "RestItem";
+    private static final String ADDITIONAL_PROPS = "AdditionalProperties";
+    public static final String DEPENDENT_SCHEMA = "DependentSchema";
+    public static final String DEPENDENT_REQUIRED = "DependentRequired";
+    public static final String UNEVALUATED_PROPS = "UnevaluatedProperties";
 
     private static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
@@ -136,6 +139,57 @@ public class GeneratorUtils {
     private static final int ARRAY_ANNOTATION_SIZE_LIMIT = 5;
     // The Tuple size will be denoted by annotations beyond this limit
     private static final int ARRAY_ANNOTATION_MIN_LIMIT = 10;
+
+    private static class RecordField {
+        private String type;
+        private boolean required;
+
+        private List<String> dependentRequired;
+        private String dependentSchema;
+
+        public RecordField(String type, boolean required) {
+            this.type = type;
+            this.required = required;
+            this.dependentRequired = new ArrayList<>();
+            this.dependentSchema = null;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public boolean getRequired() {
+            return required;
+        }
+
+        public void setRequired(boolean required) {
+            this.required = required;
+        }
+
+        public String getDependentSchema() {
+            return dependentSchema;
+        }
+
+        public void setDependentSchema(String dependentSchema) {
+            this.dependentSchema = dependentSchema;
+        }
+
+        public List<String> getDependentRequired() {
+            return dependentRequired;
+        }
+
+        public void setDependentRequired(List<String> dependentRequired) {
+            this.dependentRequired = dependentRequired;
+        }
+
+        public void addDependentRequired(String dependentRequired) {
+            this.dependentRequired.add(dependentRequired);
+        }
+    }
 
     public static String createType(String name, Schema schema, Object type, Generator generator) throws Exception {
         if (type == null) {
@@ -181,7 +235,7 @@ public class GeneratorUtils {
             return NEVER;
         }
 
-        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        generator.addImports(BAL_JSON_DATA_MODULE);
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         List<String> annotationParts = new ArrayList<>();
@@ -211,7 +265,7 @@ public class GeneratorUtils {
             return NEVER;
         }
 
-        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        generator.addImports(BAL_JSON_DATA_MODULE);
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         List<String> annotationParts = new ArrayList<>();
@@ -236,7 +290,7 @@ public class GeneratorUtils {
             return STRING;
         }
 
-        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        generator.addImports(BAL_JSON_DATA_MODULE);
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         List<String> annotationParts = new ArrayList<>();
@@ -332,7 +386,7 @@ public class GeneratorUtils {
             tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) + CLOSE_SQUARE_BRACKET);
         }
 
-        // Replace [] with json[] if present.
+        // Replace [] with json[0] if present.
         if (tupleList.getFirst().equals(OPEN_SQUARE_BRACKET + CLOSE_SQUARE_BRACKET)) {
             tupleList.set(0, BLANK_ARRAY);
         }
@@ -347,7 +401,7 @@ public class GeneratorUtils {
             return String.join(PIPE, tupleList);
         }
 
-        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        generator.addImports(BAL_JSON_DATA_MODULE);
         List<String> annotationParts = new ArrayList<>();
 
         addIfNotNull(annotationParts, MIN_ITEMS, minItems);
@@ -403,7 +457,7 @@ public class GeneratorUtils {
                                       Long minProperties, Map<String, List<String>> dependentRequired,
                                       List<String> required, Generator generator) throws Exception {
         if (Boolean.FALSE.equals(propertyNames)) {
-            return NEVER;
+            return EMPTY_RECORD;
         }
 
         if (customTypeNotRequired(additionalProperties, properties, patternProperties, dependentSchema, propertyNames,
@@ -411,23 +465,165 @@ public class GeneratorUtils {
             return UNIVERSAL_OBJECT;
         }
 
+        //! Create a name to allocate the required variable name
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
         generator.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
 
-        Map<String, String> recordFields = new HashMap<>();
+        Map<String, RecordField> recordFields = new HashMap<>();
         if (properties != null) {
             properties.forEach((key, value) -> {
                 String fieldName = resolveNameConflicts(key, generator);
                 try {
-                    recordFields.put(key, generator.convert(value, fieldName));
+                    recordFields.put(key, new RecordField(generator.convert(value, fieldName), false));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+        // Now we have all a mapping of key type pairs for each field.
+
+        String restType;
+        if (patternProperties == null) {
+            restType = getRestType(finalType, additionalProperties, unevaluatedProperties, generator);
+            // restType now has a definite string type
+        } else {
+            // TODO: Complete this and remove the exception.
+            throw new Exception("patternProperties is currently not supported for object type");
+        }
+
+        // Throw an error if restType = "never" and the required fields are not present in restType.
+        // This is required as this would raise a "never" type immediately unlike other types.
+        if (restType.equals(NEVER) && required != null) {
+            try {
+                required.forEach((key) -> {
+                    if (!recordFields.containsKey(key)) {
+                        throw new IllegalStateException("Returning NEVER");
+                    }
+                });
+            } catch (IllegalStateException e) {
+                return NEVER;
+            }
+        }
+
+        // Add field names that are present in the required array and are not present in the properties field.
+        // Change the required attribute to true if they are present.
+        if (required != null) {
+            required.forEach((key) -> {
+                if (!recordFields.containsKey(key)) {
+                    recordFields.put(key, new RecordField(restType, true));
+                } else {
+                    recordFields.get(key).setRequired(true);
+                }
+            });
+        }
+
+        // Add dependent schema fields that are not specified in the properties
+        if ((dependentSchema != null) && (!restType.equals(NEVER))) {
+            dependentSchema.forEach((key, value) -> {
+                if (!recordFields.containsKey(key)) {
+                    recordFields.put(key, new RecordField(restType, false));
+                }
+                try {
+                    String schemaName = convertToPascalCase(key) + DEPENDENT_SCHEMA;
+                    recordFields.get(key).setDependentSchema(generator.convert(value, schemaName));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
         }
 
-        // TODO: Implement object type generation
-        throw new Exception("");
+        // Handling dependent Required Fields
+        if (dependentRequired != null) {
+            dependentRequired.forEach((key, value) -> {
+                boolean fieldRequired;
+
+                // Check if the key is present in the recordFields, else add it.
+                // Object the required-ness depending on the dependent field.
+                if (!recordFields.containsKey(key)) {
+                    // if the key is not specified in properties.
+                    fieldRequired = false;
+                    recordFields.put(key, new RecordField(restType, false));
+                } else {
+                    // if the key is specified in the properties.
+                    fieldRequired = recordFields.get(key).getRequired();
+                }
+
+                // Iterate through each dependent element eg: dependentKye=x,y in A:[X,Y]
+                value.forEach((dependentKey) -> {
+                    // Add the dependentKey to the annotation part of the key.
+                    recordFields.get(key).addDependentRequired(dependentKey);
+
+                    if (!recordFields.containsKey(dependentKey)) {
+                        recordFields.put(dependentKey, new RecordField(restType, fieldRequired));
+                        return;
+                    }
+                    // else
+                    if (!recordFields.get(dependentKey).getRequired()) { // if X is not a required field then,
+                        recordFields.get(dependentKey).setRequired(fieldRequired); // Set the required-ness of A to X
+                    }
+                });
+            });
+        }
+
+        ArrayList<String> fields = processRecordFields(recordFields, generator);
+
+        if (!restType.equals(NEVER)) {
+            fields.add(restType + REST + SEMI_COLON);
+        }
+
+        return RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) + PIPE + CLOSE_BRACES;
+    }
+
+    private static ArrayList<String> processRecordFields(Map<String, RecordField> recordFields, Generator generator) {
+        ArrayList<String> annotations = new ArrayList<>();
+
+        for (Map.Entry<String, RecordField> entry : recordFields.entrySet()) {
+            String key = entry.getKey();
+            RecordField value = entry.getValue();
+
+            ArrayList<String> fieldAnnotation = new ArrayList<>();
+
+            if (value.getDependentSchema() != null) {
+                generator.addImports(BAL_JSON_DATA_MODULE);
+                String dependentSchema = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE, DEPENDENT_SCHEMA,
+                        value.getDependentSchema());
+                generator.addImports(BAL_JSON_DATA_MODULE);
+                fieldAnnotation.add(dependentSchema);
+            }
+
+            if (value.getDependentRequired() != null && !value.getDependentRequired().isEmpty()) {
+                generator.addImports(BAL_JSON_DATA_MODULE);
+                String dependentArray = value.getDependentRequired().stream()
+                        .map(name -> "\"" + name + "\"")
+                        .collect(Collectors.joining(", ", "[", "]"));
+                String dependentRequired = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE,
+                        DEPENDENT_REQUIRED, dependentArray);
+                fieldAnnotation.add(dependentRequired);
+            }
+
+            if (value.getRequired()) {
+                fieldAnnotation.add(value.getType() + WHITE_SPACE + key);
+            } else {
+                fieldAnnotation.add(value.getType() + WHITE_SPACE + key + QUESTION_MARK);
+            }
+
+            annotations.add(String.join(NEW_LINE, fieldAnnotation) + SEMI_COLON);
+        }
+
+        return annotations;
+    }
+
+    private static String getRestType(String name, Object additionalProperties, Object unevaluatedProperties,
+                                      Generator generator) throws Exception {
+        if (additionalProperties != null) {
+            return generator.convert(additionalProperties,
+                    resolveNameConflicts(name + ADDITIONAL_PROPS, generator));
+        }
+        if (unevaluatedProperties != null) {
+            return generator.convert(unevaluatedProperties,
+                    resolveNameConflicts((name + UNEVALUATED_PROPS), generator));
+        }
+        return JSON;
     }
 
     private static void addIfNotNull(List<String> list, String key, Object value) {
