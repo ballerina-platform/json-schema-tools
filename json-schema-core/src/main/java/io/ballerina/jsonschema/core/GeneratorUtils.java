@@ -134,6 +134,9 @@ public class GeneratorUtils {
                     "idn-hostname", "ipv4", "ipv6", "json-pointer", "relative-json-pointer", "uri",
                     "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
     );
+    private static final ArrayList<String> BAL_PRIMITIVE_TYPES = new ArrayList<>(
+            Arrays.asList(INTEGER, STRING, BOOLEAN, NEVER, NULL, JSON)
+    );
 
     // The Union concatenated no. of Tuples will be denoted by annotations beyond this limit
     private static final int ARRAY_ANNOTATION_SIZE_LIMIT = 5;
@@ -465,6 +468,10 @@ public class GeneratorUtils {
             return UNIVERSAL_OBJECT;
         }
 
+        if (maxProperties != null && minProperties != null && maxProperties < minProperties) {
+            return NEVER;
+        }
+
         //! Create a name to allocate the required variable name
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
         generator.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
@@ -524,8 +531,21 @@ public class GeneratorUtils {
                     recordFields.put(key, new RecordField(restType, false));
                 }
                 try {
-                    String schemaName = convertToPascalCase(key) + DEPENDENT_SCHEMA;
-                    recordFields.get(key).setDependentSchema(generator.convert(value, schemaName));
+                    String schemaName =
+                            resolveNameConflicts(convertToPascalCase(key) + DEPENDENT_SCHEMA, generator);
+                    String dependentSchemaType = generator.convert(value, schemaName);
+
+                    if (!dependentSchemaType.equals(schemaName) && !isPrimitive(dependentSchemaType)) {
+                        String newType = resolveNameConflicts(schemaName, generator);
+                        String typeDeclaration = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + newType +
+                                WHITE_SPACE + dependentSchemaType + SEMI_COLON;
+                        ModuleMemberDeclarationNode moduleNode =
+                                NodeParser.parseModuleMemberDeclaration(typeDeclaration);
+                        generator.nodes.put(newType, moduleNode);
+                        dependentSchemaType = newType;
+                    }
+
+                    recordFields.get(key).setDependentSchema(dependentSchemaType);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -624,6 +644,10 @@ public class GeneratorUtils {
                     resolveNameConflicts((name + UNEVALUATED_PROPS), generator));
         }
         return JSON;
+    }
+
+    private static boolean isPrimitive(String type) {
+        return BAL_PRIMITIVE_TYPES.contains(type);
     }
 
     private static void addIfNotNull(List<String> list, String key, Object value) {
