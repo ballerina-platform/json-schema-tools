@@ -69,6 +69,13 @@ public class JsonSchemaGeneratorTest {
                 {"33_array_with_contains.json", "33_array_with_contains.bal"},
                 {"34_universal_object.json", "34_universal_object.bal"},
                 {"35_empty_record.json", "35_empty_record.bal"},
+                {"36_invalid_record.json", "36_invalid_record.bal"},
+                {"37_simple_object_with_fields.json", "37_simple_object_with_fields.bal"},
+                {"38_simple_object_with_required_fields.json", "38_simple_object_with_required_fields.bal"},
+                {"39_additional_properties.json", "39_additional_properties.bal"},
+                {"40_additional_properties.json", "40_additional_properties.bal"},
+                {"41_unevaluated_properties.json", "41_unevaluated_properties.bal"},
+                {"42_dependent_required.json", "42_dependent_required.bal"}
         };
     }
 

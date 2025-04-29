@@ -91,6 +91,7 @@ public class GeneratorUtils {
 
     public static final String ANNOTATION_FORMAT = "%s {%n\t%s%n}%npublic type %s %s;";
     public static final String FIELD_ANNOTATION_FORMAT = "@%s:%s{%n\tvalue: %s%n}";
+    public static final String COMMA_SPACE_DELIMITTER = ", ";
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -344,7 +345,7 @@ public class GeneratorUtils {
         String restItem = "";
         if (items != null) {
             restItem = generator.convert(items, finalType + NAME_REST_ITEM);
-            if (restItem.contains("|")) {
+            if (restItem.contains(PIPE)) {
                 restItem = OPEN_BRACKET + restItem + CLOSE_BRACKET;
             }
         } else {
@@ -495,6 +496,8 @@ public class GeneratorUtils {
             // restType now has a definite string type
         } else {
             // TODO: Complete this and remove the exception.
+
+
             throw new Exception("patternProperties is currently not supported for object type");
         }
 
@@ -535,14 +538,8 @@ public class GeneratorUtils {
                             resolveNameConflicts(convertToPascalCase(key) + DEPENDENT_SCHEMA, generator);
                     String dependentSchemaType = generator.convert(value, schemaName);
 
-                    if (!dependentSchemaType.equals(schemaName) && !isPrimitive(dependentSchemaType)) {
-                        String newType = resolveNameConflicts(schemaName, generator);
-                        String typeDeclaration = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + newType +
-                                WHITE_SPACE + dependentSchemaType + SEMI_COLON;
-                        ModuleMemberDeclarationNode moduleNode =
-                                NodeParser.parseModuleMemberDeclaration(typeDeclaration);
-                        generator.nodes.put(newType, moduleNode);
-                        dependentSchemaType = newType;
+                    if (!dependentSchemaType.equals(schemaName) && !isTypeBalPrimitive(dependentSchemaType)) {
+                        dependentSchemaType = resolveTypeNameForTypedesc(schemaName, dependentSchemaType, generator);
                     }
 
                     recordFields.get(key).setDependentSchema(dependentSchemaType);
@@ -552,7 +549,8 @@ public class GeneratorUtils {
             });
         }
 
-        // Handling dependent Required Fields
+        //TODO: Optimized this for linked dependencies
+        //Handling dependent Required Fields
         if (dependentRequired != null) {
             dependentRequired.forEach((key, value) -> {
                 boolean fieldRequired;
@@ -588,10 +586,19 @@ public class GeneratorUtils {
         ArrayList<String> fields = processRecordFields(recordFields, generator);
 
         if (!restType.equals(NEVER)) {
-            fields.add(restType + REST + SEMI_COLON);
+            fields.add(handleUnion(restType) + REST + SEMI_COLON);
         }
 
         return RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) + PIPE + CLOSE_BRACES;
+    }
+
+    private static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
+        String newType = resolveNameConflicts(name, generator);
+        String typeDeclaration = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + newType + WHITE_SPACE + typeName +
+                SEMI_COLON;
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDeclaration);
+        generator.nodes.put(newType, moduleNode);
+        return newType;
     }
 
     private static ArrayList<String> processRecordFields(Map<String, RecordField> recordFields, Generator generator) {
@@ -614,7 +621,7 @@ public class GeneratorUtils {
             if (value.getDependentRequired() != null && !value.getDependentRequired().isEmpty()) {
                 generator.addImports(BAL_JSON_DATA_MODULE);
                 String dependentArray = value.getDependentRequired().stream()
-                        .map(name -> "\"" + name + "\"")
+                        .map(name -> DOUBLE_QUOTATION + name + DOUBLE_QUOTATION)
                         .collect(Collectors.joining(", ", "[", "]"));
                 String dependentRequired = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE,
                         DEPENDENT_REQUIRED, dependentArray);
@@ -646,7 +653,14 @@ public class GeneratorUtils {
         return JSON;
     }
 
-    private static boolean isPrimitive(String type) {
+    private static String handleUnion(String type) {
+        if (type.contains(PIPE) && !type.startsWith(OPEN_BRACKET)) {
+            return OPEN_BRACKET + type + CLOSE_BRACKET;
+        }
+        return type;
+    }
+
+    private static boolean isTypeBalPrimitive(String type) {
         return BAL_PRIMITIVE_TYPES.contains(type);
     }
 
@@ -658,7 +672,7 @@ public class GeneratorUtils {
 
     private static String getFormattedAnnotation(List<String> annotationParts,
                                                  String annotationType, String typeName, String type) {
-        String annotation = String.join("," + NEW_LINE + TAB, annotationParts);
+        String annotation = String.join(COMMA + NEW_LINE + TAB, annotationParts);
         return String.format(ANNOTATION_FORMAT, annotationType, annotation, typeName, type);
     }
 
