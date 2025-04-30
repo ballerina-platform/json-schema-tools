@@ -79,17 +79,19 @@ public class GeneratorUtils {
     public static final String EMPTY_RECORD = "record{||}";
     public static final String DEFAULT_SCHEMA_NAME = "Schema";
 
-    public static final String BAL_REGEX_MODULE = "ballerina/lang.regexp";
     public static final String BAL_JSON_DATA_MODULE = "ballerina/data.jsondata";
 
     public static final String ANNOTATION_MODULE = "jsondata";
+    public static final String OBJECT_VALIDATION = "ObjectValidation";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
     public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
     public static final String ARRAY_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
     public static final String OBJECT_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ObjectValidation";
     public static final String ONE_OF_ANNOTATION = AT + "OneOf";
+    public static final String PATTERN_RECORD = ANNOTATION_MODULE + COLON + "PatternPropertiesElement";
 
-    public static final String ANNOTATION_FORMAT = "%s {%n\t%s%n}%npublic type %s %s;";
+    public static final String ANNOTATION_FORMAT_WITH_TYPE = "%s {%n\t%s%n}%npublic type %s %s;";
+    public static final String ANNOTATION_FORMAT = "@%s:%s{%n\t%s%n}";
     public static final String FIELD_ANNOTATION_FORMAT = "@%s:%s{%n\tvalue: %s%n}";
     public static final String COMMA_SPACE_DELIMITTER = ", ";
 
@@ -129,6 +131,8 @@ public class GeneratorUtils {
     public static final String DEPENDENT_SCHEMA = "DependentSchema";
     public static final String DEPENDENT_REQUIRED = "DependentRequired";
     public static final String UNEVALUATED_PROPS = "UnevaluatedProperties";
+    public static final String PATTERN_ELEMENT = "PatternElement";
+    public static final String PATTERN_PROPERTIES = "PatternProperties";
 
     private static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
@@ -310,7 +314,6 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
 
         if (pattern != null) {
-            generator.addImports(BAL_REGEX_MODULE);
             annotationParts.add(PATTERN + COLON + REGEX_PREFIX + BACK_TICK + pattern + BACK_TICK);
         }
 
@@ -477,6 +480,8 @@ public class GeneratorUtils {
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
         generator.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
 
+        List<String> objectAnnotations = new ArrayList<>();
+
         Map<String, RecordField> recordFields = new HashMap<>();
         if (properties != null) {
             properties.forEach((key, value) -> {
@@ -490,15 +495,57 @@ public class GeneratorUtils {
         }
         // Now we have all a mapping of key type pairs for each field.
 
-        String restType;
-        if (patternProperties == null) {
-            restType = getRestType(finalType, additionalProperties, unevaluatedProperties, generator);
-            // restType now has a definite string type
-        } else {
+        String restType = getRestType(finalType, additionalProperties, unevaluatedProperties, generator);
+
+        if (patternProperties != null && !patternProperties.isEmpty()) {
             // TODO: Complete this and remove the exception.
+            List<String> propertyPatternTypes = new ArrayList<>(); // PatternPropertiesElement names
+            List<String> patternTypes = new ArrayList<>(); // Data type names
 
+            String objectTypePrefix = convertToCamelCase(finalType); // The prefix name of the pattern properties
 
-            throw new Exception("patternProperties is currently not supported for object type");
+            for (Map.Entry<String, Object> entry : patternProperties.entrySet()) {
+                String elementName = resolveNameConflictsWithSuffix(objectTypePrefix + PATTERN_ELEMENT, generator);
+                String elementValue = resolveNameConflicts(elementName + "Type", generator);
+
+                String key = entry.getKey();
+                Object value = entry.getValue();
+
+                String generatedType = generator.convert(value, elementValue); // The value type is generated from this
+
+                String recordObject = String.format(
+                        "%s %s = {%n\tpattern: re `%s`,%n\tvalue: %s%n};",
+                        PATTERN_RECORD, elementName, key, generatedType
+                );
+
+                ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(recordObject);
+                generator.nodes.put(elementName, moduleNode);
+
+                propertyPatternTypes.add(elementName);
+                patternTypes.add(generatedType);
+            }
+
+            String restTypeAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, ADDITIONAL_PROPS,
+                    "value" + COLON + restType);
+            objectAnnotations.add(restTypeAnnotation);
+
+            String patternElementsArray =
+                    OPEN_SQUARE_BRACKET + String.join(COMMA, propertyPatternTypes) + CLOSE_SQUARE_BRACKET;
+            String patternAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, PATTERN_PROPERTIES,
+                    "value" + COLON + patternElementsArray);
+            objectAnnotations.add(patternAnnotation);
+
+            patternTypes.add(restType);
+            restType = String.join(PIPE, patternTypes);
+        }
+
+        if (maxProperties != null || minProperties != null) {
+            List<String> minMaxProperties = new ArrayList<>();
+            addIfNotNull(minMaxProperties, MIN_PROPERTIES, minProperties);
+            addIfNotNull(minMaxProperties, MAX_PROPERTIES, maxProperties);
+            String minMaxAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, OBJECT_VALIDATION,
+                    String.join(", ", minMaxProperties));
+            objectAnnotations.add(minMaxAnnotation);
         }
 
         // Throw an error if restType = "never" and the required fields are not present in restType.
@@ -518,9 +565,10 @@ public class GeneratorUtils {
         // Add field names that are present in the required array and are not present in the properties field.
         // Change the required attribute to true if they are present.
         if (required != null) {
+            String finalRestType = restType;
             required.forEach((key) -> {
                 if (!recordFields.containsKey(key)) {
-                    recordFields.put(key, new RecordField(restType, true));
+                    recordFields.put(key, new RecordField(finalRestType, true));
                 } else {
                     recordFields.get(key).setRequired(true);
                 }
@@ -529,9 +577,10 @@ public class GeneratorUtils {
 
         // Add dependent schema fields that are not specified in the properties
         if ((dependentSchema != null) && (!restType.equals(NEVER))) {
+            String finalRestType = restType;
             dependentSchema.forEach((key, value) -> {
                 if (!recordFields.containsKey(key)) {
-                    recordFields.put(key, new RecordField(restType, false));
+                    recordFields.put(key, new RecordField(finalRestType, false));
                 }
                 try {
                     String schemaName =
@@ -552,6 +601,7 @@ public class GeneratorUtils {
         //TODO: Optimized this for linked dependencies
         //Handling dependent Required Fields
         if (dependentRequired != null) {
+            String finalRestType = restType;
             dependentRequired.forEach((key, value) -> {
                 boolean fieldRequired;
 
@@ -560,7 +610,7 @@ public class GeneratorUtils {
                 if (!recordFields.containsKey(key)) {
                     // if the key is not specified in properties.
                     fieldRequired = false;
-                    recordFields.put(key, new RecordField(restType, false));
+                    recordFields.put(key, new RecordField(finalRestType, false));
                 } else {
                     // if the key is specified in the properties.
                     fieldRequired = recordFields.get(key).getRequired();
@@ -572,7 +622,7 @@ public class GeneratorUtils {
                     recordFields.get(key).addDependentRequired(dependentKey);
 
                     if (!recordFields.containsKey(dependentKey)) {
-                        recordFields.put(dependentKey, new RecordField(restType, fieldRequired));
+                        recordFields.put(dependentKey, new RecordField(finalRestType, fieldRequired));
                         return;
                     }
                     // else
@@ -589,7 +639,16 @@ public class GeneratorUtils {
             fields.add(handleUnion(restType) + REST + SEMI_COLON);
         }
 
-        return RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) + PIPE + CLOSE_BRACES;
+        String record = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + finalType + WHITE_SPACE +
+                RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) + PIPE + CLOSE_BRACES + SEMI_COLON;
+
+        if (!objectAnnotations.isEmpty()) {
+            record = String.join(NEW_LINE, objectAnnotations) + NEW_LINE + record;
+        }
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(record);
+        generator.nodes.put(finalType, moduleNode);
+        return finalType;
     }
 
     private static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
@@ -673,7 +732,7 @@ public class GeneratorUtils {
     private static String getFormattedAnnotation(List<String> annotationParts,
                                                  String annotationType, String typeName, String type) {
         String annotation = String.join(COMMA + NEW_LINE + TAB, annotationParts);
-        return String.format(ANNOTATION_FORMAT, annotationType, annotation, typeName, type);
+        return String.format(ANNOTATION_FORMAT_WITH_TYPE, annotationType, annotation, typeName, type);
     }
 
     private static boolean invalidLimits(Double minimum, Double exclusiveMinimum, Double maximum,
@@ -719,6 +778,13 @@ public class GeneratorUtils {
             return name;
         }
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    }
+
+    public static String convertToCamelCase(String name) {
+        if (name == null || name.isEmpty()) {
+            return name;
+        }
+        return Character.toLowerCase(name.charAt(0)) + name.substring(1);
     }
 
     public static String sanitizeName(String input) {

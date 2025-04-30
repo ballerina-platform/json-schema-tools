@@ -1,5 +1,4 @@
 import ballerina/data.jsondata;
-import ballerina/lang.regexp;
 
 @jsondata:StringValidation {
     format: "email",
