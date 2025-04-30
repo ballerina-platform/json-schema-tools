@@ -27,6 +27,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -500,7 +502,7 @@ public class GeneratorUtils {
         if (patternProperties != null && !patternProperties.isEmpty()) {
             // TODO: Complete this and remove the exception.
             List<String> propertyPatternTypes = new ArrayList<>(); // PatternPropertiesElement names
-            List<String> patternTypes = new ArrayList<>(); // Data type names
+            Set<String> patternTypes = new TreeSet<>(); // Data type names
 
             String objectTypePrefix = convertToCamelCase(finalType); // The prefix name of the pattern properties
 
@@ -523,6 +525,12 @@ public class GeneratorUtils {
 
                 propertyPatternTypes.add(elementName);
                 patternTypes.add(generatedType);
+            }
+
+            // Refine patternTypes set
+            if (patternTypes.contains(JSON)) {
+                patternTypes.clear();
+                patternTypes.add(JSON);
             }
 
             String restTypeAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, ADDITIONAL_PROPS,
