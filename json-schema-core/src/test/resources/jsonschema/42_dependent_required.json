@@ -7,10 +7,11 @@
     "id": { "type": "integer" },
     "occupation": { "type": "string" }
   },
-  "required": ["id"],
+  "required": ["name"],
   "unevaluatedProperties": { "type": "integer" },
   "dependentRequired": {
     "id": ["name"],
-    "age": ["name"]
+    "age": ["id"],
+    "name": ["age"]
   }
 }

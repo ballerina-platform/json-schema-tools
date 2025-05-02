@@ -136,6 +136,7 @@ public class GeneratorUtils {
     public static final String UNEVALUATED_PROPS = "UnevaluatedProperties";
     public static final String PATTERN_ELEMENT = "PatternElement";
     public static final String PATTERN_PROPERTIES = "PatternProperties";
+    public static final String UNEVALUATED_ITEMS_SUFFIX = "UnevaluatedItems";
 
     private static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
@@ -447,9 +448,10 @@ public class GeneratorUtils {
         }
 
         if (unevaluatedItems != null) {
-            // TODO: Depends upon the object implementation.
-            //  Implement this after the object type support for JSON schema.
-            throw new IllegalArgumentException("unevaluatedItems is currently not supported for array type");
+            String customTypeName = finalType + UNEVALUATED_ITEMS_SUFFIX;
+            String typeName = generator.convert(unevaluatedItems, customTypeName);
+            annotationParts.add(UNEVALUATED_ITEMS + COLON + WHITE_SPACE +
+                    resolveTypeNameForTypedesc(customTypeName, typeName, generator));
         }
 
         String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_ANNOTATION, finalType,
@@ -503,7 +505,6 @@ public class GeneratorUtils {
         if (patternProperties != null && !patternProperties.isEmpty()) {
             generator.addImports(BAL_JSON_DATA_MODULE);
 
-            // TODO: Complete this and remove the exception.
             List<String> propertyPatternTypes = new ArrayList<>(); // PatternPropertiesElement names
             Set<String> patternTypes = new HashSet<>(); // Data type names
 
@@ -616,7 +617,6 @@ public class GeneratorUtils {
             });
         }
 
-        //TODO: Optimized this for linked dependencies
         //Handling dependent Required Fields
         if (dependentRequired != null) {
             String finalRestType = restType;
@@ -659,7 +659,6 @@ public class GeneratorUtils {
     }
 
     private static void processRequiredFields(Map<String, RecordField> recordFields) {
-        // TODO: Implement Required Fields calculation process.
         boolean changeFlag = true;
         while (changeFlag) {
             changeFlag = false;
