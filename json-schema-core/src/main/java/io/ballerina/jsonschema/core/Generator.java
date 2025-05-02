@@ -42,14 +42,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static io.ballerina.jsonschema.core.GeneratorUtils.BOOLEAN;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_BRACES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_SQUARE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COMMA;
-import static io.ballerina.jsonschema.core.GeneratorUtils.CONST;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
-import static io.ballerina.jsonschema.core.GeneratorUtils.EQUAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.FLOAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.INTEGER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.JSON;
@@ -153,17 +152,21 @@ public class Generator {
         }
 
         //TODO: Validate constraints on enums
-        List<String> result = new ArrayList<>();
-        for (Object element : schemaType) {
-            result.add(generateStringType(element));
-        }
-        String typeName = String.join(PIPE, result);
+        String typeName = schemaType.stream()
+                .map(element -> {
+                    try {
+                        return generateStringRepresentation(element);
+                    } catch (InvalidDataTypeException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.joining(PIPE));
 
         ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
         return typeName;
     }
 
-    private String generateStringType(Object obj) throws InvalidDataTypeException {
+    private String generateStringRepresentation(Object obj) throws InvalidDataTypeException {
         if (obj == null) {
             return NULL;
         }
@@ -176,7 +179,7 @@ public class Generator {
         if (obj instanceof ArrayList) {
             List<String> result = new ArrayList<>();
             for (Object element : (ArrayList<?>) obj) {
-                result.add(generateStringType(element));
+                result.add(generateStringRepresentation(element));
             }
             return OPEN_SQUARE_BRACKET + String.join(COMMA, result) + CLOSE_SQUARE_BRACKET;
         }
@@ -188,11 +191,10 @@ public class Generator {
             for (Map.Entry<String, Object> entry : ((LinkedTreeMap<String, Object>) obj).entrySet()) {
                 String key = entry.getKey();
                 Object value = entry.getValue();
-                result.add("\"" + key + "\"" + ":" + generateStringType(value));
+                result.add("\"" + key + "\"" + ":" + generateStringRepresentation(value));
             }
             String enumObject = OPEN_BRACES + String.join(COMMA, result) + CLOSE_BRACES;
-            String constDefinition = PUBLIC + WHITE_SPACE + CONST + WHITE_SPACE + objName + WHITE_SPACE + EQUAL +
-                    WHITE_SPACE + enumObject + SEMI_COLON;
+            String constDefinition = String.format("public const %s = %s;", objName, enumObject);
 
             this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(constDefinition));
             return objName;

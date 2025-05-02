@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Code Generator Utils for the Generator class.
@@ -165,7 +166,7 @@ public class GeneratorUtils {
 
     public static String createInteger(String name, Double minimum, Double exclusiveMinimum, Double maximum,
                                        Double exclusiveMaximum, Double multipleOf, Generator generator) {
-        if (customTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
 
@@ -194,7 +195,7 @@ public class GeneratorUtils {
 
     public static String createNumber(String name, Double minimum, Double exclusiveMinimum, Double maximum,
                                       Double exclusiveMaximum, Double multipleOf, Generator generator) {
-        if (customTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return NUMBER;
         }
 
@@ -223,7 +224,7 @@ public class GeneratorUtils {
 
     public static String createString(String name, String format, Long minLength, Long maxLength,
                                       String pattern, Generator generator) {
-        if (customTypeNotRequired(format, minLength, maxLength, pattern)) {
+        if (isCustomTypeNotRequired(format, minLength, maxLength, pattern)) {
             return STRING;
         }
 
@@ -338,12 +339,7 @@ public class GeneratorUtils {
         return input;
     }
 
-    private static boolean customTypeNotRequired(Object... objects) {
-        for (Object obj : objects) {
-            if (obj != null) {
-                return false;
-            }
-        }
-        return true;
+    private static boolean isCustomTypeNotRequired(Object... objects) {
+        return Arrays.stream(objects).allMatch(Objects::isNull);
     }
 }
