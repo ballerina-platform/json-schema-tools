@@ -61,7 +61,6 @@ public class GeneratorUtils {
     public static final String QUESTION_MARK = "?";
     public static final String EQUAL = "=";
     public static final String DOUBLE_QUOTATION = "\"";
-    public static final String VALUE = "value";
     public static final String UNDERSCORE = "_";
     public static final String TAB = "\t";
     public static final String CONST = "const";
@@ -79,7 +78,6 @@ public class GeneratorUtils {
     public static final String BLANK_ARRAY = "json[0]";
     public static final String UNIVERSAL_OBJECT = "record{|json...;|}";
     public static final String EMPTY_RECORD = "record{||}";
-    public static final String DEFAULT_SCHEMA_NAME = "Schema";
 
     public static final String BAL_JSON_DATA_MODULE = "ballerina/data.jsondata";
 
@@ -95,7 +93,6 @@ public class GeneratorUtils {
     public static final String ANNOTATION_FORMAT_WITH_TYPE = "%s {%n\t%s%n}%npublic type %s %s;";
     public static final String ANNOTATION_FORMAT = "@%s:%s{%n\t%s%n}";
     public static final String FIELD_ANNOTATION_FORMAT = "@%s:%s{%n\tvalue: %s%n}";
-    public static final String COMMA_SPACE_DELIMITTER = ", ";
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -137,6 +134,7 @@ public class GeneratorUtils {
     public static final String PATTERN_ELEMENT = "PatternElement";
     public static final String PATTERN_PROPERTIES = "PatternProperties";
     public static final String UNEVALUATED_ITEMS_SUFFIX = "UnevaluatedItems";
+    public static final String PROPERTY_NAMES_SUFFIX = "PropertyNames";
 
     private static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
@@ -558,12 +556,26 @@ public class GeneratorUtils {
             restType = String.join(PIPE, patternTypes);
         }
 
-        if (maxProperties != null || minProperties != null) {
-            List<String> minMaxProperties = new ArrayList<>();
-            addIfNotNull(minMaxProperties, MIN_PROPERTIES, minProperties);
-            addIfNotNull(minMaxProperties, MAX_PROPERTIES, maxProperties);
+        if (maxProperties != null || minProperties != null || propertyNames != null) {
+            List<String> objectProperties = new ArrayList<>();
+
+            addIfNotNull(objectProperties, MIN_PROPERTIES, minProperties);
+            addIfNotNull(objectProperties, MAX_PROPERTIES, maxProperties);
+
+            if (propertyNames != null) {
+                if (propertyNames instanceof Schema propertyNamesSchema) {
+                    propertyNamesSchema.setType(new ArrayList<>(List.of("string")));
+                    objectProperties.add(PROPERTY_NAMES + ": " +
+                            generator.convert(propertyNamesSchema, finalType + PROPERTY_NAMES_SUFFIX));
+                } else {
+                    objectProperties.add(PROPERTY_NAMES + ": " + generator.convert(propertyNames, ""));
+                    //TODO: Should I return never here if false?
+                    // and string if true?
+                }
+            }
+
             String minMaxAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, OBJECT_VALIDATION,
-                    String.join(", ", minMaxProperties));
+                    String.join(", ", objectProperties));
             objectAnnotations.add(minMaxAnnotation);
         }
 
@@ -642,9 +654,12 @@ public class GeneratorUtils {
 
         ArrayList<String> fields = processRecordFields(recordFields, generator);
 
+
         if (!restType.equals(NEVER)) {
             fields.add(handleUnion(restType) + REST + SEMI_COLON);
         }
+
+        //TODO: Add a min max property validation.
 
         String record = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + finalType + WHITE_SPACE +
                 RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) + PIPE + CLOSE_BRACES + SEMI_COLON;
