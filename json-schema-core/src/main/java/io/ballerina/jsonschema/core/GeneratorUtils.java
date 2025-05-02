@@ -173,7 +173,7 @@ public class GeneratorUtils {
             this.type = type;
         }
 
-        public boolean getRequired() {
+        public boolean isRequired() {
             return required;
         }
 
@@ -621,34 +621,23 @@ public class GeneratorUtils {
         if (dependentRequired != null) {
             String finalRestType = restType;
             dependentRequired.forEach((key, value) -> {
-                boolean fieldRequired;
-
                 // Check if the key is present in the recordFields, else add it.
-                // Object the required-ness depending on the dependent field.
                 if (!recordFields.containsKey(key)) {
-                    // if the key is not specified in properties.
-                    fieldRequired = false;
                     recordFields.put(key, new RecordField(finalRestType, false));
-                } else {
-                    // if the key is specified in the properties.
-                    fieldRequired = recordFields.get(key).getRequired();
                 }
 
-                // Iterate through each dependent element eg: dependentKye=x,y in A:[X,Y]
+                // Iterate through each dependent element eg: dependentKey=x,y in A:[X,Y]
                 value.forEach((dependentKey) -> {
                     // Add the dependentKey to the annotation part of the key.
                     recordFields.get(key).addDependentRequired(dependentKey);
 
+                    // recordFields is an intermediate representation of the array of the fields in the record
                     if (!recordFields.containsKey(dependentKey)) {
-                        recordFields.put(dependentKey, new RecordField(finalRestType, fieldRequired));
-                        return;
-                    }
-                    // else
-                    if (!recordFields.get(dependentKey).getRequired()) { // if X is not a required field then,
-                        recordFields.get(dependentKey).setRequired(fieldRequired); // Set the required-ness of A to X
+                        recordFields.put(dependentKey, new RecordField(finalRestType, false));
                     }
                 });
             });
+            processRequiredFields(recordFields);
         }
 
         ArrayList<String> fields = processRecordFields(recordFields, generator);
@@ -667,6 +656,29 @@ public class GeneratorUtils {
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(record);
         generator.nodes.put(finalType, moduleNode);
         return finalType;
+    }
+
+    private static void processRequiredFields(Map<String, RecordField> recordFields) {
+        // TODO: Implement Required Fields calculation process.
+        boolean changeFlag = true;
+        while (changeFlag) {
+            changeFlag = false;
+            for (Map.Entry<String, RecordField> entry : recordFields.entrySet()) {
+                String key = entry.getKey();
+                RecordField keyRecord = recordFields.get(key);
+                RecordField value = entry.getValue();
+                if (value.getDependentRequired() != null && keyRecord.isRequired()) {
+                    // If there are dependentRequired items
+                    for (String dependentRequired : value.getDependentRequired()) {
+                        // Iterate through the dependentRequired items
+                        if (keyRecord.isRequired() && !recordFields.get(dependentRequired).isRequired()) {
+                            recordFields.get(dependentRequired).setRequired(true);
+                            changeFlag = true;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
@@ -708,7 +720,7 @@ public class GeneratorUtils {
                 fieldAnnotation.add(dependentRequired);
             }
 
-            if (value.getRequired()) {
+            if (value.isRequired()) {
                 fieldAnnotation.add(value.getType() + WHITE_SPACE + key);
             } else {
                 fieldAnnotation.add(value.getType() + WHITE_SPACE + key + QUESTION_MARK);
