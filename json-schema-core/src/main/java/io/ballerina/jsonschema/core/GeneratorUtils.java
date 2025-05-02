@@ -25,10 +25,10 @@ import io.ballerina.compiler.syntax.tree.NodeParser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -129,6 +129,7 @@ public class GeneratorUtils {
 
     private static final String ITEM_SUFFIX = "Item";
     private static final String NAME_REST_ITEM = "RestItem";
+    private static final String REST_TYPE = "RestType";
     private static final String ADDITIONAL_PROPS = "AdditionalProperties";
     public static final String DEPENDENT_SCHEMA = "DependentSchema";
     public static final String DEPENDENT_REQUIRED = "DependentRequired";
@@ -500,9 +501,11 @@ public class GeneratorUtils {
         String restType = getRestType(finalType, additionalProperties, unevaluatedProperties, generator);
 
         if (patternProperties != null && !patternProperties.isEmpty()) {
+            generator.addImports(BAL_JSON_DATA_MODULE);
+
             // TODO: Complete this and remove the exception.
             List<String> propertyPatternTypes = new ArrayList<>(); // PatternPropertiesElement names
-            Set<String> patternTypes = new TreeSet<>(); // Data type names
+            Set<String> patternTypes = new HashSet<>(); // Data type names
 
             String objectTypePrefix = convertToCamelCase(finalType); // The prefix name of the pattern properties
 
@@ -528,13 +531,9 @@ public class GeneratorUtils {
             }
 
             // Refine patternTypes set
-            if (patternTypes.contains(JSON)) {
-                patternTypes.clear();
-                patternTypes.add(JSON);
-            }
-
+            String resolvedRestType = resolveTypeNameForTypedesc(REST_TYPE, restType, generator);
             String restTypeAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, ADDITIONAL_PROPS,
-                    "value" + COLON + restType);
+                    "value" + COLON + resolvedRestType);
             objectAnnotations.add(restTypeAnnotation);
 
             String patternElementsArray =
@@ -543,7 +542,18 @@ public class GeneratorUtils {
                     "value" + COLON + patternElementsArray);
             objectAnnotations.add(patternAnnotation);
 
-            patternTypes.add(restType);
+            // Handle repeating data types.
+            for (String type : restType.split("\\|")) {
+                patternTypes.add(type.trim());
+            }
+            if (patternTypes.contains(JSON)) {
+                patternTypes.clear();
+                patternTypes.add(JSON);
+            }
+            if (patternTypes.contains(NEVER) && patternTypes.size() > 1) {
+                patternTypes.remove(NEVER);
+            }
+
             restType = String.join(PIPE, patternTypes);
         }
 
@@ -660,6 +670,9 @@ public class GeneratorUtils {
     }
 
     private static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
+        if (!typeName.contains(PIPE)) {
+            return typeName;
+        }
         String newType = resolveNameConflicts(name, generator);
         String typeDeclaration = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + newType + WHITE_SPACE + typeName +
                 SEMI_COLON;

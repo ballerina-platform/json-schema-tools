@@ -280,7 +280,7 @@ public class Generator {
         if (type == ArrayList.class) {
             return "Array";
         }
-        if (type == LinkedHashMap.class) {
+        if (type == LinkedTreeMap.class) {
             return "Object";
         }
         return "Null";
