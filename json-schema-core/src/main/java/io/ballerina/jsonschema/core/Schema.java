@@ -310,6 +310,7 @@ class Schema {
 
     public Schema() {}
 
+    // Applicator
     public Object getItems() {
         return items;
     }
@@ -430,6 +431,7 @@ class Schema {
         this.not = not;
     }
 
+    // Content
     public String getContentEncoding() {
         return contentEncoding;
     }
@@ -454,6 +456,7 @@ class Schema {
         this.content = content;
     }
 
+    // Core
     public String getIdKeyword() {
         return idKeyword;
     }
@@ -526,6 +529,7 @@ class Schema {
         this.defsKeyword = defsKeyword;
     }
 
+    // Format-annotation/ Format-assertion
     public String getFormat() {
         return format;
     }
@@ -534,6 +538,7 @@ class Schema {
         this.format = format;
     }
 
+    // Meta-data
     public String getTitle() {
         return title;
     }
@@ -590,6 +595,7 @@ class Schema {
         this.examples = examples;
     }
 
+    // Unevaluated
     public Object getUnevaluatedItems() {
         return unevaluatedItems;
     }
@@ -606,6 +612,7 @@ class Schema {
         this.unevaluatedProperties = unevaluatedProperties;
     }
 
+    // Validation
     public ArrayList<String> getType() {
         return type;
     }

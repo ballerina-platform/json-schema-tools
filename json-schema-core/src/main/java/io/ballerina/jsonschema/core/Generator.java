@@ -181,10 +181,13 @@ public class Generator {
             for (Object element : (ArrayList<?>) obj) {
                 result.add(generateStringRepresentation(element));
             }
+            if (result.isEmpty()) {
+                return UNIVERSAL_ARRAY;
+            }
             return OPEN_SQUARE_BRACKET + String.join(COMMA, result) + CLOSE_SQUARE_BRACKET;
         }
         if (obj instanceof LinkedTreeMap) {
-            String objName = resolveNameConflictsWithSuffix("enumObject", this);
+            String objName = resolveNameConflictsWithSuffix("MAPPING_", this);
             this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(""));
 
             List<String> result = new ArrayList<>();
