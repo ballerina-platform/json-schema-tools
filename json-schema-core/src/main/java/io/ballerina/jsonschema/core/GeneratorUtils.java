@@ -551,6 +551,7 @@ public class GeneratorUtils {
         }
 
         if (maxProperties != null || minProperties != null || propertyNames != null) {
+            generator.addImports(BAL_JSON_DATA_MODULE);
             List<String> objectProperties = new ArrayList<>();
 
             addIfNotNull(objectProperties, MIN_PROPERTIES, minProperties);
@@ -561,10 +562,6 @@ public class GeneratorUtils {
                     propertyNamesSchema.setType(new ArrayList<>(List.of("string")));
                     objectProperties.add(PROPERTY_NAMES + ": " +
                             generator.convert(propertyNamesSchema, finalType + PROPERTY_NAMES_SUFFIX));
-                } else if (Boolean.FALSE.equals(propertyNames)) {
-                    //TODO: Remove created unwanted type objects
-                    generator.nodes.remove(finalType);
-                    return NEVER; // TODO: Test this
                 } else {
                     objectProperties.add(PROPERTY_NAMES + ": " + STRING);
                 }
