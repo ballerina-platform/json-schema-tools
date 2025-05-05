@@ -646,7 +646,10 @@ public class GeneratorUtils {
             fields.add(handleUnion(restType) + REST + SEMI_COLON);
         }
 
-        //TODO: Add a min max property validation with a rest type check.
+        // Additional minProperties check
+        if (minProperties != null && (restType.equals(NEVER) && fields.size() < minProperties)) {
+            return NEVER;
+        }
 
         String record = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + finalType + WHITE_SPACE +
                 RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) + PIPE + CLOSE_BRACES + SEMI_COLON;
