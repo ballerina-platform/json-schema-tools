@@ -84,6 +84,8 @@ public class Generator {
     private final ArrayList<String> imports = new ArrayList<>();
     private final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
+    public int constCounter = 1;
+
     private record BalTypes(List<Object> typeList, boolean types) {
     }
 
@@ -187,7 +189,7 @@ public class Generator {
             return OPEN_SQUARE_BRACKET + String.join(COMMA, result) + CLOSE_SQUARE_BRACKET;
         }
         if (obj instanceof AbstractMap) {
-            String objName = resolveNameConflictsWithSuffix("MAPPING_", this);
+            String objName = resolveNameConflictsWithSuffix("MAPPING_", this.constCounter, this);
             this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(""));
 
             List<String> result = new ArrayList<>();

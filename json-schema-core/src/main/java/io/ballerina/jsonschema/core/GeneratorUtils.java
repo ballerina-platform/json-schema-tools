@@ -302,18 +302,10 @@ public class GeneratorUtils {
         return resolvedName;
     }
 
-    public static String resolveNameConflictsWithSuffix(String name, Generator generator) {
-        String baseName = sanitizeName(name);
-        StringBuilder sb = new StringBuilder(baseName);
-        sb.append(1);
-        String resolvedName = sb.toString();
-        int counter = 2;
-
+    public static String resolveNameConflictsWithSuffix(String name, int counter, Generator generator) {
+        String resolvedName = name + counter;
         while (generator.nodes.containsKey(resolvedName)) {
-            sb = new StringBuilder(baseName);
-            sb.append(counter);
-            resolvedName = sb.toString();
-            counter++;
+            resolvedName = name + (++counter);
         }
         return resolvedName;
     }
