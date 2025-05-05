@@ -75,7 +75,7 @@ public class GeneratorUtils {
     public static final String NULL = "()";
     public static final String JSON = "json";
     public static final String UNIVERSAL_ARRAY = "[json...]";
-    public static final String BLANK_ARRAY = "json[0]";
+    public static final String EMPTY_ARRAY = "json[0]";
     public static final String UNIVERSAL_OBJECT = "record{|json...;|}";
     public static final String EMPTY_RECORD = "record{||}";
 
@@ -86,8 +86,6 @@ public class GeneratorUtils {
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
     public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
     public static final String ARRAY_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
-    public static final String OBJECT_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ObjectValidation";
-    public static final String ONE_OF_ANNOTATION = AT + "OneOf";
     public static final String PATTERN_RECORD = ANNOTATION_MODULE + COLON + "PatternPropertiesElement";
 
     public static final String ANNOTATION_FORMAT_WITH_TYPE = "%s {%n\t%s%n}%npublic type %s %s;";
@@ -241,7 +239,7 @@ public class GeneratorUtils {
             return INTEGER;
         }
 
-        if (invalidLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
+        if (invalidNumberLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
             return NEVER;
         }
 
@@ -271,7 +269,7 @@ public class GeneratorUtils {
             return NUMBER;
         }
 
-        if (invalidLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
+        if (invalidNumberLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
             return NEVER;
         }
 
@@ -397,7 +395,7 @@ public class GeneratorUtils {
 
         // Replace [] with json[0] if present.
         if (tupleList.getFirst().equals(OPEN_SQUARE_BRACKET + CLOSE_SQUARE_BRACKET)) {
-            tupleList.set(0, BLANK_ARRAY);
+            tupleList.set(0, EMPTY_ARRAY);
         }
 
         // If the last item is a rest item, the previous array element is redundant.
@@ -498,7 +496,7 @@ public class GeneratorUtils {
         }
         // Now we have all a mapping of key type pairs for each field.
 
-        String restType = getRestType(finalType, additionalProperties, unevaluatedProperties, generator);
+        String restType = getRecordRestType(finalType, additionalProperties, unevaluatedProperties, generator);
 
         if (patternProperties != null && !patternProperties.isEmpty()) {
             generator.addImports(BAL_JSON_DATA_MODULE);
@@ -656,12 +654,11 @@ public class GeneratorUtils {
 
         ArrayList<String> fields = processRecordFields(recordFields, generator);
 
-
         if (!restType.equals(NEVER)) {
             fields.add(handleUnion(restType) + REST + SEMI_COLON);
         }
 
-        //TODO: Add a min max property validation.
+        //TODO: Add a min max property validation with a rest type check.
 
         String record = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + finalType + WHITE_SPACE +
                 RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) + PIPE + CLOSE_BRACES + SEMI_COLON;
@@ -697,6 +694,7 @@ public class GeneratorUtils {
         }
     }
 
+    // Create a new type with the union of typedesc and return the new type name.
     private static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
         if (!typeName.contains(PIPE)) {
             return typeName;
@@ -710,7 +708,7 @@ public class GeneratorUtils {
     }
 
     private static ArrayList<String> processRecordFields(Map<String, RecordField> recordFields, Generator generator) {
-        ArrayList<String> annotations = new ArrayList<>();
+        ArrayList<String> recordBody = new ArrayList<>();
 
         for (Map.Entry<String, RecordField> entry : recordFields.entrySet()) {
             String key = entry.getKey();
@@ -742,14 +740,14 @@ public class GeneratorUtils {
                 fieldAnnotation.add(value.getType() + WHITE_SPACE + key + QUESTION_MARK);
             }
 
-            annotations.add(String.join(NEW_LINE, fieldAnnotation) + SEMI_COLON);
+            recordBody.add(String.join(NEW_LINE, fieldAnnotation) + SEMI_COLON);
         }
 
-        return annotations;
+        return recordBody;
     }
 
-    private static String getRestType(String name, Object additionalProperties, Object unevaluatedProperties,
-                                      Generator generator) throws Exception {
+    private static String getRecordRestType(String name, Object additionalProperties, Object unevaluatedProperties,
+                                            Generator generator) throws Exception {
         if (additionalProperties != null) {
             return generator.convert(additionalProperties,
                     resolveNameConflicts(name + ADDITIONAL_PROPS, generator));
@@ -761,6 +759,7 @@ public class GeneratorUtils {
         return JSON;
     }
 
+    // Handle union values by enclosing them in parentheses.
     private static String handleUnion(String type) {
         if (type.contains(PIPE) && !type.startsWith(OPEN_BRACKET)) {
             return OPEN_BRACKET + type + CLOSE_BRACKET;
@@ -779,13 +778,13 @@ public class GeneratorUtils {
     }
 
     private static String getFormattedAnnotation(List<String> annotationParts,
-                                                 String annotationType, String typeName, String type) {
+                                                 String annotationType, String typeName, String balType) {
         String annotation = String.join(COMMA + NEW_LINE + TAB, annotationParts);
-        return String.format(ANNOTATION_FORMAT_WITH_TYPE, annotationType, annotation, typeName, type);
+        return String.format(ANNOTATION_FORMAT_WITH_TYPE, annotationType, annotation, typeName, balType);
     }
 
-    private static boolean invalidLimits(Double minimum, Double exclusiveMinimum, Double maximum,
-                                         Double exclusiveMaximum) {
+    private static boolean invalidNumberLimits(Double minimum, Double exclusiveMinimum, Double maximum,
+                                               Double exclusiveMaximum) {
         return (minimum != null && maximum != null && maximum < minimum) ||
                 (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
                 (exclusiveMinimum != null && maximum != null && maximum <= exclusiveMinimum) ||
