@@ -481,7 +481,7 @@ public class GeneratorUtils {
 
         //! Create a name to allocate the required variable name
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
-        generator.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+        generator.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
 
         List<String> objectAnnotations = new ArrayList<>();
 
@@ -567,10 +567,12 @@ public class GeneratorUtils {
                     propertyNamesSchema.setType(new ArrayList<>(List.of("string")));
                     objectProperties.add(PROPERTY_NAMES + ": " +
                             generator.convert(propertyNamesSchema, finalType + PROPERTY_NAMES_SUFFIX));
+                } else if (Boolean.FALSE.equals(propertyNames)) {
+                    //TODO: Remove created unwanted type objects
+                    generator.nodes.remove(finalType);
+                    return NEVER; // TODO: Test this.......................
                 } else {
-                    objectProperties.add(PROPERTY_NAMES + ": " + generator.convert(propertyNames, ""));
-                    //TODO: Should I return never here if false?
-                    // and string if true?
+                    objectProperties.add(PROPERTY_NAMES + ": " + STRING);
                 }
             }
 
