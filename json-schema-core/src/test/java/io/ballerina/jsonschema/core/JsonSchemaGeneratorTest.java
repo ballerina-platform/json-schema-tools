@@ -43,13 +43,13 @@ public class JsonSchemaGeneratorTest {
                 {"7_enum_with_string.json", "7_enum_with_string.bal"},
                 {"8_enum_with_integer.json", "8_enum_with_integer.bal"},
                 {"9_null.json", "9_null.bal"},
-//                {"10_nested_enum.json", "10_nested_enum.bal"},
+                {"10_nested_enum.json", "10_nested_enum.bal"},
                 {"11_nested_enum_with_type.json", "11_nested_enum_with_type.bal"},
-//                {"12_nested_enum_with_multiple_types.json", "12_nested_enum_with_multiple_types.bal"},
+                {"12_nested_enum_with_multiple_types.json", "12_nested_enum_with_multiple_types.bal"},
                 {"13_enum_with_number_type.json", "13_enum_with_number_type.bal"},
                 {"14_enum_with_const.json", "14_enum_with_const.bal"},
                 {"15_invalid_enum_with_const.json", "15_invalid_enum_with_const.bal"},
-//                {"16_object_const.json", "16_object_const.bal"},
+                {"16_object_const.json", "16_object_const.bal"},
                 {"17_constrained_string.json", "17_constrained_string.bal"},
         };
     }

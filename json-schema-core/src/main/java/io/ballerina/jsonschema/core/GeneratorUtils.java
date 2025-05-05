@@ -18,10 +18,10 @@
 
 package io.ballerina.jsonschema.core;
 
-import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -155,7 +155,7 @@ public class GeneratorUtils {
                     schema.getMinItems(), schema.getMaxItems(), schema.getUniqueItems(), schema.getMaxContains(),
                     schema.getMinContains(), schema.getUnevaluatedItems(), generator);
         }
-        if (type == LinkedTreeMap.class) {
+        if (type == AbstractMap.class) {
             return createObject(name, schema.getAdditionalProperties(), schema.getProperties(),
                     schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(),
                     schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(),

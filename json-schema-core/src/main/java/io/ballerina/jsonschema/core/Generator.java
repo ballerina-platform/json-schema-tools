@@ -18,7 +18,6 @@
 
 package io.ballerina.jsonschema.core;
 
-import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.AbstractNodeFactory;
 import io.ballerina.compiler.syntax.tree.ImportDeclarationNode;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
@@ -34,6 +33,7 @@ import org.ballerinalang.formatter.core.FormatterException;
 import org.ballerinalang.formatter.core.options.ForceFormattingOptions;
 import org.ballerinalang.formatter.core.options.FormattingOptions;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -186,12 +186,12 @@ public class Generator {
             }
             return OPEN_SQUARE_BRACKET + String.join(COMMA, result) + CLOSE_SQUARE_BRACKET;
         }
-        if (obj instanceof LinkedTreeMap) {
+        if (obj instanceof AbstractMap) {
             String objName = resolveNameConflictsWithSuffix("MAPPING_", this);
             this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(""));
 
             List<String> result = new ArrayList<>();
-            for (Map.Entry<String, Object> entry : ((LinkedTreeMap<String, Object>) obj).entrySet()) {
+            for (Map.Entry<String, Object> entry : ((AbstractMap<String, Object>) obj).entrySet()) {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 result.add("\"" + key + "\"" + ":" + generateStringRepresentation(value));
@@ -215,7 +215,7 @@ public class Generator {
             typeList.add(Boolean.class);
             typeList.add(String.class);
             typeList.add(ArrayList.class);
-            typeList.add(LinkedTreeMap.class);
+            typeList.add(AbstractMap.class);
             typeList.add(null);
         } else {
             for (String element : type) {
@@ -242,6 +242,12 @@ public class Generator {
 
         for (Object element : enumKeyword) {
             Class<?> elementClass = (element == null) ? null : element.getClass();
+
+            // Change LinkedTreeMap class to AbstractMap
+            if (elementClass != null && AbstractMap.class.isAssignableFrom(elementClass)) {
+                elementClass = AbstractMap.class;
+            }
+
             if (typeList.contains(elementClass)) {
                 valueList.add(element);
             }
@@ -264,7 +270,7 @@ public class Generator {
             case "boolean" -> Boolean.class;
             case "string" -> String.class;
             case "array" -> ArrayList.class;
-            case "object" -> LinkedTreeMap.class;
+            case "object" -> AbstractMap.class;
             case "null" -> null;
             default -> throw new RuntimeException("Unsupported type: " + type);
         };
@@ -286,7 +292,7 @@ public class Generator {
         if (type == ArrayList.class) {
             return "Array";
         }
-        if (type == LinkedHashMap.class) {
+        if (type == AbstractMap.class) {
             return "Object";
         }
         return "Null";
