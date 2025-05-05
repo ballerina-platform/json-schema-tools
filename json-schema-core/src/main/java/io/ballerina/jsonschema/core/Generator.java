@@ -196,8 +196,8 @@ public class Generator {
                 Object value = entry.getValue();
                 result.add("\"" + key + "\"" + ":" + generateStringRepresentation(value));
             }
-            String enumObject = OPEN_BRACES + String.join(COMMA, result) + CLOSE_BRACES;
-            String constDefinition = String.format("public const %s = %s;", objName, enumObject);
+            String enumConst = OPEN_BRACES + String.join(COMMA, result) + CLOSE_BRACES;
+            String constDefinition = String.format("public const %s = %s;", objName, enumConst);
 
             this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(constDefinition));
             return objName;
