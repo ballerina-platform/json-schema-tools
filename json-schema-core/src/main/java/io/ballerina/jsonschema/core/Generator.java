@@ -84,7 +84,11 @@ public class Generator {
     private final ArrayList<String> imports = new ArrayList<>();
     private final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
-    public int constCounter = 1;
+    private int constCounter = 1;
+
+    public void setConstCounter(int newCount) {
+        this.constCounter = newCount;
+    }
 
     private record BalTypes(List<Object> typeList, boolean types) {
     }

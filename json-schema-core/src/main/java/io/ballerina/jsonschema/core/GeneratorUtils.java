@@ -303,10 +303,11 @@ public class GeneratorUtils {
     }
 
     public static String resolveNameConflictsWithSuffix(String name, int counter, Generator generator) {
-        String resolvedName = name + counter;
-        while (generator.nodes.containsKey(resolvedName)) {
-            resolvedName = name + (++counter);
-        }
+        String resolvedName;
+        do {
+            resolvedName = name + counter++;
+        } while (generator.nodes.containsKey(resolvedName));
+        generator.setConstCounter(counter);
         return resolvedName;
     }
 
