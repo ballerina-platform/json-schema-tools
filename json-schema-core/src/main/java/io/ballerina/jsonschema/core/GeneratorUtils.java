@@ -83,14 +83,16 @@ public class GeneratorUtils {
 
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String OBJECT_VALIDATION = "ObjectValidation";
-    public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
-    public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
-    public static final String ARRAY_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "ArrayValidation";
+    public static final String NUMBER_VALIDATION = "NumberValidation";
+    public static final String STRING_VALIDATION = "StringValidation";
+    public static final String ARRAY_VALIDATION = "ArrayValidation";
     public static final String PATTERN_RECORD = ANNOTATION_MODULE + COLON + "PatternPropertiesElement";
+    public static final String VALUE = "value";
 
-    public static final String ANNOTATION_FORMAT_WITH_TYPE = "%s {%n\t%s%n}%npublic type %s %s;";
     public static final String ANNOTATION_FORMAT = "@%s:%s{%n\t%s%n}";
+    public static final String TYPE_FORMAT = "public type %s %s;";
     public static final String FIELD_ANNOTATION_FORMAT = "@%s:%s{%n\tvalue: %s%n}";
+    public static final String PATTERN_FORMAT = "%s %s = {%n\tpattern: re `%s`,%n\tvalue: %s%n};";
 
     public static final String MINIMUM = "minimum";
     public static final String EXCLUSIVE_MINIMUM = "exclusiveMinimum";
@@ -254,7 +256,7 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_ANNOTATION, finalType, INTEGER);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_VALIDATION, finalType, INTEGER);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
@@ -284,7 +286,7 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_ANNOTATION, finalType, NUMBER);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_VALIDATION, finalType, NUMBER);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
@@ -317,7 +319,7 @@ public class GeneratorUtils {
             annotationParts.add(PATTERN + COLON + REGEX_PREFIX + BACK_TICK + pattern + BACK_TICK);
         }
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, STRING_ANNOTATION, finalType, STRING);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, STRING_VALIDATION, finalType, STRING);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
@@ -355,25 +357,24 @@ public class GeneratorUtils {
             restItem = JSON;
         }
 
-        // TODO: Create sub-schemas before all of these early return types.
-        //  Reference implementation depends on this feature.
+        // TODO: Create sub-schemas before all of these early return types for schema reference implementation.
 
         if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
             generator.nodes.remove(finalType);
             return NEVER;
         }
 
-        // Presence of a rest type.
+        // Determine the rest item type
         if (!restItem.equals(NEVER)) {
             if (arrayItems.size() < startPosition) {
                 if (startPosition < ARRAY_ANNOTATION_MIN_LIMIT) {
                     for (int i = arrayItems.size(); i < startPosition; i++) {
                         arrayItems.add(restItem);
                     }
-                    // Avoids further annotation on minItems
+                    // Avoids further annotations on minItems
                     minItems = null;
                 } else {
-                    // Accommodates the startPosition including the rest Item type
+                    // Accommodates the startPosition including the rest item type
                     startPosition = arrayItems.size() + 1;
                 }
             }
@@ -381,7 +382,7 @@ public class GeneratorUtils {
                 for (int i = arrayItems.size(); i < endPosition; i++) {
                     arrayItems.add(restItem);
                 }
-                // Avoids further annotation on maxItems
+                // Avoids further annotations on maxItems
                 maxItems = null;
             } else {
                 arrayItems.add(restItem + REST);
@@ -422,7 +423,7 @@ public class GeneratorUtils {
 
             if (newType.contains(PIPE)) {
                 // Ballerina typedesc doesn't allow union types. Hence, we need to create a new type definition
-                String typeDef = TYPE + WHITE_SPACE + containsRecordName + WHITE_SPACE + newType + SEMI_COLON;
+                String typeDef = String.format(TYPE_FORMAT, containsRecordName, newType);
                 ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDef);
                 generator.nodes.put(containsRecordName, moduleNode);
                 newType = containsRecordName;
@@ -450,7 +451,7 @@ public class GeneratorUtils {
                     resolveTypeNameForTypedesc(customTypeName, typeName, generator));
         }
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_ANNOTATION, finalType,
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_VALIDATION, finalType,
                 String.join(PIPE, tupleList));
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
@@ -477,7 +478,6 @@ public class GeneratorUtils {
             return NEVER;
         }
 
-        //! Create a name to allocate the required variable name
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
         generator.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
 
@@ -494,17 +494,16 @@ public class GeneratorUtils {
                 }
             });
         }
-        // Now we have all a mapping of key type pairs for each field.
 
         String restType = getRecordRestType(finalType, additionalProperties, unevaluatedProperties, generator);
 
         if (patternProperties != null && !patternProperties.isEmpty()) {
             generator.addImports(BAL_JSON_DATA_MODULE);
 
-            List<String> propertyPatternTypes = new ArrayList<>(); // PatternPropertiesElement names
-            Set<String> patternTypes = new HashSet<>(); // Data type names
+            List<String> propertyPatternTypes = new ArrayList<>();
+            Set<String> patternTypes = new HashSet<>();
 
-            String objectTypePrefix = convertToCamelCase(finalType); // The prefix name of the pattern properties
+            String objectTypePrefix = convertToCamelCase(finalType);
 
             for (Map.Entry<String, Object> entry : patternProperties.entrySet()) {
                 String elementName = resolveNameConflictsWithSuffix(objectTypePrefix + PATTERN_ELEMENT, generator);
@@ -513,12 +512,9 @@ public class GeneratorUtils {
                 String key = entry.getKey();
                 Object value = entry.getValue();
 
-                String generatedType = generator.convert(value, elementValue); // The value type is generated from this
+                String generatedType = generator.convert(value, elementValue);
 
-                String recordObject = String.format(
-                        "%s %s = {%n\tpattern: re `%s`,%n\tvalue: %s%n};",
-                        PATTERN_RECORD, elementName, key, generatedType
-                );
+                String recordObject = String.format(PATTERN_FORMAT, PATTERN_RECORD, elementName, key, generatedType);
 
                 ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(recordObject);
                 generator.nodes.put(elementName, moduleNode);
@@ -527,16 +523,16 @@ public class GeneratorUtils {
                 patternTypes.add(generatedType);
             }
 
-            // Refine patternTypes set
             String resolvedRestType = resolveTypeNameForTypedesc(REST_TYPE, restType, generator);
+
             String restTypeAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, ADDITIONAL_PROPS,
-                    "value" + COLON + resolvedRestType);
+                    VALUE + COLON + resolvedRestType);
             objectAnnotations.add(restTypeAnnotation);
 
             String patternElementsArray =
                     OPEN_SQUARE_BRACKET + String.join(COMMA, propertyPatternTypes) + CLOSE_SQUARE_BRACKET;
             String patternAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, PATTERN_PROPERTIES,
-                    "value" + COLON + patternElementsArray);
+                    VALUE + COLON + patternElementsArray);
             objectAnnotations.add(patternAnnotation);
 
             // Handle repeating data types.
@@ -568,7 +564,7 @@ public class GeneratorUtils {
                 } else if (Boolean.FALSE.equals(propertyNames)) {
                     //TODO: Remove created unwanted type objects
                     generator.nodes.remove(finalType);
-                    return NEVER; // TODO: Test this.......................
+                    return NEVER; // TODO: Test this
                 } else {
                     objectProperties.add(PROPERTY_NAMES + ": " + STRING);
                 }
@@ -579,8 +575,6 @@ public class GeneratorUtils {
             objectAnnotations.add(minMaxAnnotation);
         }
 
-        // Throw an error if restType = "never" and the required fields are not present in restType.
-        // This is required as this would raise a "never" type immediately unlike other types.
         if (restType.equals(NEVER) && required != null) {
             try {
                 required.forEach((key) -> {
@@ -593,8 +587,7 @@ public class GeneratorUtils {
             }
         }
 
-        // Add field names that are present in the required array and are not present in the properties field.
-        // Change the required attribute to true if they are present.
+        // Add field names that are present in the required array and are not present in the properties' keyword.
         if (required != null) {
             String finalRestType = restType;
             required.forEach((key) -> {
@@ -606,7 +599,7 @@ public class GeneratorUtils {
             });
         }
 
-        // Add dependent schema fields that are not specified in the properties
+        // Add dependent schema fields that are not specified in the properties' keyword.
         if ((dependentSchema != null) && (!restType.equals(NEVER))) {
             String finalRestType = restType;
             dependentSchema.forEach((key, value) -> {
@@ -629,21 +622,16 @@ public class GeneratorUtils {
             });
         }
 
-        //Handling dependent Required Fields
         if (dependentRequired != null) {
             String finalRestType = restType;
             dependentRequired.forEach((key, value) -> {
-                // Check if the key is present in the recordFields, else add it.
                 if (!recordFields.containsKey(key)) {
                     recordFields.put(key, new RecordField(finalRestType, false));
                 }
 
-                // Iterate through each dependent element eg: dependentKey=x,y in A:[X,Y]
                 value.forEach((dependentKey) -> {
-                    // Add the dependentKey to the annotation part of the key.
                     recordFields.get(key).addDependentRequired(dependentKey);
 
-                    // recordFields is an intermediate representation of the array of the fields in the record
                     if (!recordFields.containsKey(dependentKey)) {
                         recordFields.put(dependentKey, new RecordField(finalRestType, false));
                     }
@@ -780,7 +768,8 @@ public class GeneratorUtils {
     private static String getFormattedAnnotation(List<String> annotationParts,
                                                  String annotationType, String typeName, String balType) {
         String annotation = String.join(COMMA + NEW_LINE + TAB, annotationParts);
-        return String.format(ANNOTATION_FORMAT_WITH_TYPE, annotationType, annotation, typeName, balType);
+        return String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, annotationType, annotation) + NEW_LINE +
+                String.format(TYPE_FORMAT, typeName, balType);
     }
 
     private static boolean invalidNumberLimits(Double minimum, Double exclusiveMinimum, Double maximum,
