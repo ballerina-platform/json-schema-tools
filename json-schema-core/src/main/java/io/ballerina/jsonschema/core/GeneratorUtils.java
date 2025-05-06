@@ -576,7 +576,7 @@ public class GeneratorUtils {
             try {
                 required.forEach((key) -> {
                     if (!recordFields.containsKey(key)) {
-                        throw new IllegalStateException("Returning NEVER");
+                        throw new IllegalStateException("Required field " + key + " is missing.");
                     }
                 });
             } catch (IllegalStateException e) {
