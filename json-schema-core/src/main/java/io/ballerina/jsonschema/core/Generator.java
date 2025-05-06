@@ -85,7 +85,7 @@ public class Generator {
 
     private int constCounter = 0;
 
-    public int getNextCounter() {
+    public int getNextConstIndex() {
         return ++this.constCounter;
     }
 

@@ -305,7 +305,7 @@ public class GeneratorUtils {
         String name = "MAPPING_";
         String resolvedName;
         do {
-            resolvedName = name + generator.getNextCounter();
+            resolvedName = name + generator.getNextConstIndex();
         } while (generator.nodes.containsKey(resolvedName));
         return resolvedName;
     }
