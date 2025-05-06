@@ -26,6 +26,7 @@ import io.ballerina.compiler.syntax.tree.NodeFactory;
 import io.ballerina.compiler.syntax.tree.NodeList;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 import io.ballerina.compiler.syntax.tree.Token;
+import io.ballerina.jsonschema.core.SchemaUtils.InvalidDataTypeException;
 import io.ballerina.jsonschema.core.diagnostic.JsonSchemaDiagnostic;
 import org.ballerinalang.formatter.core.Formatter;
 import org.ballerinalang.formatter.core.FormatterException;
@@ -43,6 +44,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.ballerina.jsonschema.core.GeneratorUtils.BOOLEAN;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_BRACES;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_SQUARE_BRACKET;
+import static io.ballerina.jsonschema.core.GeneratorUtils.COMMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.FLOAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.INTEGER;
@@ -50,6 +54,8 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.JSON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NEVER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NULL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER;
+import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_BRACES;
+import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_SQUARE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PIPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PUBLIC;
 import static io.ballerina.jsonschema.core.GeneratorUtils.SEMI_COLON;
@@ -60,6 +66,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_OBJECT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.IMPORT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.createType;
+import static io.ballerina.jsonschema.core.GeneratorUtils.resolveConstMapping;
 import static io.ballerina.jsonschema.core.SchemaUtils.ID_TO_TYPE_MAP;
 
 /**
@@ -75,6 +82,12 @@ public class Generator {
     Map<String, ModuleMemberDeclarationNode> nodes = new LinkedHashMap<>();
     private final ArrayList<String> imports = new ArrayList<>();
     private final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
+
+    private int constCounter = 0;
+
+    public int getNextConstIndex() {
+        return ++this.constCounter;
+    }
 
     private record BalTypes(List<Object> typeList, boolean types) {
     }
@@ -94,7 +107,7 @@ public class Generator {
         return new Response(generatedTypes, this.diagnostics);
     }
 
-    String convert(Object schemaObject, String name) {
+    String convert(Object schemaObject, String name) throws Exception {
         // JSON Schema allows a schema to be a boolean: `true` allows any value, `false` allows none.
         // It is handled here before processing object-based schemas.
         if (schemaObject instanceof Boolean boolValue) {
@@ -112,18 +125,23 @@ public class Generator {
         }
 
         if (balTypes.types()) {
+            if (schemaType.contains(Double.class)) {
+                schemaType.remove(Long.class);
+            }
             if (schemaType.size() == 1) {
                 String typeName = createType(name, schema, schemaType.getFirst(), this);
                 ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
                 return typeName;
             }
+
             Set<String> unionTypes = new HashSet<>();
+
             for (Object element : schemaType) {
                 String subtypeName = name + getBallerinaType(element);
                 unionTypes.add(createType(subtypeName, schema, element, this));
             }
             if (unionTypes.containsAll(
-                    Set.of(INTEGER, NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
+                    Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
                 ID_TO_TYPE_MAP.put(schema.getIdKeyword(), JSON);
                 return JSON;
             }
@@ -139,9 +157,57 @@ public class Generator {
         }
 
         //TODO: Validate constraints on enums
-        String typeName = schemaType.stream().map(String::valueOf).collect(Collectors.joining(PIPE));
+        String typeName = schemaType.stream()
+                .map(element -> {
+                    try {
+                        return generateStringRepresentation(element);
+                    } catch (InvalidDataTypeException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.joining(PIPE));
+
         ID_TO_TYPE_MAP.put(schema.getIdKeyword(), typeName);
         return typeName;
+    }
+
+    private String generateStringRepresentation(Object obj) throws InvalidDataTypeException {
+        if (obj == null) {
+            return NULL;
+        }
+        if (obj instanceof String) {
+            return "\"" + obj + "\"";
+        }
+        if (obj instanceof Double || obj instanceof Boolean || obj instanceof Long) {
+            return String.valueOf(obj);
+        }
+        if (obj instanceof ArrayList) {
+            List<String> result = new ArrayList<>();
+            for (Object element : (ArrayList<?>) obj) {
+                result.add(generateStringRepresentation(element));
+            }
+            if (result.isEmpty()) {
+                return UNIVERSAL_ARRAY;
+            }
+            return OPEN_SQUARE_BRACKET + String.join(COMMA, result) + CLOSE_SQUARE_BRACKET;
+        }
+        if (obj instanceof Map) {
+            String objName = resolveConstMapping(this);
+            this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(""));
+
+            List<String> result = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) obj).entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                result.add("\"" + key + "\"" + ":" + generateStringRepresentation(value));
+            }
+            String enumConst = OPEN_BRACES + String.join(COMMA, result) + CLOSE_BRACES;
+            String constDefinition = String.format("public const %s = %s;", objName, enumConst);
+
+            this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(constDefinition));
+            return objName;
+        }
+        throw new InvalidDataTypeException("Type not supported");
     }
 
     private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
@@ -154,12 +220,17 @@ public class Generator {
             typeList.add(Boolean.class);
             typeList.add(String.class);
             typeList.add(ArrayList.class);
-            typeList.add(LinkedHashMap.class);
+            typeList.add(Map.class);
             typeList.add(null);
         } else {
             for (String element : type) {
                 typeList.add(getIntermediateJsonClassType(element));
             }
+        }
+
+        // "integer" represented by "Long" is a subtype of "number" represented by "Double"
+        if (typeList.contains(Double.class)) {
+            typeList.add(Long.class);
         }
 
         if (enumKeyword == null) {
@@ -175,7 +246,14 @@ public class Generator {
         Set<Object> valueList = new HashSet<>();
 
         for (Object element : enumKeyword) {
-            if (typeList.contains(element.getClass())) {
+            Class<?> elementClass = (element == null) ? null : element.getClass();
+
+            // Change LinkedTreeMap class to Map
+            if (elementClass != null && Map.class.isAssignableFrom(elementClass)) {
+                elementClass = Map.class;
+            }
+
+            if (typeList.contains(elementClass)) {
                 valueList.add(element);
             }
         }
@@ -197,7 +275,7 @@ public class Generator {
             case "boolean" -> Boolean.class;
             case "string" -> String.class;
             case "array" -> ArrayList.class;
-            case "object" -> LinkedHashMap.class;
+            case "object" -> Map.class;
             case "null" -> null;
             default -> throw new RuntimeException("Unsupported type: " + type);
         };
@@ -219,7 +297,7 @@ public class Generator {
         if (type == ArrayList.class) {
             return "Array";
         }
-        if (type == LinkedHashMap.class) {
+        if (type == Map.class) {
             return "Object";
         }
         return "Null";

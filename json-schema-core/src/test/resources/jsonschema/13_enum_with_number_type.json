@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    42,
+    null,
+    3.14,
+    52,
+    100,
+    "exampleString",
+    true,
+    [1, 2, "sample"],
+    {
+      "key1": 100,
+      "key2": {
+        "nestedKey": 200
+      },
+      "key3": ["item1", 10]
+    },
+    {
+      "key1": 100,
+      "key2": true
+    }
+  ],
+  "type": "number"
+}

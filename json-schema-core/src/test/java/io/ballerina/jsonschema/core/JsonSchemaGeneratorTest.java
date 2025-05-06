@@ -33,11 +33,25 @@ public class JsonSchemaGeneratorTest {
 
     @DataProvider(name = "jsonSchemaProvider")
     public Object[][] provideTestPaths() {
-        return new Object[][]{{"1_simple_int_schema.json", "1_simple_int_schema.bal"},
-                {"2_constrained_int_schema.json", "2_constrained_int_schema.bal"},
-                {"3_true_schema.json", "3_true_schema.bal"},
-                {"4_false_schema.json", "4_false_schema.bal"},
-                {"5_invalid_int_schema.json", "5_invalid_int_schema.bal"}};
+        return new Object[][]{
+                {"1_simple_int.json", "1_simple_int.bal"},
+                {"2_constrained_int.json", "2_constrained_int.bal"},
+                {"3_true.json", "3_true.bal"},
+                {"4_false.json", "4_false.bal"},
+                {"5_invalid_int.json", "5_invalid_int.bal"},
+                {"6_constrained_number.json", "6_constrained_number.bal"},
+                {"7_enum_with_string.json", "7_enum_with_string.bal"},
+                {"8_enum_with_integer.json", "8_enum_with_integer.bal"},
+                {"9_null.json", "9_null.bal"},
+                {"10_nested_enum.json", "10_nested_enum.bal"},
+                {"11_nested_enum_with_type.json", "11_nested_enum_with_type.bal"},
+                {"12_nested_enum_with_multiple_types.json", "12_nested_enum_with_multiple_types.bal"},
+                {"13_enum_with_number_type.json", "13_enum_with_number_type.bal"},
+                {"14_enum_with_const.json", "14_enum_with_const.bal"},
+                {"15_invalid_enum_with_const.json", "15_invalid_enum_with_const.bal"},
+                {"16_object_const.json", "16_object_const.bal"},
+                {"17_constrained_string.json", "17_constrained_string.bal"},
+        };
     }
 
     @Test(dataProvider = "jsonSchemaProvider")

@@ -22,7 +22,10 @@ import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Code Generator Utils for the Generator class.
@@ -57,6 +60,7 @@ public class GeneratorUtils {
     public static final String VALUE = "value";
     public static final String UNDERSCORE = "_";
     public static final String TAB = "\t";
+    public static final String CONST = "const";
 
     public static final String INTEGER = "int";
     public static final String STRING = "string";
@@ -73,7 +77,9 @@ public class GeneratorUtils {
     public static final String DEPENDENT_SCHEMA = "dependentSchema";
     public static final String DEPENDENT_REQUIRED = "dependentRequired";
 
-    public static final String BAL_JSON_SCHEMA_DATA_MODULE = "ballerina/data.jsondata";
+    public static final String BAL_REGEX_MODULE = "ballerina/lang.regexp";
+    public static final String BAL_JSON_DATA_MODULE = "ballerina/data.jsondata";
+
     public static final String ANNOTATION_MODULE = "jsondata";
     public static final String NUMBER_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "NumberValidation";
     public static final String STRING_ANNOTATION = AT + ANNOTATION_MODULE + COLON + "StringValidation";
@@ -115,19 +121,51 @@ public class GeneratorUtils {
     private static final String WHITESPACE_PATTERN = "\\s";
     private static final String SPECIAL_CHARS_PATTERN = "[!@$%^&*()_\\-|]";
 
-    public static String createType(String name, Schema schema, Object type, Generator generator) {
+    private static final String ITEM_SUFFIX = "Item";
+    private static final String NAME_REST_ITEM = "RestItem";
+
+    private static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
+            Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
+                    "idn-hostname", "ipv4", "ipv6", "json-pointer", "relative-json-pointer", "uri",
+                    "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
+    );
+
+    public static String createType(String name, Schema schema, Object type, Generator generator) throws Exception {
+        if (type == null) {
+            return NULL;
+        }
+        if (type == Boolean.class) {
+            return BOOLEAN;
+        }
         if (type == Long.class) {
             return createInteger(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
                     schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
         }
-        //TODO: Complete for other data types
+        if (type == Double.class) {
+            return createNumber(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
+                    schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
+        }
+        if (type == String.class) {
+            return createString(name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(),
+                    schema.getPattern(), generator);
+        }
+        if (type == ArrayList.class) {
+            return createArray(name, schema.getPrefixItems(), schema.getItems(), schema.getContains(),
+                    schema.getMinItems(), schema.getMaxItems(), schema.getUniqueItems(), schema.getMaxContains(),
+                    schema.getMinContains(), schema.getUnevaluatedItems(), generator);
+        }
+        if (type == Map.class) {
+            return createObject(name, schema.getAdditionalProperties(), schema.getProperties(),
+                    schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(),
+                    schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(),
+                    schema.getDependentRequired(), schema.getRequired(), generator);
+        }
         throw new RuntimeException("Type currently not supported");
     }
 
     public static String createInteger(String name, Double minimum, Double exclusiveMinimum, Double maximum,
                                        Double exclusiveMaximum, Double multipleOf, Generator generator) {
-        if (minimum == null && maximum == null && exclusiveMaximum == null &&
-                exclusiveMinimum == null && multipleOf == null) {
+        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
 
@@ -135,7 +173,7 @@ public class GeneratorUtils {
             return NEVER;
         }
 
-        generator.addImports(BAL_JSON_SCHEMA_DATA_MODULE);
+        generator.addImports(BAL_JSON_DATA_MODULE);
         String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
 
         List<String> annotationParts = new ArrayList<>();
@@ -152,6 +190,81 @@ public class GeneratorUtils {
         generator.nodes.put(finalType, moduleNode);
 
         return finalType;
+    }
+
+    public static String createNumber(String name, Double minimum, Double exclusiveMinimum, Double maximum,
+                                      Double exclusiveMaximum, Double multipleOf, Generator generator) {
+        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+            return NUMBER;
+        }
+
+        if (invalidLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
+            return NEVER;
+        }
+
+        generator.addImports(BAL_JSON_DATA_MODULE);
+        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
+
+        List<String> annotationParts = new ArrayList<>();
+
+        addIfNotNull(annotationParts, MINIMUM, minimum);
+        addIfNotNull(annotationParts, EXCLUSIVE_MINIMUM, exclusiveMinimum);
+        addIfNotNull(annotationParts, MAXIMUM, maximum);
+        addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
+        addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
+
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_ANNOTATION, finalType, NUMBER);
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
+        generator.nodes.put(finalType, moduleNode);
+
+        return finalType;
+    }
+
+    public static String createString(String name, String format, Long minLength, Long maxLength,
+                                      String pattern, Generator generator) {
+        if (isCustomTypeNotRequired(format, minLength, maxLength, pattern)) {
+            return STRING;
+        }
+
+        generator.addImports(BAL_JSON_DATA_MODULE);
+        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
+
+        List<String> annotationParts = new ArrayList<>();
+
+        if (format != null) {
+            if (!STRING_FORMATS.contains(format)) {
+                throw new IllegalArgumentException("Invalid format: " + format);
+            }
+            annotationParts.add(FORMAT + COLON + DOUBLE_QUOTATION + format + DOUBLE_QUOTATION);
+        }
+
+        addIfNotNull(annotationParts, MIN_LENGTH, minLength);
+        addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
+        addIfNotNull(annotationParts, PATTERN, REGEX_PREFIX + WHITE_SPACE + BACK_TICK + pattern + BACK_TICK);
+
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, STRING_ANNOTATION, finalType, STRING);
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
+        generator.nodes.put(finalType, moduleNode);
+
+        return finalType;
+    }
+
+    public static String createArray(String name, List<Object> prefixItems, Object items, Object contains,
+                                     Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains,
+                                     Long minContains, Object unevaluatedItems, Generator generator) throws Exception {
+        // TODO: Implement array type generation
+        return UNIVERSAL_ARRAY;
+    }
+
+    public static String createObject(String name, Object additionalProperties, Map<String, Object> properties,
+                                      Map<String, Object> patternProperties, Map<String, Object> dependentSchema,
+                                      Object propertyNames, Object unevaluatedProperties, Long maxProperties,
+                                      Long minProperties, Map<String, List<String>> dependentRequired,
+                                      List<String> required, Generator generator) {
+        // TODO: Implement object type generation
+        return UNIVERSAL_OBJECT;
     }
 
     private static void addIfNotNull(List<String> list, String key, Object value) {
@@ -176,12 +289,25 @@ public class GeneratorUtils {
 
     public static String resolveNameConflicts(String name, Generator generator) {
         String baseName = sanitizeName(name);
+        String resolvedName = baseName;
         int counter = 1;
-        while (generator.nodes.containsKey(name)) {
-            name = baseName + counter;
+
+        while (generator.nodes.containsKey(resolvedName)) {
+            StringBuilder sb = new StringBuilder(baseName);
+            sb.append(counter);
+            resolvedName = sb.toString();
             counter++;
         }
-        return name;
+        return resolvedName;
+    }
+
+    public static String resolveConstMapping(Generator generator) {
+        String name = "MAPPING_";
+        String resolvedName;
+        do {
+            resolvedName = name + generator.getNextConstIndex();
+        } while (generator.nodes.containsKey(resolvedName));
+        return resolvedName;
     }
 
     public static String convertToPascalCase(String name) {
@@ -203,5 +329,9 @@ public class GeneratorUtils {
             input = input.replaceAll(placeholder, UNDERSCORE);
         }
         return input;
+    }
+
+    private static boolean isCustomTypeNotRequired(Object... objects) {
+        return Arrays.stream(objects).allMatch(Objects::isNull);
     }
 }
