@@ -21,7 +21,6 @@ package io.ballerina.jsonschema.core;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -155,7 +154,7 @@ public class GeneratorUtils {
                     schema.getMinItems(), schema.getMaxItems(), schema.getUniqueItems(), schema.getMaxContains(),
                     schema.getMinContains(), schema.getUnevaluatedItems(), generator);
         }
-        if (type == AbstractMap.class) {
+        if (type == Map.class) {
             return createObject(name, schema.getAdditionalProperties(), schema.getProperties(),
                     schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(),
                     schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(),
@@ -302,12 +301,12 @@ public class GeneratorUtils {
         return resolvedName;
     }
 
-    public static String resolveNameConflictsWithSuffix(String name, int counter, Generator generator) {
+    public static String resolveConstMapping(Generator generator) {
+        String name = "MAPPING_";
         String resolvedName;
         do {
-            resolvedName = name + counter++;
+            resolvedName = name + generator.getNextCounter();
         } while (generator.nodes.containsKey(resolvedName));
-        generator.setConstCounter(counter);
         return resolvedName;
     }
 

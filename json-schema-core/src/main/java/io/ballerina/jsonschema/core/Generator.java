@@ -33,7 +33,6 @@ import org.ballerinalang.formatter.core.FormatterException;
 import org.ballerinalang.formatter.core.options.ForceFormattingOptions;
 import org.ballerinalang.formatter.core.options.FormattingOptions;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,7 +66,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_OBJECT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.IMPORT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.createType;
-import static io.ballerina.jsonschema.core.GeneratorUtils.resolveNameConflictsWithSuffix;
+import static io.ballerina.jsonschema.core.GeneratorUtils.resolveConstMapping;
 import static io.ballerina.jsonschema.core.SchemaUtils.ID_TO_TYPE_MAP;
 
 /**
@@ -84,10 +83,10 @@ public class Generator {
     private final ArrayList<String> imports = new ArrayList<>();
     private final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
-    private int constCounter = 1;
+    private int constCounter = 0;
 
-    public void setConstCounter(int newCount) {
-        this.constCounter = newCount;
+    public int getNextCounter() {
+        return ++this.constCounter;
     }
 
     private record BalTypes(List<Object> typeList, boolean types) {
@@ -192,12 +191,12 @@ public class Generator {
             }
             return OPEN_SQUARE_BRACKET + String.join(COMMA, result) + CLOSE_SQUARE_BRACKET;
         }
-        if (obj instanceof AbstractMap) {
-            String objName = resolveNameConflictsWithSuffix("MAPPING_", this.constCounter, this);
+        if (obj instanceof Map) {
+            String objName = resolveConstMapping(this);
             this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(""));
 
             List<String> result = new ArrayList<>();
-            for (Map.Entry<String, Object> entry : ((AbstractMap<String, Object>) obj).entrySet()) {
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) obj).entrySet()) {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 result.add("\"" + key + "\"" + ":" + generateStringRepresentation(value));
@@ -221,7 +220,7 @@ public class Generator {
             typeList.add(Boolean.class);
             typeList.add(String.class);
             typeList.add(ArrayList.class);
-            typeList.add(AbstractMap.class);
+            typeList.add(Map.class);
             typeList.add(null);
         } else {
             for (String element : type) {
@@ -249,9 +248,9 @@ public class Generator {
         for (Object element : enumKeyword) {
             Class<?> elementClass = (element == null) ? null : element.getClass();
 
-            // Change LinkedTreeMap class to AbstractMap
-            if (elementClass != null && AbstractMap.class.isAssignableFrom(elementClass)) {
-                elementClass = AbstractMap.class;
+            // Change LinkedTreeMap class to Map
+            if (elementClass != null && Map.class.isAssignableFrom(elementClass)) {
+                elementClass = Map.class;
             }
 
             if (typeList.contains(elementClass)) {
@@ -276,7 +275,7 @@ public class Generator {
             case "boolean" -> Boolean.class;
             case "string" -> String.class;
             case "array" -> ArrayList.class;
-            case "object" -> AbstractMap.class;
+            case "object" -> Map.class;
             case "null" -> null;
             default -> throw new RuntimeException("Unsupported type: " + type);
         };
@@ -298,7 +297,7 @@ public class Generator {
         if (type == ArrayList.class) {
             return "Array";
         }
-        if (type == AbstractMap.class) {
+        if (type == Map.class) {
             return "Object";
         }
         return "Null";
