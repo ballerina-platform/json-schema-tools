@@ -503,9 +503,14 @@ public class GeneratorUtils {
 
             String objectTypePrefix = convertToCamelCase(finalType);
 
+            int count = 0;
+
             for (Map.Entry<String, Object> entry : patternProperties.entrySet()) {
-                String elementName =
-                        resolveNameConflictsWithSuffix(objectTypePrefix + PATTERN_ELEMENT, generator);
+                String elementName;
+                do {
+                    elementName = objectTypePrefix + PATTERN_ELEMENT + count++;
+                } while (generator.nodes.containsKey(elementName));
+
                 String elementValue = resolveNameConflicts(elementName + "Type", generator);
 
                 String key = entry.getKey();
@@ -786,22 +791,6 @@ public class GeneratorUtils {
 
         while (generator.nodes.containsKey(resolvedName)) {
             StringBuilder sb = new StringBuilder(baseName);
-            sb.append(counter);
-            resolvedName = sb.toString();
-            counter++;
-        }
-        return resolvedName;
-    }
-
-    public static String resolveNameConflictsWithSuffix(String name, Generator generator) {
-        String baseName = sanitizeName(name);
-        StringBuilder sb = new StringBuilder(baseName);
-        sb.append(1);
-        String resolvedName = sb.toString();
-        int counter = 2;
-
-        while (generator.nodes.containsKey(resolvedName)) {
-            sb = new StringBuilder(baseName);
             sb.append(counter);
             resolvedName = sb.toString();
             counter++;
