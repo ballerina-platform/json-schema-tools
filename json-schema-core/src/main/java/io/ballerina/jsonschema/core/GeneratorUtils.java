@@ -508,15 +508,15 @@ public class GeneratorUtils {
             for (Map.Entry<String, Object> entry : patternProperties.entrySet()) {
                 String elementName;
                 do {
-                    elementName = objectTypePrefix + PATTERN_ELEMENT + count++;
+                    elementName = objectTypePrefix + PATTERN_ELEMENT + (++count);
                 } while (generator.nodes.containsKey(elementName));
-
-                String elementValue = resolveNameConflicts(elementName + "Type", generator);
 
                 String key = entry.getKey();
                 Object value = entry.getValue();
 
-                String generatedType = generator.convert(value, elementValue);
+                String typeName = elementName + "Type";
+                String generatedType = resolveTypeNameForTypedesc(typeName,
+                        generator.convert(value, resolveNameConflicts(typeName, generator)), generator);
 
                 String recordObject = String.format(PATTERN_FORMAT, PATTERN_RECORD, elementName, key, generatedType);
 
@@ -647,8 +647,11 @@ public class GeneratorUtils {
             fields.add(handleUnion(restType) + REST + SEMI_COLON);
         }
 
-        // Additional minProperties check
+        // Additional min/maxProperties check
         if (minProperties != null && (restType.equals(NEVER) && fields.size() < minProperties)) {
+            return NEVER;
+        }
+        if (maxProperties != null && required != null && required.size() > maxProperties) {
             return NEVER;
         }
 

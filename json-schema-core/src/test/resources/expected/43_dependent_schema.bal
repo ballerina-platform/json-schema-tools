@@ -5,13 +5,13 @@ public type Schema record {|
     json name?;
     int id;
     @jsondata:DependentSchema {
-        value: AgeDependentSchema1
+        value: AgeDependentSchema
     }
     int|float|decimal age?;
     int...;
 |};
 
-public type AgeDependentSchema1 record {|
+public type AgeDependentSchema record {|
     string name?;
     json...;
 |};

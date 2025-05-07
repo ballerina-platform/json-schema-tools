@@ -75,7 +75,14 @@ public class JsonSchemaGeneratorTest {
                 {"39_additional_properties.json", "39_additional_properties.bal"},
                 {"40_additional_properties.json", "40_additional_properties.bal"},
                 {"41_unevaluated_properties.json", "41_unevaluated_properties.bal"},
-                {"42_dependent_required.json", "42_dependent_required.bal"}
+                {"42_dependent_required.json", "42_dependent_required.bal"},
+                {"43_dependent_schema.json", "43_dependent_schema.bal"},
+                {"44_array_unevaluated_items.json", "44_array_unevaluated_items.bal"},
+                {"45_pattern_properties.json", "45_pattern_properties.bal"},
+                {"46_pattern_properties.json", "46_pattern_properties.bal"},
+                {"47_property_names.json", "47_property_names.bal"},
+                {"48_property_names.json", "48_property_names.bal"},
+                {"49_property_names.json", "49_property_names.bal"},
         };
     }
 
