@@ -18,7 +18,6 @@
 
 package io.ballerina.jsonschema.core;
 
-import com.google.gson.internal.LinkedTreeMap;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
 
@@ -28,9 +27,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.Objects;
 
 /**
  * Code Generator Utils for the Generator class.
@@ -356,7 +355,7 @@ public class GeneratorUtils {
             restItem = JSON;
         }
 
-        // TODO: Create sub-schemas before all of these early return types for schema reference implementation.
+        // TODO: Create sub-schemas before all the early return types for schema reference implementation.
 
         if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
             generator.nodes.remove(finalType);
@@ -505,7 +504,8 @@ public class GeneratorUtils {
             String objectTypePrefix = convertToCamelCase(finalType);
 
             for (Map.Entry<String, Object> entry : patternProperties.entrySet()) {
-                String elementName = resolveNameConflictsWithSuffix(objectTypePrefix + PATTERN_ELEMENT, generator);
+                String elementName =
+                        resolveNameConflictsWithSuffix(objectTypePrefix + PATTERN_ELEMENT, generator);
                 String elementValue = resolveNameConflicts(elementName + "Type", generator);
 
                 String key = entry.getKey();
@@ -786,6 +786,22 @@ public class GeneratorUtils {
 
         while (generator.nodes.containsKey(resolvedName)) {
             StringBuilder sb = new StringBuilder(baseName);
+            sb.append(counter);
+            resolvedName = sb.toString();
+            counter++;
+        }
+        return resolvedName;
+    }
+
+    public static String resolveNameConflictsWithSuffix(String name, Generator generator) {
+        String baseName = sanitizeName(name);
+        StringBuilder sb = new StringBuilder(baseName);
+        sb.append(1);
+        String resolvedName = sb.toString();
+        int counter = 2;
+
+        while (generator.nodes.containsKey(resolvedName)) {
+            sb = new StringBuilder(baseName);
             sb.append(counter);
             resolvedName = sb.toString();
             counter++;
