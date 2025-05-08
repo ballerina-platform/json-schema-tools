@@ -1,6 +1,6 @@
 public type Schema record {|
     string name;
-    string|int id;
+    int|string id;
     int|float|decimal age?;
-    (string|int)...;
+    (int|string)...;
 |};

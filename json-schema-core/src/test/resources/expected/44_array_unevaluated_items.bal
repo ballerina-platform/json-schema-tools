@@ -11,8 +11,8 @@ public type Schema [(int|float|decimal)...];
 }
 public type SchemaContainsNumber int|float|decimal;
 
-public type SchemaContains ()|boolean|string|record {|
+public type SchemaContains SchemaContainsNumber|boolean|string|[json...]|record {|
     json...;
-|}|[json...]|SchemaContainsNumber;
+|}|();
 
 public type SchemaUnevaluatedItems int|float|decimal;

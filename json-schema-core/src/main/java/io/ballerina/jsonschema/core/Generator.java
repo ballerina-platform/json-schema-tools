@@ -36,8 +36,8 @@ import org.ballerinalang.formatter.core.options.FormattingOptions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -134,7 +134,7 @@ public class Generator {
                 return typeName;
             }
 
-            Set<String> unionTypes = new HashSet<>();
+            Set<String> unionTypes = new LinkedHashSet<>();
 
             for (Object element : schemaType) {
                 String subtypeName = name + getBallerinaType(element);
@@ -212,7 +212,7 @@ public class Generator {
 
     private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
                                           List<String> type) {
-        Set<Class<?>> typeList = new HashSet<>();
+        Set<Class<?>> typeList = new LinkedHashSet<>();
 
         if (type == null || type.isEmpty()) {
             typeList.add(Long.class);
@@ -243,7 +243,7 @@ public class Generator {
             return new BalTypes(new ArrayList<>(), false);
         }
 
-        Set<Object> valueList = new HashSet<>();
+        Set<Object> valueList = new LinkedHashSet<>();
 
         for (Object element : enumKeyword) {
             Class<?> elementClass = (element == null) ? null : element.getClass();

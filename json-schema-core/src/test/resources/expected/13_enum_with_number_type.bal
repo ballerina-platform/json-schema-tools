@@ -1,1 +1,1 @@
-public type Schema 52|100|3.14|42;
+public type Schema 42|3.14|52|100;
