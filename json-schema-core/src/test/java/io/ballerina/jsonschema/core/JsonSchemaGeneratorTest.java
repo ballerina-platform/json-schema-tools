@@ -101,6 +101,7 @@ public class JsonSchemaGeneratorTest {
         Response result = generator.convertBaseSchema(schema);
         Assert.assertTrue(result.getDiagnostics().isEmpty(), "Diagnostics should be empty");
         String expectedValue = Files.readString(expected);
-        Assert.assertEquals(result.getTypes(), expectedValue, "Expected value should be " + expectedValue + " but got " + result.getTypes());
+        Assert.assertEquals(result.getTypes(), expectedValue, "Expected value should be " + expectedValue +
+                " but got " + result.getTypes());
     }
 }
