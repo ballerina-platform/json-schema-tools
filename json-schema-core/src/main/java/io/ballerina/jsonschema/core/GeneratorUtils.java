@@ -117,17 +117,17 @@ public class GeneratorUtils {
     public static final String MIN_PROPERTIES = "minProperties";
     public static final String PROPERTY_NAMES = "propertyNames";
 
-    private static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
-    private static final String DIGIT_PATTERN = ".*\\d.*";
-    private static final String STARTS_WITH_DIGIT_PATTERN = "^\\d.*";
-    private static final String SLASH_PATTERN = "[/\\\\]";
-    private static final String WHITESPACE_PATTERN = "\\s";
-    private static final String SPECIAL_CHARS_PATTERN = "[!@$%^&*()_\\-|]";
+    public static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
+    public static final String DIGIT_PATTERN = ".*\\d.*";
+    public static final String STARTS_WITH_DIGIT_PATTERN = "^\\d.*";
+    public static final String SLASH_PATTERN = "[/\\\\]";
+    public static final String WHITESPACE_PATTERN = "\\s";
+    public static final String SPECIAL_CHARS_PATTERN = "[!@$%^&*()_\\-|]";
 
-    private static final String ITEM_SUFFIX = "Item";
-    private static final String NAME_REST_ITEM = "RestItem";
-    private static final String REST_TYPE = "RestType";
-    private static final String ADDITIONAL_PROPS = "AdditionalProperties";
+    public static final String ITEM_SUFFIX = "Item";
+    public static final String NAME_REST_ITEM = "RestItem";
+    public static final String REST_TYPE = "RestType";
+    public static final String ADDITIONAL_PROPS = "AdditionalProperties";
     public static final String DEPENDENT_SCHEMA = "DependentSchema";
     public static final String DEPENDENT_REQUIRED = "DependentRequired";
     public static final String UNEVALUATED_PROPS = "UnevaluatedProperties";
@@ -624,7 +624,7 @@ public class GeneratorUtils {
                             resolveNameConflicts(convertToPascalCase(key) + DEPENDENT_SCHEMA, generator);
                     String dependentSchemaType = generator.convert(value, schemaName);
 
-                    if (!dependentSchemaType.equals(schemaName) && !isTypeBalPrimitive(dependentSchemaType)) {
+                    if (!dependentSchemaType.equals(schemaName) && !isPrimitiveBalType(dependentSchemaType)) {
                         dependentSchemaType = resolveTypeNameForTypedesc(schemaName, dependentSchemaType, generator);
                     }
 
@@ -779,7 +779,7 @@ public class GeneratorUtils {
         return type;
     }
 
-    private static boolean isTypeBalPrimitive(String type) {
+    private static boolean isPrimitiveBalType(String type) {
         return BAL_PRIMITIVE_TYPES.contains(type);
     }
 
