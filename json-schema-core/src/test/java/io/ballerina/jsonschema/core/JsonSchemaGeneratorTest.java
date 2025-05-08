@@ -83,6 +83,9 @@ public class JsonSchemaGeneratorTest {
                 {"47_property_names.json", "47_property_names.bal"},
                 {"48_property_names.json", "48_property_names.bal"},
                 {"49_property_names.json", "49_property_names.bal"},
+                {"50_min_max_properties.json", "50_min_max_properties.bal"},
+                {"51_min_max_properties.json", "51_min_max_properties.bal"},
+                {"52_default_value.json", "52_default_value.bal"},
         };
     }
 

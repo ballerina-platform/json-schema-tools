@@ -141,11 +141,11 @@ public class GeneratorUtils {
                     "idn-hostname", "ipv4", "ipv6", "json-pointer", "relative-json-pointer", "uri",
                     "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
     );
-    private static final ArrayList<String> BAL_PRIMITIVE_TYPES = new ArrayList<>(
-            Arrays.asList(INTEGER, STRING, BOOLEAN, NEVER, NULL, JSON)
+    private static final List<String> BAL_PRIMITIVE_TYPES = new ArrayList<>(
+            Arrays.asList(INTEGER, BOOLEAN, NULL,  NEVER, JSON, STRING)
     );
 
-    // The Union concatenated no. of Tuples will be denoted by annotations beyond this limit
+    // The Union concatenated number of Tuples will be denoted by annotations beyond this limit
     private static final int ARRAY_ANNOTATION_SIZE_LIMIT = 5;
     // The Tuple size will be denoted by annotations beyond this limit
     private static final int ARRAY_ANNOTATION_MIN_LIMIT = 10;
@@ -156,12 +156,14 @@ public class GeneratorUtils {
 
         private List<String> dependentRequired;
         private String dependentSchema;
+        private String defaultValue;
 
         public RecordField(String type, boolean required) {
             this.type = type;
             this.required = required;
             this.dependentRequired = new ArrayList<>();
             this.dependentSchema = null;
+            this.defaultValue = null;
         }
 
         public String getType() {
@@ -198,6 +200,14 @@ public class GeneratorUtils {
 
         public void addDependentRequired(String dependentRequired) {
             this.dependentRequired.add(dependentRequired);
+        }
+
+        public void setDefaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
+        public String getDefaultValue() {
+            return defaultValue;
         }
     }
 
@@ -345,14 +355,12 @@ public class GeneratorUtils {
         long endPosition = (maxItems == null) ? Long.MAX_VALUE : maxItems;
         long annotationLimit = startPosition + ARRAY_ANNOTATION_SIZE_LIMIT;
 
-        String restItem = "";
+        String restItem = JSON;
         if (items != null) {
             restItem = generator.convert(items, finalType + NAME_REST_ITEM);
             if (restItem.contains(PIPE)) {
                 restItem = OPEN_BRACKET + restItem + CLOSE_BRACKET;
             }
-        } else {
-            restItem = JSON;
         }
 
         // TODO: Create sub-schemas before all the early return types for schema reference implementation.
@@ -486,7 +494,11 @@ public class GeneratorUtils {
             properties.forEach((key, value) -> {
                 String fieldName = resolveNameConflicts(key, generator);
                 try {
-                    recordFields.put(key, new RecordField(generator.convert(value, fieldName), false));
+                    RecordField recordField = new RecordField(generator.convert(value, fieldName), false);
+                    recordFields.put(key, recordField);
+                    if (value instanceof Schema schema && schema.getDefaultKeyword() != null) {
+                        recordField.setDefaultValue(generator.generateStringRepresentation(schema.getDefaultKeyword()));
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -730,7 +742,12 @@ public class GeneratorUtils {
             }
 
             if (value.isRequired()) {
-                fieldAnnotation.add(value.getType() + WHITE_SPACE + key);
+                if (value.getDefaultValue() != null) {
+                    fieldAnnotation.add(String.join(WHITE_SPACE, value.getType(), key, EQUAL,
+                            value.getDefaultValue()));
+                } else {
+                    fieldAnnotation.add(value.getType() + WHITE_SPACE + key);
+                }
             } else {
                 fieldAnnotation.add(value.getType() + WHITE_SPACE + key + QUESTION_MARK);
             }
