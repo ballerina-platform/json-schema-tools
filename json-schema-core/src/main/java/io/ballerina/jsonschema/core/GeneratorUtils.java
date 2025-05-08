@@ -363,7 +363,7 @@ public class GeneratorUtils {
             }
         }
 
-        // TODO: Create sub-schemas before all the early return types for schema reference implementation.
+        //TODO: Create sub-schemas before all the early return types for schema reference implementation.
 
         if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
             generator.nodes.remove(finalType);
