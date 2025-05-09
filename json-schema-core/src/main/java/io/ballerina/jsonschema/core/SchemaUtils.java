@@ -159,6 +159,136 @@ public class SchemaUtils {
         }
     }
 
+    public static void convertToAbsoluteUri(Object schemaObject, URI baseUri) {
+        if (!(schemaObject instanceof Schema schema)) {
+            return;
+        }
+
+        // Resolving $ref and $dynamicRef
+        if (schema.getRefKeyword() != null) {
+            URI uri = URI.create(schema.getRefKeyword());
+            schema.setRefKeyword(baseUri.resolve(uri).toString());
+        }
+        if (schema.getDynamicRefKeyword() != null) {
+            URI uri = URI.create(schema.getDynamicRefKeyword());
+            schema.setDynamicRefKeyword(baseUri.resolve(uri).toString());
+        }
+
+        // Change the base URI for the sub schemas
+        if (schema.getIdKeyword() != null) {
+            baseUri = URI.create(schema.getIdKeyword());
+        }
+
+        // prefixItems
+        if (schema.getPrefixItems() != null) {
+            for (Object obj : schema.getPrefixItems()) {
+                convertToAbsoluteUri(obj, baseUri);
+            }
+        }
+
+        // items
+        if (schema.getItems() != null) {
+            convertToAbsoluteUri(schema.getItems(), baseUri);
+        }
+
+        // contains
+        if (schema.getContains() != null) {
+            convertToAbsoluteUri(schema.getContains(), baseUri);
+        }
+
+        // additionalProperties
+        if (schema.getAdditionalProperties() != null) {
+            convertToAbsoluteUri(schema.getAdditionalProperties(), baseUri);
+        }
+
+        // properties
+        if (schema.getProperties() != null) {
+            for (Map.Entry<String, Object> entry : schema.getProperties().entrySet()) {
+                convertToAbsoluteUri(entry.getValue(), baseUri);
+            }
+        }
+
+        // patternProperties
+        if (schema.getPatternProperties() != null) {
+            for (Map.Entry<String, Object> entry : schema.getPatternProperties().entrySet()) {
+                convertToAbsoluteUri(entry.getValue(), baseUri);
+            }
+        }
+
+        // dependentSchema
+        if (schema.getDependentSchema() != null) {
+            convertToAbsoluteUri(schema.getDependentSchema(), baseUri);
+        }
+
+        // propertyNames
+        if (schema.getPropertyNames() != null) {
+            convertToAbsoluteUri(schema.getPropertyNames(), baseUri);
+        }
+
+        // if
+        if (schema.getIfKeyword() != null) {
+            convertToAbsoluteUri(schema.getIfKeyword(), baseUri);
+        }
+
+        // then
+        if (schema.getThen() != null) {
+            convertToAbsoluteUri(schema.getThen(), baseUri);
+        }
+
+        // else
+        if (schema.getElseKeyword() != null) {
+            convertToAbsoluteUri(schema.getElseKeyword(), baseUri);
+        }
+
+        // allOf
+        if (schema.getAllOf() != null) {
+            for (Object obj : schema.getAllOf()) {
+                convertToAbsoluteUri(obj, baseUri);
+            }
+        }
+
+        // anyOf
+        if (schema.getAnyOf() != null) {
+            for (Object obj : schema.getAnyOf()) {
+                convertToAbsoluteUri(obj, baseUri);
+            }
+        }
+
+        // oneOf
+        if (schema.getOneOf() != null) {
+            for (Object obj : schema.getOneOf()) {
+                convertToAbsoluteUri(obj, baseUri);
+            }
+        }
+
+        // not
+        if (schema.getNot() != null) {
+            convertToAbsoluteUri(schema.getNot(), baseUri);
+        }
+
+        // content
+        if (schema.getContent() != null) {
+            convertToAbsoluteUri(schema.getContent(), baseUri);
+        }
+
+        // $defs
+        if (schema.getDefsKeyword() != null) {
+            for (Map.Entry<String, Object> entry : schema.getDefsKeyword().entrySet()) {
+                convertToAbsoluteUri(entry.getValue(), baseUri);
+            }
+        }
+
+        // unevaluatedItems
+        if (schema.getUnevaluatedItems() != null) {
+            convertToAbsoluteUri(schema.getUnevaluatedItems(), baseUri);
+        }
+
+        // unevaluatedProperties
+        if (schema.getUnevaluatedProperties() != null) {
+            convertToAbsoluteUri(schema.getUnevaluatedProperties(), baseUri);
+        }
+    }
+
     public static Object parseJsonSchema(String jsonString) throws Exception {
         Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
         jsonString = jsonString.trim();

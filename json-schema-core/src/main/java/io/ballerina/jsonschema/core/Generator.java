@@ -134,6 +134,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.processRequiredFields;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveConstMapping;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveNameConflicts;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveTypeNameForTypedesc;
+import static io.ballerina.jsonschema.core.SchemaUtils.convertToAbsoluteUri;
 import static io.ballerina.jsonschema.core.SchemaUtils.fetchSchemaId;
 
 /**
@@ -165,7 +166,7 @@ public class Generator {
     }
 
     public Response convertBaseSchema(ArrayList<Object> schemaObjectList) throws Exception {
-        // This doesn't fetch the schema id if there is only one file or if the first file is a boolean
+        //! This doesn't fetch the schema id if there is only one file or if the first file is a boolean
         if ((schemaObjectList.size() > 1) && (schemaObjectList.getFirst() instanceof Schema schema)) {
             for (Object schemaObject : schemaObjectList) {
                 if (schemaObject instanceof Boolean) {
@@ -174,12 +175,16 @@ public class Generator {
                 if (schema.getIdKeyword() == null) {
                     throw new Exception("All the schemas must have an id if there are multiple schema files.");
                 }
-                fetchSchemaId((Schema) schemaObject, this.idToSchemaMap);
+                fetchSchemaId(schemaObject, this.idToSchemaMap);
                 //! Add all schemas and sub schemas mapped to their id's.
                 // Don't need to always have an id, as that exception is handled in the upper part.
             }
         } else if (schemaObjectList.getFirst() instanceof Schema schema && schema.getIdKeyword() != null) {
             fetchSchemaId(schema, this.idToSchemaMap);
+        }
+
+        for (Object schemaObject : schemaObjectList) {
+            convertToAbsoluteUri(schemaObject, URI.create("dummy:/"));
         }
 
         // Generate the ballerina code based on the first element.
