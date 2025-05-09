@@ -1,1 +1,1 @@
-public type Schema "world"|"hello";
+public type Schema "hello"|"world";
