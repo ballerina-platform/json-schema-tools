@@ -20,15 +20,13 @@ package io.ballerina.jsonschema.core;
 
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.NodeParser;
+import io.ballerina.jsonschema.core.diagnostic.JsonSchemaDiagnostic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -136,21 +134,16 @@ public class GeneratorUtils {
     public static final String UNEVALUATED_ITEMS_SUFFIX = "UnevaluatedItems";
     public static final String PROPERTY_NAMES_SUFFIX = "PropertyNames";
 
-    private static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
+    static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
                     "idn-hostname", "ipv4", "ipv6", "json-pointer", "relative-json-pointer", "uri",
                     "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
     );
-    private static final List<String> BAL_PRIMITIVE_TYPES = new ArrayList<>(
+    static final List<String> BAL_PRIMITIVE_TYPES = new ArrayList<>(
             Arrays.asList(INTEGER, BOOLEAN, NULL, NEVER, JSON, STRING)
     );
 
-    // The Union concatenated number of Tuples will be denoted by annotations beyond this limit
-    private static final int ARRAY_ANNOTATION_SIZE_LIMIT = 5;
-    // The Tuple size will be denoted by annotations beyond this limit
-    private static final int ARRAY_ANNOTATION_MIN_LIMIT = 10;
-
-    private static class RecordField {
+    static class RecordField {
         private String type;
         private boolean required;
 
@@ -158,7 +151,7 @@ public class GeneratorUtils {
         private String dependentSchema;
         private String defaultValue;
 
-        public RecordField(String type, boolean required) {
+        RecordField(String type, boolean required) {
             this.type = type;
             this.required = required;
             this.dependentRequired = new ArrayList<>();
@@ -178,8 +171,8 @@ public class GeneratorUtils {
             return required;
         }
 
-        void setRequired(boolean required) {
-            this.required = required;
+        void setRequired() {
+            this.required = true;
         }
 
         String getDependentSchema() {
@@ -211,476 +204,7 @@ public class GeneratorUtils {
         }
     }
 
-    public static String createType(String name, Schema schema, Object type, Generator generator) throws Exception {
-        if (type == null) {
-            return NULL;
-        }
-        if (type == Boolean.class) {
-            return BOOLEAN;
-        }
-        if (type == Long.class) {
-            return createInteger(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
-                    schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
-        }
-        if (type == Double.class) {
-            return createNumber(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
-                    schema.getExclusiveMaximum(), schema.getMultipleOf(), generator);
-        }
-        if (type == String.class) {
-            return createString(name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(),
-                    schema.getPattern(), generator);
-        }
-        if (type == ArrayList.class) {
-            return createArray(name, schema.getPrefixItems(), schema.getItems(), schema.getContains(),
-                    schema.getMinItems(), schema.getMaxItems(), schema.getUniqueItems(), schema.getMaxContains(),
-                    schema.getMinContains(), schema.getUnevaluatedItems(), generator);
-        }
-        if (type == Map.class) {
-            return createObject(name, schema.getAdditionalProperties(), schema.getProperties(),
-                    schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(),
-                    schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(),
-                    schema.getDependentRequired(), schema.getRequired(), generator);
-        }
-        throw new RuntimeException("Type currently not supported");
-    }
-
-    public static String createInteger(String name, Double minimum, Double exclusiveMinimum, Double maximum,
-                                       Double exclusiveMaximum, Double multipleOf, Generator generator) {
-        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
-            return INTEGER;
-        }
-
-        if (isNumberLimitInvalid(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
-            return NEVER;
-        }
-
-        generator.addImports(BAL_JSON_DATA_MODULE);
-        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
-
-        List<String> annotationParts = new ArrayList<>();
-
-        addIfNotNull(annotationParts, MINIMUM, minimum);
-        addIfNotNull(annotationParts, EXCLUSIVE_MINIMUM, exclusiveMinimum);
-        addIfNotNull(annotationParts, MAXIMUM, maximum);
-        addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
-        addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
-
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_CONSTRAINTS, finalType, INTEGER);
-
-        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        generator.nodes.put(finalType, moduleNode);
-
-        return finalType;
-    }
-
-    public static String createNumber(String name, Double minimum, Double exclusiveMinimum, Double maximum,
-                                      Double exclusiveMaximum, Double multipleOf, Generator generator) {
-        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
-            return NUMBER;
-        }
-
-        if (isNumberLimitInvalid(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
-            return NEVER;
-        }
-
-        generator.addImports(BAL_JSON_DATA_MODULE);
-        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
-
-        List<String> annotationParts = new ArrayList<>();
-
-        addIfNotNull(annotationParts, MINIMUM, minimum);
-        addIfNotNull(annotationParts, EXCLUSIVE_MINIMUM, exclusiveMinimum);
-        addIfNotNull(annotationParts, MAXIMUM, maximum);
-        addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
-        addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
-
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_CONSTRAINTS, finalType, NUMBER);
-
-        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        generator.nodes.put(finalType, moduleNode);
-
-        return finalType;
-    }
-
-    public static String createString(String name, String format, Long minLength, Long maxLength,
-                                      String pattern, Generator generator) {
-        if (isCustomTypeNotRequired(format, minLength, maxLength, pattern)) {
-            return STRING;
-        }
-
-        generator.addImports(BAL_JSON_DATA_MODULE);
-        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
-
-        List<String> annotationParts = new ArrayList<>();
-
-        if (format != null) {
-            if (!STRING_FORMATS.contains(format)) {
-                throw new IllegalArgumentException("Invalid format: " + format);
-            }
-            annotationParts.add(FORMAT + COLON + DOUBLE_QUOTATION + format + DOUBLE_QUOTATION);
-        }
-
-        addIfNotNull(annotationParts, MIN_LENGTH, minLength);
-        addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
-
-        if (pattern != null) {
-            annotationParts.add(PATTERN + COLON + REGEX_PREFIX + BACK_TICK + pattern + BACK_TICK);
-        }
-
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, STRING_CONSTRAINTS, finalType, STRING);
-
-        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        generator.nodes.put(finalType, moduleNode);
-
-        return finalType;
-    }
-
-    public static String createArray(String name, List<Object> prefixItems, Object items, Object contains,
-                                     Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains,
-                                     Long minContains, Object unevaluatedItems, Generator generator) throws Exception {
-        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
-        generator.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
-
-        ArrayList<String> arrayItems = new ArrayList<>();
-
-        if (prefixItems != null) {
-            for (int i = 0; i < prefixItems.size(); i++) {
-                Object item = prefixItems.get(i);
-                arrayItems.add(generator.convert(item, finalType + ITEM_SUFFIX + i));
-            }
-        }
-
-        long startPosition = minItems == null ? 0L : minItems;
-        long endPosition = maxItems == null ? Long.MAX_VALUE : maxItems;
-        long annotationLimit = startPosition + ARRAY_ANNOTATION_SIZE_LIMIT;
-
-        String restItem = JSON;
-        if (items != null) {
-            restItem = generator.convert(items, finalType + NAME_REST_ITEM);
-            if (restItem.contains(PIPE)) {
-                restItem = OPEN_BRACKET + restItem + CLOSE_BRACKET;
-            }
-        }
-
-        //TODO: Create sub-schemas before all the early return types for schema reference implementation.
-
-        if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
-            generator.nodes.remove(finalType);
-            return NEVER;
-        }
-
-        // Determine the rest item type
-        if (!restItem.equals(NEVER)) {
-            if (arrayItems.size() < startPosition) {
-                if (startPosition < ARRAY_ANNOTATION_MIN_LIMIT) {
-                    for (int i = arrayItems.size(); i < startPosition; i++) {
-                        arrayItems.add(restItem);
-                    }
-                    // Avoids further annotations on minItems
-                    minItems = null;
-                } else {
-                    // Accommodates the startPosition including the rest item type
-                    startPosition = arrayItems.size() + 1;
-                }
-            }
-            if (endPosition < annotationLimit) {
-                for (int i = arrayItems.size(); i < endPosition; i++) {
-                    arrayItems.add(restItem);
-                }
-                // Avoids further annotations on maxItems
-                maxItems = null;
-            } else {
-                arrayItems.add(restItem + REST);
-            }
-        }
-
-        ArrayList<String> tupleList = new ArrayList<>();
-
-        long upperBound = Math.min(Math.min(annotationLimit, endPosition), arrayItems.size());
-        for (int i = (int) startPosition; i <= upperBound; i++) {
-            tupleList.add(OPEN_SQUARE_BRACKET + String.join(COMMA, arrayItems.subList(0, i)) + CLOSE_SQUARE_BRACKET);
-        }
-
-        // Replace [] with json[0] if present.
-        if (tupleList.getFirst().equals(OPEN_SQUARE_BRACKET + CLOSE_SQUARE_BRACKET)) {
-            tupleList.set(0, EMPTY_ARRAY);
-        }
-
-        // If the last item is a rest item, the previous array element is redundant.
-        if (tupleList.getLast().contains(REST) && tupleList.size() >= 2) {
-            tupleList.remove(tupleList.size() - 2);
-        }
-
-        if ((minItems == null) && (maxItems == null) && (uniqueItems == null) && (contains == null)) {
-            generator.nodes.remove(finalType);
-            return String.join(PIPE, tupleList);
-        }
-
-        generator.addImports(BAL_JSON_DATA_MODULE);
-        List<String> annotationParts = new ArrayList<>();
-
-        addIfNotNull(annotationParts, MIN_ITEMS, minItems);
-        addIfNotNull(annotationParts, MAX_ITEMS, maxItems);
-        addIfNotNull(annotationParts, UNIQUE_ITEMS, uniqueItems);
-
-        if (contains != null) {
-            String containsRecordName = resolveNameConflicts(finalType +
-                    convertToPascalCase(CONTAINS), generator);
-            String newType = generator.convert(contains, containsRecordName);
-
-            if (newType.contains(PIPE)) {
-                // Ballerina typedesc doesn't allow union types. Hence, we need to create a new type definition
-                String typeDef = String.format(TYPE_FORMAT, containsRecordName, newType);
-                ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDef);
-                generator.nodes.put(containsRecordName, moduleNode);
-                newType = containsRecordName;
-            }
-
-            List<String> containsAnnotationParts = new ArrayList<>();
-
-            containsAnnotationParts.add(CONTAINS + COLON + WHITE_SPACE + newType);
-            if (minContains == null) {
-                containsAnnotationParts.add(MIN_CONTAINS + COLON + WHITE_SPACE + ZERO);
-            } else {
-                containsAnnotationParts.add(MIN_CONTAINS + COLON + WHITE_SPACE + minContains);
-            }
-
-            addIfNotNull(containsAnnotationParts, MAX_CONTAINS, maxContains);
-
-            String combined = String.join(COMMA, containsAnnotationParts);
-            annotationParts.add(CONTAINS + COLON + WHITE_SPACE + OPEN_BRACES + combined + CLOSE_BRACES);
-        }
-
-        if (unevaluatedItems != null) {
-            String customTypeName = finalType + UNEVALUATED_ITEMS_SUFFIX;
-            String typeName = generator.convert(unevaluatedItems, customTypeName);
-            annotationParts.add(UNEVALUATED_ITEMS + COLON + WHITE_SPACE +
-                    resolveTypeNameForTypedesc(customTypeName, typeName, generator));
-        }
-
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_CONSTRAINTS, finalType,
-                String.join(PIPE, tupleList));
-
-        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        generator.nodes.put(finalType, moduleNode);
-
-        return finalType;
-    }
-
-    public static String createObject(String name, Object additionalProperties, Map<String, Object> properties,
-                                      Map<String, Object> patternProperties, Map<String, Object> dependentSchema,
-                                      Object propertyNames, Object unevaluatedProperties, Long maxProperties,
-                                      Long minProperties, Map<String, List<String>> dependentRequired,
-                                      List<String> required, Generator generator) throws Exception {
-        if (Boolean.FALSE.equals(propertyNames)) {
-            return EMPTY_RECORD;
-        }
-
-        if (isCustomTypeNotRequired(additionalProperties, properties, patternProperties, dependentSchema, propertyNames,
-                unevaluatedProperties, maxProperties, minProperties, dependentRequired, required)) {
-            return UNIVERSAL_OBJECT;
-        }
-
-        if (maxProperties != null && minProperties != null && maxProperties < minProperties) {
-            return NEVER;
-        }
-
-        String finalType = resolveNameConflicts(convertToPascalCase(name), generator);
-        generator.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
-
-        List<String> objectAnnotations = new ArrayList<>();
-
-        Map<String, RecordField> recordFields = new HashMap<>();
-        if (properties != null) {
-            properties.forEach((key, value) -> {
-                String fieldName = resolveNameConflicts(key, generator);
-                try {
-                    RecordField recordField = new RecordField(generator.convert(value, fieldName), false);
-                    recordFields.put(key, recordField);
-                    if (value instanceof Schema schema && schema.getDefaultKeyword() != null) {
-                        recordField.setDefaultValue(generator.generateStringRepresentation(schema.getDefaultKeyword()));
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
-        String restType = getRecordRestType(finalType, additionalProperties, unevaluatedProperties, generator);
-
-        if (patternProperties != null && !patternProperties.isEmpty()) {
-            generator.addImports(BAL_JSON_DATA_MODULE);
-
-            List<String> propertyPatternTypes = new ArrayList<>();
-            Set<String> patternTypes = new HashSet<>();
-
-            String objectTypePrefix = convertToCamelCase(finalType);
-
-            int count = 0;
-
-            for (Map.Entry<String, Object> entry : patternProperties.entrySet()) {
-                String elementName;
-                do {
-                    elementName = objectTypePrefix + PATTERN_ELEMENT + (++count);
-                } while (generator.nodes.containsKey(elementName));
-
-                String key = entry.getKey();
-                Object value = entry.getValue();
-
-                String typeName = elementName + "Type";
-                String generatedType = resolveTypeNameForTypedesc(typeName,
-                        generator.convert(value, resolveNameConflicts(typeName, generator)), generator);
-
-                String recordObject = String.format(PATTERN_FORMAT, PATTERN_RECORD, elementName, key, generatedType);
-
-                ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(recordObject);
-                generator.nodes.put(elementName, moduleNode);
-
-                propertyPatternTypes.add(elementName);
-                patternTypes.add(generatedType);
-            }
-
-            String resolvedRestType = resolveTypeNameForTypedesc(REST_TYPE, restType, generator);
-
-            String restTypeAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, ADDITIONAL_PROPS,
-                    VALUE + COLON + resolvedRestType);
-            objectAnnotations.add(restTypeAnnotation);
-
-            String patternElementsArray =
-                    OPEN_SQUARE_BRACKET + String.join(COMMA, propertyPatternTypes) + CLOSE_SQUARE_BRACKET;
-            String patternAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, PATTERN_PROPERTIES,
-                    VALUE + COLON + patternElementsArray);
-            objectAnnotations.add(patternAnnotation);
-
-            // Handle repeating data types.
-            for (String type : restType.split("\\|")) {
-                patternTypes.add(type.trim());
-            }
-            if (patternTypes.contains(JSON)) {
-                patternTypes.clear();
-                patternTypes.add(JSON);
-            }
-            if (patternTypes.contains(NEVER) && patternTypes.size() > 1) {
-                patternTypes.remove(NEVER);
-            }
-
-            restType = String.join(PIPE, patternTypes);
-        }
-
-        if (maxProperties != null || minProperties != null || propertyNames != null) {
-            generator.addImports(BAL_JSON_DATA_MODULE);
-            List<String> objectProperties = new ArrayList<>();
-
-            addIfNotNull(objectProperties, MIN_PROPERTIES, minProperties);
-            addIfNotNull(objectProperties, MAX_PROPERTIES, maxProperties);
-
-            if (propertyNames != null) {
-                if (propertyNames instanceof Schema propertyNamesSchema) {
-                    propertyNamesSchema.setType(new ArrayList<>(List.of("string")));
-                    objectProperties.add(PROPERTY_NAMES + ": " +
-                            generator.convert(propertyNamesSchema, finalType + PROPERTY_NAMES_SUFFIX));
-                } else {
-                    objectProperties.add(PROPERTY_NAMES + ": " + STRING);
-                }
-            }
-
-            String minMaxAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, OBJECT_CONSTRAINTS,
-                    String.join(", ", objectProperties));
-            objectAnnotations.add(minMaxAnnotation);
-        }
-
-        if (restType.equals(NEVER) && required != null) {
-            try {
-                required.forEach((key) -> {
-                    if (!recordFields.containsKey(key)) {
-                        throw new IllegalStateException("Required field " + key + " is missing.");
-                    }
-                });
-            } catch (IllegalStateException e) {
-                return NEVER;
-            }
-        }
-
-        // Add field names that are present in the required array and are not present in the properties' keyword.
-        if (required != null) {
-            String finalRestType = restType;
-            required.forEach((key) -> {
-                if (!recordFields.containsKey(key)) {
-                    recordFields.put(key, new RecordField(finalRestType, true));
-                } else {
-                    recordFields.get(key).setRequired(true);
-                }
-            });
-        }
-
-        // Add dependent schema fields that are not specified in the properties' keyword.
-        if ((dependentSchema != null) && (!restType.equals(NEVER))) {
-            String finalRestType = restType;
-            dependentSchema.forEach((key, value) -> {
-                if (!recordFields.containsKey(key)) {
-                    recordFields.put(key, new RecordField(finalRestType, false));
-                }
-                try {
-                    String schemaName =
-                            resolveNameConflicts(convertToPascalCase(key) + DEPENDENT_SCHEMA, generator);
-                    String dependentSchemaType = generator.convert(value, schemaName);
-
-                    if (!dependentSchemaType.equals(schemaName) && !isPrimitiveBalType(dependentSchemaType)) {
-                        dependentSchemaType = resolveTypeNameForTypedesc(schemaName, dependentSchemaType, generator);
-                    }
-
-                    recordFields.get(key).setDependentSchema(dependentSchemaType);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
-        if (dependentRequired != null) {
-            String finalRestType = restType;
-            dependentRequired.forEach((key, value) -> {
-                if (!recordFields.containsKey(key)) {
-                    recordFields.put(key, new RecordField(finalRestType, false));
-                }
-
-                value.forEach((dependentKey) -> {
-                    recordFields.get(key).addDependentRequired(dependentKey);
-
-                    if (!recordFields.containsKey(dependentKey)) {
-                        recordFields.put(dependentKey, new RecordField(finalRestType, false));
-                    }
-                });
-            });
-            processRequiredFields(recordFields);
-        }
-
-        ArrayList<String> fields = processRecordFields(recordFields, generator);
-
-        if (!restType.equals(NEVER)) {
-            fields.add(handleUnion(restType) + REST + SEMI_COLON);
-        }
-
-        // Additional min/maxProperties check
-        if (minProperties != null && (restType.equals(NEVER) && fields.size() < minProperties)) {
-            return NEVER;
-        }
-        if (maxProperties != null && required != null && required.size() > maxProperties) {
-            return NEVER;
-        }
-
-        String record = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + finalType + WHITE_SPACE +
-                RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) + PIPE + CLOSE_BRACES + SEMI_COLON;
-
-        if (!objectAnnotations.isEmpty()) {
-            record = String.join(NEW_LINE, objectAnnotations) + NEW_LINE + record;
-        }
-
-        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(record);
-        generator.nodes.put(finalType, moduleNode);
-        return finalType;
-    }
-
-    private static void processRequiredFields(Map<String, RecordField> recordFields) {
+    static void processRequiredFields(Map<String, RecordField> recordFields) {
         boolean changeFlag = true;
         while (changeFlag) {
             changeFlag = false;
@@ -696,7 +220,7 @@ public class GeneratorUtils {
                 // If there are dependentRequired items iterate through them
                 for (String dependentRequired : value.getDependentRequired()) {
                     if (!recordFields.get(dependentRequired).isRequired()) {
-                        recordFields.get(dependentRequired).setRequired(true);
+                        recordFields.get(dependentRequired).setRequired();
                         changeFlag = true;
                     }
                 }
@@ -705,7 +229,7 @@ public class GeneratorUtils {
     }
 
     // Create a new type with the union of typedesc and return the new type name.
-    private static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
+    static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
         if (!typeName.contains(PIPE)) {
             return typeName;
         }
@@ -717,7 +241,7 @@ public class GeneratorUtils {
         return newType;
     }
 
-    private static ArrayList<String> processRecordFields(Map<String, RecordField> recordFields, Generator generator) {
+    static ArrayList<String> processRecordFields(Map<String, RecordField> recordFields, Generator generator) {
         ArrayList<String> recordBody = new ArrayList<>();
 
         for (Map.Entry<String, RecordField> entry : recordFields.entrySet()) {
@@ -727,15 +251,15 @@ public class GeneratorUtils {
             ArrayList<String> fieldAnnotation = new ArrayList<>();
 
             if (value.getDependentSchema() != null) {
-                generator.addImports(BAL_JSON_DATA_MODULE);
+                addImports(BAL_JSON_DATA_MODULE, generator);
                 String dependentSchema = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE, DEPENDENT_SCHEMA,
                         value.getDependentSchema());
-                generator.addImports(BAL_JSON_DATA_MODULE);
+                addImports(BAL_JSON_DATA_MODULE, generator);
                 fieldAnnotation.add(dependentSchema);
             }
 
             if (value.getDependentRequired() != null && !value.getDependentRequired().isEmpty()) {
-                generator.addImports(BAL_JSON_DATA_MODULE);
+                addImports(BAL_JSON_DATA_MODULE, generator);
                 String dependentArray = value.getDependentRequired().stream()
                         .map(name -> DOUBLE_QUOTATION + name + DOUBLE_QUOTATION)
                         .collect(Collectors.joining(", ", "[", "]"));
@@ -761,8 +285,8 @@ public class GeneratorUtils {
         return recordBody;
     }
 
-    private static String getRecordRestType(String name, Object additionalProperties, Object unevaluatedProperties,
-                                            Generator generator) throws Exception {
+    static String getRecordRestType(String name, Object additionalProperties, Object unevaluatedProperties,
+                                    Generator generator) throws Exception {
         if (additionalProperties != null) {
             return generator.convert(additionalProperties,
                     resolveNameConflicts(name + ADDITIONAL_PROPS, generator));
@@ -775,39 +299,39 @@ public class GeneratorUtils {
     }
 
     // Handle union values by enclosing them in parentheses.
-    private static String handleUnion(String type) {
+    static String handleUnion(String type) {
         if (type.contains(PIPE) && !type.startsWith(OPEN_BRACKET)) {
             return OPEN_BRACKET + type + CLOSE_BRACKET;
         }
         return type;
     }
 
-    private static boolean isPrimitiveBalType(String type) {
+    static boolean isPrimitiveBalType(String type) {
         return BAL_PRIMITIVE_TYPES.contains(type);
     }
 
-    private static void addIfNotNull(List<String> list, String key, Object value) {
+    static void addIfNotNull(List<String> list, String key, Object value) {
         if (value != null) {
             list.add(key + ": " + value);
         }
     }
 
-    private static String getFormattedAnnotation(List<String> annotationParts,
-                                                 String annotationType, String typeName, String balType) {
+    static String getFormattedAnnotation(List<String> annotationParts,
+                                         String annotationType, String typeName, String balType) {
         String annotation = String.join(COMMA + NEW_LINE + TAB, annotationParts);
         return String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, annotationType, annotation) + NEW_LINE +
                 String.format(TYPE_FORMAT, typeName, balType);
     }
 
-    private static boolean isNumberLimitInvalid(Double minimum, Double exclusiveMinimum, Double maximum,
-                                                Double exclusiveMaximum) {
+    static boolean isNumberLimitInvalid(Double minimum, Double exclusiveMinimum, Double maximum,
+                                        Double exclusiveMaximum) {
         return (minimum != null && maximum != null && maximum < minimum) ||
                 (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
                 (exclusiveMinimum != null && maximum != null && maximum <= exclusiveMinimum) ||
                 (exclusiveMinimum != null && exclusiveMaximum != null && exclusiveMaximum <= exclusiveMinimum);
     }
 
-    public static String resolveNameConflicts(String name, Generator generator) {
+    static String resolveNameConflicts(String name, Generator generator) {
         String baseName = sanitizeName(name);
         String resolvedName = baseName;
         int counter = 1;
@@ -821,7 +345,7 @@ public class GeneratorUtils {
         return resolvedName;
     }
 
-    public static String resolveConstMapping(Generator generator) {
+    static String resolveConstMapping(Generator generator) {
         String name = "MAPPING_";
         String resolvedName;
         do {
@@ -830,21 +354,21 @@ public class GeneratorUtils {
         return resolvedName;
     }
 
-    public static String convertToPascalCase(String name) {
+    static String convertToPascalCase(String name) {
         if (name == null || name.isEmpty()) {
             return name;
         }
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
-    public static String convertToCamelCase(String name) {
+    static String convertToCamelCase(String name) {
         if (name == null || name.isEmpty()) {
             return name;
         }
         return Character.toLowerCase(name.charAt(0)) + name.substring(1);
     }
 
-    public static String sanitizeName(String input) {
+    static String sanitizeName(String input) {
         if (!input.matches(INVALID_CHARS_PATTERN)
                 || (input.matches(DIGIT_PATTERN) && !input.matches(STARTS_WITH_DIGIT_PATTERN))) {
             return input;
@@ -858,7 +382,18 @@ public class GeneratorUtils {
         return input;
     }
 
-    private static boolean isCustomTypeNotRequired(Object... objects) {
+    static boolean isCustomTypeNotRequired(Object... objects) {
         return Arrays.stream(objects).allMatch(Objects::isNull);
+    }
+
+    static void addImports(String module, Generator generator) {
+        String importDeclaration = IMPORT + WHITE_SPACE + module + SEMI_COLON;
+        if (!generator.imports.contains(importDeclaration)) {
+            generator.imports.add(importDeclaration);
+        }
+    }
+
+    static void addDiagnostic(JsonSchemaDiagnostic diagnostic, Generator generator) {
+        generator.diagnostics.add(diagnostic);
     }
 }
