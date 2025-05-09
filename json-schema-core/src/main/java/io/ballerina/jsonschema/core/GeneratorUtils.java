@@ -82,10 +82,10 @@ public class GeneratorUtils {
     public static final String BAL_JSON_DATA_MODULE = "ballerina/data.jsondata";
 
     public static final String ANNOTATION_MODULE = "jsondata";
-    public static final String OBJECT_VALIDATION = "ObjectValidation";
-    public static final String NUMBER_VALIDATION = "NumberValidation";
-    public static final String STRING_VALIDATION = "StringValidation";
-    public static final String ARRAY_VALIDATION = "ArrayValidation";
+    public static final String OBJECT_CONSTRAINTS = "ObjectConstraints";
+    public static final String NUMBER_CONSTRAINTS = "NumberConstraints";
+    public static final String STRING_CONSTRAINTS = "StringConstraints";
+    public static final String ARRAY_CONSTRAINTS = "ArrayConstraints";
     public static final String PATTERN_RECORD = ANNOTATION_MODULE + COLON + "PatternPropertiesElement";
     public static final String VALUE = "value";
 
@@ -142,7 +142,7 @@ public class GeneratorUtils {
                     "uri-reference", "uri-template", "iri", "iri-reference", "uuid")
     );
     private static final List<String> BAL_PRIMITIVE_TYPES = new ArrayList<>(
-            Arrays.asList(INTEGER, BOOLEAN, NULL,  NEVER, JSON, STRING)
+            Arrays.asList(INTEGER, BOOLEAN, NULL, NEVER, JSON, STRING)
     );
 
     // The Union concatenated number of Tuples will be denoted by annotations beyond this limit
@@ -166,47 +166,47 @@ public class GeneratorUtils {
             this.defaultValue = null;
         }
 
-        public String getType() {
+        String getType() {
             return type;
         }
 
-        public void setType(String type) {
+        void setType(String type) {
             this.type = type;
         }
 
-        public boolean isRequired() {
+        boolean isRequired() {
             return required;
         }
 
-        public void setRequired(boolean required) {
+        void setRequired(boolean required) {
             this.required = required;
         }
 
-        public String getDependentSchema() {
+        String getDependentSchema() {
             return dependentSchema;
         }
 
-        public void setDependentSchema(String dependentSchema) {
+        void setDependentSchema(String dependentSchema) {
             this.dependentSchema = dependentSchema;
         }
 
-        public List<String> getDependentRequired() {
+        List<String> getDependentRequired() {
             return dependentRequired;
         }
 
-        public void setDependentRequired(List<String> dependentRequired) {
+        void setDependentRequired(List<String> dependentRequired) {
             this.dependentRequired = dependentRequired;
         }
 
-        public void addDependentRequired(String dependentRequired) {
+        void addDependentRequired(String dependentRequired) {
             this.dependentRequired.add(dependentRequired);
         }
 
-        public void setDefaultValue(String defaultValue) {
+        void setDefaultValue(String defaultValue) {
             this.defaultValue = defaultValue;
         }
 
-        public String getDefaultValue() {
+        String getDefaultValue() {
             return defaultValue;
         }
     }
@@ -250,7 +250,7 @@ public class GeneratorUtils {
             return INTEGER;
         }
 
-        if (invalidNumberLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
+        if (isNumberLimitInvalid(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
             return NEVER;
         }
 
@@ -265,7 +265,7 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_VALIDATION, finalType, INTEGER);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_CONSTRAINTS, finalType, INTEGER);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
@@ -279,7 +279,7 @@ public class GeneratorUtils {
             return NUMBER;
         }
 
-        if (invalidNumberLimits(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
+        if (isNumberLimitInvalid(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
             return NEVER;
         }
 
@@ -294,7 +294,7 @@ public class GeneratorUtils {
         addIfNotNull(annotationParts, EXCLUSIVE_MAXIMUM, exclusiveMaximum);
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_VALIDATION, finalType, NUMBER);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, NUMBER_CONSTRAINTS, finalType, NUMBER);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
@@ -327,7 +327,7 @@ public class GeneratorUtils {
             annotationParts.add(PATTERN + COLON + REGEX_PREFIX + BACK_TICK + pattern + BACK_TICK);
         }
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, STRING_VALIDATION, finalType, STRING);
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, STRING_CONSTRAINTS, finalType, STRING);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         generator.nodes.put(finalType, moduleNode);
@@ -342,7 +342,6 @@ public class GeneratorUtils {
         generator.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
 
         ArrayList<String> arrayItems = new ArrayList<>();
-        ArrayList<String> tupleList = new ArrayList<>();
 
         if (prefixItems != null) {
             for (int i = 0; i < prefixItems.size(); i++) {
@@ -351,8 +350,8 @@ public class GeneratorUtils {
             }
         }
 
-        long startPosition = (minItems == null) ? 0L : minItems;
-        long endPosition = (maxItems == null) ? Long.MAX_VALUE : maxItems;
+        long startPosition = minItems == null ? 0L : minItems;
+        long endPosition = maxItems == null ? Long.MAX_VALUE : maxItems;
         long annotationLimit = startPosition + ARRAY_ANNOTATION_SIZE_LIMIT;
 
         String restItem = JSON;
@@ -394,6 +393,8 @@ public class GeneratorUtils {
                 arrayItems.add(restItem + REST);
             }
         }
+
+        ArrayList<String> tupleList = new ArrayList<>();
 
         long upperBound = Math.min(Math.min(annotationLimit, endPosition), arrayItems.size());
         for (int i = (int) startPosition; i <= upperBound; i++) {
@@ -457,7 +458,7 @@ public class GeneratorUtils {
                     resolveTypeNameForTypedesc(customTypeName, typeName, generator));
         }
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_VALIDATION, finalType,
+        String formattedAnnotation = getFormattedAnnotation(annotationParts, ARRAY_CONSTRAINTS, finalType,
                 String.join(PIPE, tupleList));
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
@@ -583,7 +584,7 @@ public class GeneratorUtils {
                 }
             }
 
-            String minMaxAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, OBJECT_VALIDATION,
+            String minMaxAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, OBJECT_CONSTRAINTS,
                     String.join(", ", objectProperties));
             objectAnnotations.add(minMaxAnnotation);
         }
@@ -687,14 +688,16 @@ public class GeneratorUtils {
                 String key = entry.getKey();
                 RecordField keyRecord = recordFields.get(key);
                 RecordField value = entry.getValue();
-                if (value.getDependentRequired() != null && keyRecord.isRequired()) {
-                    // If there are dependentRequired items
-                    for (String dependentRequired : value.getDependentRequired()) {
-                        // Iterate through the dependentRequired items
-                        if (keyRecord.isRequired() && !recordFields.get(dependentRequired).isRequired()) {
-                            recordFields.get(dependentRequired).setRequired(true);
-                            changeFlag = true;
-                        }
+
+                if (value.getDependentRequired() == null || !keyRecord.isRequired()) {
+                    continue;
+                }
+
+                // If there are dependentRequired items iterate through them
+                for (String dependentRequired : value.getDependentRequired()) {
+                    if (!recordFields.get(dependentRequired).isRequired()) {
+                        recordFields.get(dependentRequired).setRequired(true);
+                        changeFlag = true;
                     }
                 }
             }
@@ -796,8 +799,8 @@ public class GeneratorUtils {
                 String.format(TYPE_FORMAT, typeName, balType);
     }
 
-    private static boolean invalidNumberLimits(Double minimum, Double exclusiveMinimum, Double maximum,
-                                               Double exclusiveMaximum) {
+    private static boolean isNumberLimitInvalid(Double minimum, Double exclusiveMinimum, Double maximum,
+                                                Double exclusiveMaximum) {
         return (minimum != null && maximum != null && maximum < minimum) ||
                 (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
                 (exclusiveMinimum != null && maximum != null && maximum <= exclusiveMinimum) ||

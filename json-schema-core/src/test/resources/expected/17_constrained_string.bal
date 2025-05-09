@@ -1,6 +1,6 @@
 import ballerina/data.jsondata;
 
-@jsondata:StringValidation {
+@jsondata:StringConstraints {
     format: "email",
     minLength: 1,
     maxLength: 10,

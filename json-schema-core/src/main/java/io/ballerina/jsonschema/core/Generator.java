@@ -171,7 +171,7 @@ public class Generator {
         return typeName;
     }
 
-    public String generateStringRepresentation(Object obj) throws InvalidDataTypeException {
+    String generateStringRepresentation(Object obj) throws InvalidDataTypeException {
         if (obj == null) {
             return NULL;
         }

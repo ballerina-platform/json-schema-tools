@@ -1,6 +1,6 @@
 import ballerina/data.jsondata;
 
-@jsondata:ArrayValidation {
+@jsondata:ArrayConstraints {
     maxItems: 100
 }
 public type Schema json[0]|[int, string...];

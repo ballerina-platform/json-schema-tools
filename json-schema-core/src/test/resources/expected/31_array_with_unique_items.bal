@@ -1,6 +1,6 @@
 import ballerina/data.jsondata;
 
-@jsondata:ArrayValidation {
+@jsondata:ArrayConstraints {
     uniqueItems: true
 }
 public type Schema [string...];

@@ -1,11 +1,11 @@
 import ballerina/data.jsondata;
 
-@jsondata:StringValidation {
+@jsondata:StringConstraints {
     minLength: 5
 }
 public type SchemaRestItemString string;
 
-@jsondata:NumberValidation {
+@jsondata:NumberConstraints {
     minimum: 20.0
 }
 public type SchemaRestItemNumber int|float|decimal;

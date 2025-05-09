@@ -1,6 +1,6 @@
 import ballerina/data.jsondata;
 
-@jsondata:ObjectValidation {
+@jsondata:ObjectConstraints {
     minProperties: 2,
     maxProperties: 4
 }

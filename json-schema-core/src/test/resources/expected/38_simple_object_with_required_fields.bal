@@ -8,7 +8,7 @@ public type Schema record {|
     json...;
 |};
 
-@jsondata:NumberValidation {
+@jsondata:NumberConstraints {
     minimum: 0.0
 }
 public type Id int;

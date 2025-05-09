@@ -1,6 +1,6 @@
 import ballerina/data.jsondata;
 
-@jsondata:ObjectValidation {
+@jsondata:ObjectConstraints {
     propertyNames: string
 }
 public type Schema record {|

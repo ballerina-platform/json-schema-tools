@@ -1,12 +1,12 @@
 import ballerina/data.jsondata;
 
-@jsondata:ArrayValidation {
+@jsondata:ArrayConstraints {
     uniqueItems: true,
     contains: {contains: SchemaContains, minContains: 3, maxContains: 5}
 }
 public type Schema [string...];
 
-@jsondata:NumberValidation {
+@jsondata:NumberConstraints {
     multipleOf: 2.0
 }
 public type SchemaContains int;
