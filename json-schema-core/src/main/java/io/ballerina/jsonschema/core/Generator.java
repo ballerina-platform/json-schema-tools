@@ -33,6 +33,7 @@ import org.ballerinalang.formatter.core.FormatterException;
 import org.ballerinalang.formatter.core.options.ForceFormattingOptions;
 import org.ballerinalang.formatter.core.options.FormattingOptions;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -133,6 +134,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.processRequiredFields;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveConstMapping;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveNameConflicts;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveTypeNameForTypedesc;
+import static io.ballerina.jsonschema.core.SchemaUtils.fetchSchemaId;
 
 /**
  * Ballerina code generation handler.
@@ -153,13 +155,35 @@ public class Generator {
     final ArrayList<String> imports = new ArrayList<>();
     final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
+    //! This is definitely a schema as id's can only be assigned to schema values
+    final Map<URI, Schema> idToSchemaMap = new HashMap<>();
+
     private int constCounter = 0;
 
     int getNextConstIndex() {
         return ++this.constCounter;
     }
 
-    public Response convertBaseSchema(Object schemaObject) throws Exception {
+    public Response convertBaseSchema(ArrayList<Object> schemaObjectList) throws Exception {
+        // This doesn't fetch the schema id if there is only one file or if the first file is a boolean
+        if ((schemaObjectList.size() > 1) && (schemaObjectList.getFirst() instanceof Schema schema)) {
+            for (Object schemaObject : schemaObjectList) {
+                if (schemaObject instanceof Boolean) {
+                    continue;
+                }
+                if (schema.getIdKeyword() == null) {
+                    throw new Exception("All the schemas must have an id if there are multiple schema files.");
+                }
+                fetchSchemaId((Schema) schemaObject, this.idToSchemaMap);
+                //! Add all schemas and sub schemas mapped to their id's.
+                // Don't need to always have an id, as that exception is handled in the upper part.
+            }
+        } else if (schemaObjectList.getFirst() instanceof Schema schema && schema.getIdKeyword() != null) {
+            fetchSchemaId(schema, this.idToSchemaMap);
+        }
+
+        // Generate the ballerina code based on the first element.
+        Object schemaObject = schemaObjectList.getFirst();
         String generatedTypeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
 
         if (!generatedTypeName.equals(DEFAULT_SCHEMA_NAME)) {
@@ -267,7 +291,7 @@ public class Generator {
     }
 
     private String createInteger(String name, Double minimum, Double exclusiveMinimum, Double maximum,
-                                       Double exclusiveMaximum, Double multipleOf) {
+                                 Double exclusiveMaximum, Double multipleOf) {
         if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
@@ -297,7 +321,7 @@ public class Generator {
     }
 
     private String createNumber(String name, Double minimum, Double exclusiveMinimum, Double maximum,
-                                      Double exclusiveMaximum, Double multipleOf) {
+                                Double exclusiveMaximum, Double multipleOf) {
         if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return NUMBER;
         }
@@ -327,7 +351,7 @@ public class Generator {
     }
 
     private String createString(String name, String format, Long minLength, Long maxLength,
-                                      String pattern) {
+                                String pattern) {
         if (isCustomTypeNotRequired(format, minLength, maxLength, pattern)) {
             return STRING;
         }
@@ -363,8 +387,8 @@ public class Generator {
     }
 
     private String createArray(String name, List<Object> prefixItems, Object items, Object contains,
-                                     Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains,
-                                     Long minContains, Object unevaluatedItems) throws Exception {
+                               Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains,
+                               Long minContains, Object unevaluatedItems) throws Exception {
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
         this.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
 
@@ -499,10 +523,10 @@ public class Generator {
     }
 
     private String createObject(String name, Object additionalProperties, Map<String, Object> properties,
-                                      Map<String, Object> patternProperties, Map<String, Object> dependentSchema,
-                                      Object propertyNames, Object unevaluatedProperties, Long maxProperties,
-                                      Long minProperties, Map<String, List<String>> dependentRequired,
-                                      List<String> required) throws Exception {
+                                Map<String, Object> patternProperties, Map<String, Object> dependentSchema,
+                                Object propertyNames, Object unevaluatedProperties, Long maxProperties,
+                                Long minProperties, Map<String, List<String>> dependentRequired,
+                                List<String> required) throws Exception {
         if (Boolean.FALSE.equals(propertyNames)) {
             return EMPTY_RECORD;
         }

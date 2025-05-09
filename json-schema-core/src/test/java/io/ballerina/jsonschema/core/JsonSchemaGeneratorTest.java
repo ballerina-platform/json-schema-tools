@@ -25,6 +25,7 @@ import org.testng.annotations.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class JsonSchemaGeneratorTest {
     private static final Path RES_DIR = Paths.get("src/test/resources/").toAbsolutePath();
@@ -98,7 +99,7 @@ public class JsonSchemaGeneratorTest {
     private void validate(Path sample, Path expected, Generator generator) throws Exception {
         String jsonSchemaFileContent = Files.readString(sample);
         Object schema = SchemaUtils.parseJsonSchema(jsonSchemaFileContent);
-        Response result = generator.convertBaseSchema(schema);
+        Response result = generator.convertBaseSchema(new ArrayList<>() {{ add(schema); }});
         Assert.assertTrue(result.getDiagnostics().isEmpty(), "Diagnostics should be empty");
         String expectedValue = Files.readString(expected);
         Assert.assertEquals(result.getTypes(), expectedValue, "Generated types do not match expected output");

@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -153,8 +154,13 @@ public class JsonSchemaCmd implements BLauncherCmd {
         String jsonFileContent = Files.readString(filePath);
         Object schema = SchemaUtils.parseJsonSchema(jsonFileContent);
 
+        ArrayList<Object> schemaList = new ArrayList<>();
+        schemaList.add(schema);
+
         Generator generator = new Generator();
-        Response result = generator.convertBaseSchema(schema);
+        Response result = generator.convertBaseSchema(schemaList);
+
+
         if (!result.getDiagnostics().isEmpty()) {
             result.getDiagnostics().forEach(jsonSchemaDiagnostic ->
                     outStream.println(jsonSchemaDiagnostic.toString()));

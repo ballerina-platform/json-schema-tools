@@ -22,7 +22,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Util methods to handle Schema keywords.
@@ -33,6 +35,129 @@ public class SchemaUtils {
     private static final String DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema";
 
     private static final List<String> SUPPORTED_DRAFTS = List.of(DRAFT_2020_12);
+
+    public static void fetchSchemaId(Object schemaObject, Map<URI, Schema> idToSchemaMap) {
+        if (!(schemaObject instanceof Schema schema)) {
+            return;
+        }
+
+        if (schema.getIdKeyword() != null) {
+            URI uri = URI.create(schema.getIdKeyword());
+            if (idToSchemaMap.containsKey(uri)) {
+                throw new RuntimeException("Schema id \"" + schema.getIdKeyword() + "\" is not unique");
+            }
+            idToSchemaMap.put(uri, schema);
+        }
+
+        // prefixItems
+        if (schema.getPrefixItems() != null) {
+            for (Object obj : schema.getPrefixItems()) {
+                fetchSchemaId(obj, idToSchemaMap);
+            }
+        }
+
+        // items
+        if (schema.getItems() != null) {
+            fetchSchemaId(schema.getItems(), idToSchemaMap);
+        }
+
+        // contains
+        if (schema.getContains() != null) {
+            fetchSchemaId(schema.getContains(), idToSchemaMap);
+        }
+
+        // additionalProperties
+        if (schema.getAdditionalProperties() != null) {
+            fetchSchemaId(schema.getAdditionalProperties(), idToSchemaMap);
+        }
+
+        // properties
+        if (schema.getProperties() != null) {
+            for (Map.Entry<String, Object> entry : schema.getProperties().entrySet()) {
+                fetchSchemaId(entry.getValue(), idToSchemaMap);
+            }
+        }
+
+        // patternProperties
+        if (schema.getPatternProperties() != null) {
+            for (Map.Entry<String, Object> entry : schema.getPatternProperties().entrySet()) {
+                fetchSchemaId(entry.getValue(), idToSchemaMap);
+            }
+        }
+
+        // dependentSchema
+        if (schema.getDependentSchema() != null) {
+            fetchSchemaId(schema.getDependentSchema(), idToSchemaMap);
+        }
+
+        // propertyNames
+        if (schema.getPropertyNames() != null) {
+            fetchSchemaId(schema.getPropertyNames(), idToSchemaMap);
+        }
+
+        // if
+        if (schema.getIfKeyword() != null) {
+            fetchSchemaId(schema.getIfKeyword(), idToSchemaMap);
+        }
+
+        // then
+        if (schema.getThen() != null) {
+            fetchSchemaId(schema.getThen(), idToSchemaMap);
+        }
+
+        // else
+        if (schema.getElseKeyword() != null) {
+            fetchSchemaId(schema.getElseKeyword(), idToSchemaMap);
+        }
+
+        // allOf
+        if (schema.getAllOf() != null) {
+            for (Object obj : schema.getAllOf()) {
+                fetchSchemaId(obj, idToSchemaMap);
+            }
+        }
+
+        // anyOf
+        if (schema.getAnyOf() != null) {
+            for (Object obj : schema.getAnyOf()) {
+                fetchSchemaId(obj, idToSchemaMap);
+            }
+        }
+
+        // oneOf
+        if (schema.getOneOf() != null) {
+            for (Object obj : schema.getOneOf()) {
+                fetchSchemaId(obj, idToSchemaMap);
+            }
+        }
+
+        // not
+        if (schema.getNot() != null) {
+            fetchSchemaId(schema.getNot(), idToSchemaMap);
+        }
+
+        // content
+        if (schema.getContent() != null) {
+            fetchSchemaId(schema.getContent(), idToSchemaMap);
+        }
+
+        // $defs
+        if (schema.getDefsKeyword() != null) {
+            for (Map.Entry<String, Object> entry : schema.getDefsKeyword().entrySet()) {
+                fetchSchemaId(entry.getValue(), idToSchemaMap);
+            }
+        }
+
+        // unevaluatedItems
+        if (schema.getUnevaluatedItems() != null) {
+            fetchSchemaId(schema.getUnevaluatedItems(), idToSchemaMap);
+        }
+
+        // unevaluatedProperties
+        if (schema.getUnevaluatedProperties() != null) {
+            fetchSchemaId(schema.getUnevaluatedProperties(), idToSchemaMap);
+        }
+    }
 
     public static Object parseJsonSchema(String jsonString) throws Exception {
         Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
