@@ -36,7 +36,7 @@ public class SchemaUtils {
 
     private static final List<String> SUPPORTED_DRAFTS = List.of(DRAFT_2020_12);
 
-    public static void fetchSchemaId(Object schemaObject, Map<URI, Schema> idToSchemaMap) {
+    public static void fetchSchemaId(Object schemaObject, URI baseUri, Map<URI, Schema> idToSchemaMap) {
         if (!(schemaObject instanceof Schema schema)) {
             return;
         }
@@ -47,115 +47,132 @@ public class SchemaUtils {
                 throw new RuntimeException("Schema id \"" + schema.getIdKeyword() + "\" is not unique");
             }
             idToSchemaMap.put(uri, schema);
+            baseUri = uri;
+        }
+        if (schema.getAnchorKeyword() != null) {
+            // TODO: validate the anchor syntax
+            URI uri = URI.create("#" + schema.getAnchorKeyword());
+            if (idToSchemaMap.containsKey(uri)) {
+                throw new RuntimeException("Schema anchor \"" + schema.getAnchorKeyword() + "\" is not unique");
+            }
+            idToSchemaMap.put(baseUri.resolve(uri), schema);
+        }
+        if (schema.getDynamicAnchorKeyword() != null) {
+            // TODO: validate the anchor syntax
+            URI uri = URI.create("#" + schema.getDynamicAnchorKeyword());
+            if (idToSchemaMap.containsKey(uri)) {
+                throw new RuntimeException("Schema anchor \"" + schema.getDynamicAnchorKeyword() + "\" is not unique");
+            }
+            idToSchemaMap.put(baseUri.resolve(uri), schema);
         }
 
         // prefixItems
         if (schema.getPrefixItems() != null) {
             for (Object obj : schema.getPrefixItems()) {
-                fetchSchemaId(obj, idToSchemaMap);
+                fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
         // items
         if (schema.getItems() != null) {
-            fetchSchemaId(schema.getItems(), idToSchemaMap);
+            fetchSchemaId(schema.getItems(), baseUri, idToSchemaMap);
         }
 
         // contains
         if (schema.getContains() != null) {
-            fetchSchemaId(schema.getContains(), idToSchemaMap);
+            fetchSchemaId(schema.getContains(), baseUri, idToSchemaMap);
         }
 
         // additionalProperties
         if (schema.getAdditionalProperties() != null) {
-            fetchSchemaId(schema.getAdditionalProperties(), idToSchemaMap);
+            fetchSchemaId(schema.getAdditionalProperties(), baseUri, idToSchemaMap);
         }
 
         // properties
         if (schema.getProperties() != null) {
             for (Map.Entry<String, Object> entry : schema.getProperties().entrySet()) {
-                fetchSchemaId(entry.getValue(), idToSchemaMap);
+                fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
         }
 
         // patternProperties
         if (schema.getPatternProperties() != null) {
             for (Map.Entry<String, Object> entry : schema.getPatternProperties().entrySet()) {
-                fetchSchemaId(entry.getValue(), idToSchemaMap);
+                fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
         }
 
         // dependentSchema
         if (schema.getDependentSchema() != null) {
-            fetchSchemaId(schema.getDependentSchema(), idToSchemaMap);
+            fetchSchemaId(schema.getDependentSchema(), baseUri, idToSchemaMap);
         }
 
         // propertyNames
         if (schema.getPropertyNames() != null) {
-            fetchSchemaId(schema.getPropertyNames(), idToSchemaMap);
+            fetchSchemaId(schema.getPropertyNames(), baseUri, idToSchemaMap);
         }
 
         // if
         if (schema.getIfKeyword() != null) {
-            fetchSchemaId(schema.getIfKeyword(), idToSchemaMap);
+            fetchSchemaId(schema.getIfKeyword(), baseUri, idToSchemaMap);
         }
 
         // then
         if (schema.getThen() != null) {
-            fetchSchemaId(schema.getThen(), idToSchemaMap);
+            fetchSchemaId(schema.getThen(), baseUri, idToSchemaMap);
         }
 
         // else
         if (schema.getElseKeyword() != null) {
-            fetchSchemaId(schema.getElseKeyword(), idToSchemaMap);
+            fetchSchemaId(schema.getElseKeyword(), baseUri, idToSchemaMap);
         }
 
         // allOf
         if (schema.getAllOf() != null) {
             for (Object obj : schema.getAllOf()) {
-                fetchSchemaId(obj, idToSchemaMap);
+                fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
         // anyOf
         if (schema.getAnyOf() != null) {
             for (Object obj : schema.getAnyOf()) {
-                fetchSchemaId(obj, idToSchemaMap);
+                fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
         // oneOf
         if (schema.getOneOf() != null) {
             for (Object obj : schema.getOneOf()) {
-                fetchSchemaId(obj, idToSchemaMap);
+                fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
         // not
         if (schema.getNot() != null) {
-            fetchSchemaId(schema.getNot(), idToSchemaMap);
+            fetchSchemaId(schema.getNot(), baseUri, idToSchemaMap);
         }
 
         // content
         if (schema.getContent() != null) {
-            fetchSchemaId(schema.getContent(), idToSchemaMap);
+            fetchSchemaId(schema.getContent(), baseUri, idToSchemaMap);
         }
 
         // $defs
         if (schema.getDefsKeyword() != null) {
             for (Map.Entry<String, Object> entry : schema.getDefsKeyword().entrySet()) {
-                fetchSchemaId(entry.getValue(), idToSchemaMap);
+                fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
         }
 
         // unevaluatedItems
         if (schema.getUnevaluatedItems() != null) {
-            fetchSchemaId(schema.getUnevaluatedItems(), idToSchemaMap);
+            fetchSchemaId(schema.getUnevaluatedItems(), baseUri, idToSchemaMap);
         }
 
         // unevaluatedProperties
         if (schema.getUnevaluatedProperties() != null) {
-            fetchSchemaId(schema.getUnevaluatedProperties(), idToSchemaMap);
+            fetchSchemaId(schema.getUnevaluatedProperties(), baseUri, idToSchemaMap);
         }
     }
 

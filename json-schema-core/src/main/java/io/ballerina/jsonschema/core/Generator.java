@@ -166,26 +166,30 @@ public class Generator {
     }
 
     public Response convertBaseSchema(ArrayList<Object> schemaObjectList) throws Exception {
-        //! This doesn't fetch the schema id if there is only one file or if the first file is a boolean
-        if ((schemaObjectList.size() > 1) && (schemaObjectList.getFirst() instanceof Schema schema)) {
-            for (Object schemaObject : schemaObjectList) {
-                if (schemaObject instanceof Boolean) {
-                    continue;
+        if (schemaObjectList.getFirst() instanceof Schema schema) {
+            //! This doesn't fetch the schema id if there is only one file or if the first file is a boolean
+            if (schemaObjectList.size() > 1) {
+                for (Object schemaObject : schemaObjectList) {
+                    if (schemaObject instanceof Boolean) {
+                        continue;
+                    }
+                    if (schema.getIdKeyword() == null) {
+                        throw new Exception("All the schemas must have an id if there are multiple schema files.");
+                    }
+                    fetchSchemaId(schemaObject, URI.create(""), this.idToSchemaMap); //! id is definitely not null here
+                    //! Add all schemas and sub schemas mapped to their id's.
+                    // Don't need to always have an id, as that exception is handled in the upper part.
                 }
-                if (schema.getIdKeyword() == null) {
-                    throw new Exception("All the schemas must have an id if there are multiple schema files.");
-                }
-                fetchSchemaId(schemaObject, this.idToSchemaMap);
-                //! Add all schemas and sub schemas mapped to their id's.
-                // Don't need to always have an id, as that exception is handled in the upper part.
+            } else if (schema.getIdKeyword() != null) {
+                fetchSchemaId(schema, URI.create(""), this.idToSchemaMap); //! id is definitely not null here
             }
-        } else if (schemaObjectList.getFirst() instanceof Schema schema && schema.getIdKeyword() != null) {
-            fetchSchemaId(schema, this.idToSchemaMap);
+
+            // Convert the uri of each schema to absolute uri's
+            for (Object schemaObject : schemaObjectList) {
+                convertToAbsoluteUri(schemaObject, URI.create("dummy:/"));
+            }
         }
 
-        for (Object schemaObject : schemaObjectList) {
-            convertToAbsoluteUri(schemaObject, URI.create("dummy:/"));
-        }
 
         // Generate the ballerina code based on the first element.
         Object schemaObject = schemaObjectList.getFirst();
@@ -211,6 +215,8 @@ public class Generator {
         }
 
         Schema schema = (Schema) schemaObject;
+
+        // Check for references and resolve them if they are already found.
 
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
         List<Object> schemaType = balTypes.typeList();
