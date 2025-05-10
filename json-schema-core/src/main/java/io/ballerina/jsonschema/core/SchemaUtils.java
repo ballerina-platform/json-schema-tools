@@ -385,8 +385,15 @@ public class SchemaUtils {
                 return getSchemaByKeyword(schema.getPropertyNames(), pathList);
             }
             case "if" -> {
-                return getSchemaByKeyword(schema.getIf(), pathList);
+                return getSchemaByKeyword(schema.getIfKeyword(), pathList);
             }
+            case "then" -> {
+                return getSchemaByKeyword(schema.getThen(), pathList);
+            }
+            case "else" -> {
+                return getSchemaByKeyword(schema.getElseKeyword(), pathList);
+            }
+            // TODO: Handle other cases.
             default -> throw new RuntimeException("Invalid path: " + String.join("/", pathList));
         }
         // TODO: For other paths that are not mentioned here.
