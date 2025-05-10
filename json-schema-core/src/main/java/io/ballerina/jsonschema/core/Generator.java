@@ -126,6 +126,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.VALUE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ZERO;
 import static io.ballerina.jsonschema.core.GeneratorUtils.addIfNotNull;
+import static io.ballerina.jsonschema.core.GeneratorUtils.addIfNotNullString;
 import static io.ballerina.jsonschema.core.GeneratorUtils.addImports;
 import static io.ballerina.jsonschema.core.GeneratorUtils.convertToCamelCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.convertToPascalCase;
@@ -322,10 +323,11 @@ public class Generator {
         List<String> annotationParts = new ArrayList<>();
 
         if (typeAnnot != AnnotType.FIELD) {
-            addIfNotNull(annotationParts, DESCRIPTION, "\"" + schema.getDescription() + "\"");
+            addIfNotNullString(annotationParts, DESCRIPTION, "\"" + schema.getDescription() + "\"");
         }
-        addIfNotNull(annotationParts, TITLE, "\"" + schema.getTitle() + "\"");
-        addIfNotNull(annotationParts, COMMENT, "\"" + schema.getCommentKeyword() + "\"");
+
+        addIfNotNullString(annotationParts, TITLE, "\"" + schema.getTitle() + "\"");
+        addIfNotNullString(annotationParts, COMMENT, "\"" + schema.getCommentKeyword() + "\"");
 
         if (schema.getExamples() != null) {
             List<String> examples = new ArrayList<>();

@@ -335,6 +335,12 @@ public class GeneratorUtils {
         }
     }
 
+    static void addIfNotNullString(List<String> list, String key, Object value) {
+        if (!value.equals("\"null\"")) {
+            list.add(key + ": " + value);
+        }
+    }
+
     static String getFormattedAnnotation(List<String> annotationParts,
                                          String annotationType, String typeName, String balType) {
         String annotation = String.join(COMMA + NEW_LINE + TAB, annotationParts);
