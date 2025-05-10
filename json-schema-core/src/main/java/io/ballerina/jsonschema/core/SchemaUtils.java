@@ -364,6 +364,29 @@ public class SchemaUtils {
             case "contains" -> {
                 return getSchemaByKeyword(schema.getContains(), pathList);
             }
+            case "additionalProperties" -> {
+                return getSchemaByKeyword(schema.getAdditionalProperties(), pathList);
+            }
+            case "properties" -> {
+                if (schema.getProperties() == null) {
+                    throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+                }
+                String key = pathList.removeFirst();
+                return getSchemaByKeyword(schema.getProperties().get(key), pathList);
+            }
+            case "dependentSchema" -> {
+                if (schema.getDependentSchema() == null) {
+                    throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+                }
+                String key = pathList.removeFirst();
+                return getSchemaByKeyword(schema.getDependentSchema().get(key), pathList);
+            }
+            case "propertyNames" -> {
+                return getSchemaByKeyword(schema.getPropertyNames(), pathList);
+            }
+            case "if" -> {
+                return getSchemaByKeyword(schema.getIf(), pathList);
+            }
             default -> throw new RuntimeException("Invalid path: " + String.join("/", pathList));
         }
         // TODO: For other paths that are not mentioned here.
