@@ -58,12 +58,15 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_SQUARE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COLON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COMMA;
+import static io.ballerina.jsonschema.core.GeneratorUtils.COMMENT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CONTAINS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPENDENT_SCHEMA;
+import static io.ballerina.jsonschema.core.GeneratorUtils.DESCRIPTION;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DOUBLE_QUOTATION;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_ARRAY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_RECORD;
+import static io.ballerina.jsonschema.core.GeneratorUtils.EXAMPLES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EXCLUSIVE_MAXIMUM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EXCLUSIVE_MINIMUM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.FLOAT;
@@ -76,6 +79,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.MAX_CONTAINS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MAX_ITEMS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MAX_LENGTH;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MAX_PROPERTIES;
+import static io.ballerina.jsonschema.core.GeneratorUtils.META_DATA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MINIMUM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MIN_CONTAINS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MIN_ITEMS;
@@ -109,6 +113,8 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.SEMI_COLON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING_CONSTRAINTS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING_FORMATS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.TAB;
+import static io.ballerina.jsonschema.core.GeneratorUtils.TITLE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.TYPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.TYPE_FORMAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNEVALUATED_ITEMS;
@@ -126,7 +132,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.convertToPascalCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.getFormattedAnnotation;
 import static io.ballerina.jsonschema.core.GeneratorUtils.getRecordRestType;
 import static io.ballerina.jsonschema.core.GeneratorUtils.handleUnion;
-import static io.ballerina.jsonschema.core.GeneratorUtils.isCustomTypeNotRequired;
+import static io.ballerina.jsonschema.core.GeneratorUtils.areAllNull;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isNumberLimitInvalid;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isPrimitiveBalType;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRecordFields;
@@ -211,7 +217,16 @@ public class Generator {
         return new Response(generatedTypes, this.diagnostics);
     }
 
+    public enum AnnotType {
+        TYPE,
+        FIELD
+    }
+
     public String convert(Object schemaObject, String name) throws Exception {
+        return convert(schemaObject, name, AnnotType.TYPE);
+    }
+
+    public String convert(Object schemaObject, String name, AnnotType type) throws Exception {
         // JSON Schema allows a schema to be a boolean: `true` allows any value, `false` allows none.
         // It is handled here before processing object-based schemas.
         if (schemaObject instanceof Boolean boolValue) {
@@ -221,7 +236,7 @@ public class Generator {
         Schema schema = (Schema) schemaObject;
 
         if (schema.getRefKeyword() != null) {
-            Object obj =  getSchemaById(idToSchemaMap, schema.getRefKeyword());
+            Object obj = getSchemaById(idToSchemaMap, schema.getRefKeyword());
             return convert(obj, name);
         } else if (schema.getDynamicRefKeyword() != null) {
             Object obj = getSchemaById(idToSchemaMap, schema.getDynamicRefKeyword());
@@ -237,8 +252,9 @@ public class Generator {
         List<Object> schemaType = balTypes.typeList();
 
         if (schemaType.isEmpty()) {
-            schemaToTypeMap.put(schema, NEVER);
-            return NEVER;
+            String finalType = processMetaData(schema, NEVER, name, type);
+            schemaToTypeMap.put(schema, finalType);
+            return finalType;
         }
 
         if (balTypes.types()) {
@@ -247,7 +263,8 @@ public class Generator {
             }
             if (schemaType.size() == 1) {
                 String typeName = createType(name, schema, schemaType.getFirst());
-                schemaToTypeMap.put(schema, typeName);
+                String finalType = processMetaData(schema, typeName, name, type);
+                schemaToTypeMap.put(schema, finalType);
                 return typeName;
             }
 
@@ -259,8 +276,9 @@ public class Generator {
             }
             if (unionTypes.containsAll(
                     Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
-                schemaToTypeMap.put(schema, JSON);
-                return JSON;
+                String finalType = processMetaData(schema, JSON, name, type);
+                schemaToTypeMap.put(schema, finalType);
+                return finalType;
             }
             if (unionTypes.contains(NUMBER)) {
                 unionTypes.remove(NUMBER);
@@ -268,9 +286,11 @@ public class Generator {
                 unionTypes.add(FLOAT);
                 unionTypes.add(DECIMAL);
             }
+
             String typeName = String.join(PIPE, unionTypes);
-            schemaToTypeMap.put(schema, typeName);
-            return typeName;
+            String finalType = processMetaData(schema, typeName, name, type);
+            schemaToTypeMap.put(schema, finalType);
+            return finalType;
         }
 
         //TODO: Validate constraints on enums
@@ -284,8 +304,51 @@ public class Generator {
                 })
                 .collect(Collectors.joining(PIPE));
 
-        schemaToTypeMap.put(schema, typeName);
-        return typeName;
+        String finalType = processMetaData(schema, typeName, name, type);
+        schemaToTypeMap.put(schema, finalType);
+        return finalType;
+    }
+
+    private String processMetaData(Schema schema, String type, String name, AnnotType typeAnnot) throws Exception {
+        if (areAllNull(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples())) {
+            if (typeAnnot == AnnotType.FIELD) {
+                return type;
+            }
+            if (schema.getDescription() == null) {
+                return type;
+            }
+        }
+
+        List<String> annotationParts = new ArrayList<>();
+
+        if (typeAnnot != AnnotType.FIELD) {
+            addIfNotNull(annotationParts, DESCRIPTION, "\"" + schema.getDescription() + "\"");
+        }
+        addIfNotNull(annotationParts, TITLE, "\"" + schema.getTitle() + "\"");
+        addIfNotNull(annotationParts, COMMENT, "\"" + schema.getCommentKeyword() + "\"");
+
+        if (schema.getExamples() != null) {
+            List<String> examples = new ArrayList<>();
+            for (Object example : schema.getExamples()) {
+                examples.add(generateStringRepresentation(example));
+            }
+            String exampleString = "\"" + String.join(COMMA, examples) + "\"";
+            annotationParts.add(EXAMPLES + COLON + exampleString);
+        }
+
+        String annotationFields = String.join(COMMA + NEW_LINE + TAB, annotationParts);
+        String annotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, META_DATA, annotationFields);
+
+        if (this.nodes.containsKey(type)) {
+            this.nodes.put(type, NodeParser.parseModuleMemberDeclaration(annotation +
+                    NEW_LINE + this.nodes.get(type)));
+            return type;
+        } else {
+            String resolvedName = resolveNameConflicts(name, this);
+            this.nodes.put(resolvedName, NodeParser.parseModuleMemberDeclaration(annotation + NEW_LINE +
+                    String.format(TYPE_FORMAT, resolvedName, type)));
+            return resolvedName;
+        }
     }
 
     private String createType(String name, Schema schema, Object type) throws Exception {
@@ -323,7 +386,7 @@ public class Generator {
 
     private String createInteger(String name, Double minimum, Double exclusiveMinimum, Double maximum,
                                  Double exclusiveMaximum, Double multipleOf) {
-        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (areAllNull(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
 
@@ -353,7 +416,7 @@ public class Generator {
 
     private String createNumber(String name, Double minimum, Double exclusiveMinimum, Double maximum,
                                 Double exclusiveMaximum, Double multipleOf) {
-        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (areAllNull(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return NUMBER;
         }
 
@@ -383,7 +446,7 @@ public class Generator {
 
     private String createString(String name, String format, Long minLength, Long maxLength,
                                 String pattern) {
-        if (isCustomTypeNotRequired(format, minLength, maxLength, pattern)) {
+        if (areAllNull(format, minLength, maxLength, pattern)) {
             return STRING;
         }
 
@@ -562,7 +625,7 @@ public class Generator {
             return EMPTY_RECORD;
         }
 
-        if (isCustomTypeNotRequired(additionalProperties, properties, patternProperties,
+        if (areAllNull(additionalProperties, properties, patternProperties,
                 dependentSchema, propertyNames,
                 unevaluatedProperties, maxProperties, minProperties, dependentRequired, required)) {
             return UNIVERSAL_OBJECT;
@@ -583,7 +646,10 @@ public class Generator {
                 String fieldName = resolveNameConflicts(key, this);
                 try {
                     GeneratorUtils.RecordField recordField =
-                            new GeneratorUtils.RecordField(this.convert(value, fieldName), false);
+                            new GeneratorUtils.RecordField(this.convert(value, fieldName, AnnotType.FIELD), false);
+                    if (value instanceof Schema schema && schema.getDescription() != null) {
+                        recordField.setDescription(schema.getDescription());
+                    }
                     recordFields.put(key, recordField);
                     if (value instanceof Schema schema && schema.getDefaultKeyword() != null) {
                         recordField.setDefaultValue(this.generateStringRepresentation(schema.getDefaultKeyword()));

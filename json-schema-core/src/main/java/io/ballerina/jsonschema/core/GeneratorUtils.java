@@ -84,6 +84,7 @@ public class GeneratorUtils {
     public static final String NUMBER_CONSTRAINTS = "NumberConstraints";
     public static final String STRING_CONSTRAINTS = "StringConstraints";
     public static final String ARRAY_CONSTRAINTS = "ArrayConstraints";
+    public static final String META_DATA = "MetaData";
     public static final String PATTERN_RECORD = ANNOTATION_MODULE + COLON + "PatternPropertiesElement";
     public static final String VALUE = "value";
 
@@ -114,6 +115,11 @@ public class GeneratorUtils {
     public static final String MAX_PROPERTIES = "maxProperties";
     public static final String MIN_PROPERTIES = "minProperties";
     public static final String PROPERTY_NAMES = "propertyNames";
+
+    public static final String TITLE = "title";
+    public static final String DESCRIPTION = "description";
+    public static final String COMMENT = "comment";
+    public static final String EXAMPLES = "examples";
 
     public static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
     public static final String DIGIT_PATTERN = ".*\\d.*";
@@ -150,6 +156,7 @@ public class GeneratorUtils {
         private List<String> dependentRequired;
         private String dependentSchema;
         private String defaultValue;
+        private String description;
 
         RecordField(String type, boolean required) {
             this.type = type;
@@ -202,6 +209,14 @@ public class GeneratorUtils {
         String getDefaultValue() {
             return defaultValue;
         }
+        
+        void setDescription(String description) {
+            this.description = description;
+        }
+        
+        String getDescription() {
+            return description;
+        }
     }
 
     static void processRequiredFields(Map<String, RecordField> recordFields) {
@@ -249,6 +264,10 @@ public class GeneratorUtils {
             RecordField value = entry.getValue();
 
             ArrayList<String> fieldAnnotation = new ArrayList<>();
+            
+            if (value.getDescription() != null) {
+                fieldAnnotation.add("# " + value.getDescription());
+            }
 
             if (value.getDependentSchema() != null) {
                 addImports(BAL_JSON_DATA_MODULE, generator);
@@ -382,7 +401,7 @@ public class GeneratorUtils {
         return input;
     }
 
-    static boolean isCustomTypeNotRequired(Object... objects) {
+    static boolean areAllNull(Object... objects) {
         return Arrays.stream(objects).allMatch(Objects::isNull);
     }
 
