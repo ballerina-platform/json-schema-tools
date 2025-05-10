@@ -24,6 +24,7 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents the deserialized Schema object corresponding to a JSON schema.
@@ -175,6 +176,8 @@ class Schema {
     private Map<String, List<String>> dependentRequired;
 
     // TODO: Extra properties support.
+//    @JsonAdapter(SchemaDeserializers.OtherProperties.class)
+//    transient private Map<String, Object> extraProperties;
 
     // Constructors
     public Schema(
@@ -308,7 +311,8 @@ class Schema {
         this.dependentRequired = dependentRequired;
     }
 
-    public Schema() {}
+    public Schema() {
+    }
 
     // Applicator
     public Object getItems() {
@@ -772,4 +776,89 @@ class Schema {
     public void setDependentRequired(Map<String, List<String>> dependentRequired) {
         this.dependentRequired = dependentRequired;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Schema)) {
+            return false;
+        }
+        Schema schema = (Schema) o;
+
+        return Objects.equals(prefixItems, schema.prefixItems) &&
+                Objects.equals(items, schema.items) &&
+                Objects.equals(contains, schema.contains) &&
+                Objects.equals(additionalProperties, schema.additionalProperties) &&
+                Objects.equals(properties, schema.properties) &&
+                Objects.equals(patternProperties, schema.patternProperties) &&
+                Objects.equals(dependentSchema, schema.dependentSchema) &&
+                Objects.equals(propertyNames, schema.propertyNames) &&
+                Objects.equals(ifKeyword, schema.ifKeyword) &&
+                Objects.equals(then, schema.then) &&
+                Objects.equals(elseKeyword, schema.elseKeyword) &&
+                Objects.equals(allOf, schema.allOf) &&
+                Objects.equals(oneOf, schema.oneOf) &&
+                Objects.equals(anyOf, schema.anyOf) &&
+                Objects.equals(not, schema.not) &&
+                Objects.equals(contentEncoding, schema.contentEncoding) &&
+                Objects.equals(contentMediaType, schema.contentMediaType) &&
+                Objects.equals(content, schema.content) &&
+                Objects.equals(idKeyword, schema.idKeyword) &&
+                Objects.equals(schemaKeyword, schema.schemaKeyword) &&
+                Objects.equals(refKeyword, schema.refKeyword) &&
+                Objects.equals(anchorKeyword, schema.anchorKeyword) &&
+                Objects.equals(dynamicRefKeyword, schema.dynamicRefKeyword) &&
+                Objects.equals(dynamicAnchorKeyword, schema.dynamicAnchorKeyword) &&
+                Objects.equals(vocabularyKeyword, schema.vocabularyKeyword) &&
+                Objects.equals(commentKeyword, schema.commentKeyword) &&
+                Objects.equals(defsKeyword, schema.defsKeyword) &&
+                Objects.equals(format, schema.format) &&
+                Objects.equals(title, schema.title) &&
+                Objects.equals(description, schema.description) &&
+                Objects.equals(defaultKeyword, schema.defaultKeyword) &&
+                Objects.equals(deprecated, schema.deprecated) &&
+                Objects.equals(readOnly, schema.readOnly) &&
+                Objects.equals(writeOnly, schema.writeOnly) &&
+                Objects.equals(examples, schema.examples) &&
+                Objects.equals(unevaluatedItems, schema.unevaluatedItems) &&
+                Objects.equals(unevaluatedProperties, schema.unevaluatedProperties) &&
+                Objects.equals(type, schema.type) &&
+                Objects.equals(constKeyword, schema.constKeyword) &&
+                Objects.equals(enumKeyword, schema.enumKeyword) &&
+                Objects.equals(multipleOf, schema.multipleOf) &&
+                Objects.equals(maximum, schema.maximum) &&
+                Objects.equals(exclusiveMaximum, schema.exclusiveMaximum) &&
+                Objects.equals(minimum, schema.minimum) &&
+                Objects.equals(exclusiveMinimum, schema.exclusiveMinimum) &&
+                Objects.equals(maxLength, schema.maxLength) &&
+                Objects.equals(minLength, schema.minLength) &&
+                Objects.equals(pattern, schema.pattern) &&
+                Objects.equals(maxItems, schema.maxItems) &&
+                Objects.equals(minItems, schema.minItems) &&
+                Objects.equals(uniqueItems, schema.uniqueItems) &&
+                Objects.equals(maxContains, schema.maxContains) &&
+                Objects.equals(minContains, schema.minContains) &&
+                Objects.equals(maxProperties, schema.maxProperties) &&
+                Objects.equals(minProperties, schema.minProperties) &&
+                Objects.equals(required, schema.required) &&
+                Objects.equals(dependentRequired, schema.dependentRequired);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                prefixItems, items, contains, additionalProperties, properties, patternProperties,
+                dependentSchema, propertyNames, ifKeyword, then, elseKeyword, allOf, oneOf, anyOf, not,
+                contentEncoding, contentMediaType, content, idKeyword, schemaKeyword, refKeyword,
+                anchorKeyword, dynamicRefKeyword, dynamicAnchorKeyword, vocabularyKeyword,
+                commentKeyword, defsKeyword, format, title, description, defaultKeyword, deprecated,
+                readOnly, writeOnly, examples, unevaluatedItems, unevaluatedProperties, type,
+                constKeyword, enumKeyword, multipleOf, maximum, exclusiveMaximum, minimum,
+                exclusiveMinimum, maxLength, minLength, pattern, maxItems, minItems, uniqueItems,
+                maxContains, minContains, maxProperties, minProperties, required, dependentRequired
+        );
+    }
+
 }

@@ -23,6 +23,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -304,6 +306,67 @@ public class SchemaUtils {
         if (schema.getUnevaluatedProperties() != null) {
             convertToAbsoluteUri(schema.getUnevaluatedProperties(), baseUri);
         }
+    }
+
+    public static Object getSchemaById(Map<URI, Schema> idToSchemaMap, String uri) throws Exception {
+        URI id = URI.create(uri);
+        if (idToSchemaMap.containsKey(id)) {
+            return idToSchemaMap.get(id);
+        }
+
+        URI nearestUri = URI.create("");
+        for (URI key : idToSchemaMap.keySet()) {
+            if (uri.startsWith(key.toString()) && key.toString().length() > nearestUri.toString().length()) {
+                nearestUri = key;
+            }
+        }
+
+        if (nearestUri.equals(URI.create(""))) {
+            throw new RuntimeException("No matching schema found for " + uri);
+        }
+
+        Schema schema = idToSchemaMap.get(nearestUri);
+
+        String basePath = nearestUri.toString();
+        String relativePath = uri.substring(basePath.length());
+
+        if (!relativePath.startsWith("#/")) {
+            throw new RuntimeException("Invalid path: " + basePath);
+        }
+
+        relativePath = relativePath.substring(2);
+        ArrayList<String> pathList = new ArrayList<>(Arrays.asList(relativePath.split("/")));
+
+        return getSchemaByKeyword(schema, pathList);
+    }
+
+    public static Object getSchemaByKeyword(Object schemaObject, ArrayList<String> pathList) throws Exception {
+        if (pathList.isEmpty()) {
+            return schemaObject;
+        }
+        if (!(schemaObject instanceof Schema schema)) {
+            throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+        }
+
+        String nextPath = pathList.removeFirst();
+
+        switch (nextPath) {
+            case "$defs" -> {
+                if (schema.getDefsKeyword() == null) {
+                    throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+                }
+                String key = pathList.removeFirst();
+                return getSchemaByKeyword(schema.getDefsKeyword().get(key), pathList);
+            }
+            case "items" -> {
+                return getSchemaByKeyword(schema.getItems(), pathList);
+            }
+            case "contains" -> {
+                return getSchemaByKeyword(schema.getContains(), pathList);
+            }
+            default -> throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+        }
+        // TODO: For other paths that are not mentioned here.
     }
 
     public static Object parseJsonSchema(String jsonString) throws Exception {

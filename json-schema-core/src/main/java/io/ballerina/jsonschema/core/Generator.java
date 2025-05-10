@@ -136,6 +136,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.resolveNameConflicts;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveTypeNameForTypedesc;
 import static io.ballerina.jsonschema.core.SchemaUtils.convertToAbsoluteUri;
 import static io.ballerina.jsonschema.core.SchemaUtils.fetchSchemaId;
+import static io.ballerina.jsonschema.core.SchemaUtils.getSchemaById;
 
 /**
  * Ballerina code generation handler.
@@ -158,6 +159,9 @@ public class Generator {
 
     //! This is definitely a schema as id's can only be assigned to schema values
     final Map<URI, Schema> idToSchemaMap = new HashMap<>();
+
+    //! Add a comment for this mapping ( If it works )
+    final Map<Schema, String> schemaToTypeMap = new HashMap<>();
 
     private int constCounter = 0;
 
@@ -216,12 +220,24 @@ public class Generator {
 
         Schema schema = (Schema) schemaObject;
 
-        // Check for references and resolve them if they are already found.
+        if (schema.getRefKeyword() != null) {
+            Object obj =  getSchemaById(idToSchemaMap, schema.getRefKeyword());
+            return convert(obj, name);
+        } else if (schema.getDynamicRefKeyword() != null) {
+            Object obj = getSchemaById(idToSchemaMap, schema.getDynamicRefKeyword());
+            return convert(obj, name);
+        }
+        // TODO: Handle the condition with additional constraints.
+
+        if (schemaToTypeMap.containsKey(schema)) {
+            return schemaToTypeMap.get(schema);
+        }
 
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
         List<Object> schemaType = balTypes.typeList();
 
         if (schemaType.isEmpty()) {
+            schemaToTypeMap.put(schema, NEVER);
             return NEVER;
         }
 
@@ -231,6 +247,7 @@ public class Generator {
             }
             if (schemaType.size() == 1) {
                 String typeName = createType(name, schema, schemaType.getFirst());
+                schemaToTypeMap.put(schema, typeName);
                 return typeName;
             }
 
@@ -242,6 +259,7 @@ public class Generator {
             }
             if (unionTypes.containsAll(
                     Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
+                schemaToTypeMap.put(schema, JSON);
                 return JSON;
             }
             if (unionTypes.contains(NUMBER)) {
@@ -251,6 +269,7 @@ public class Generator {
                 unionTypes.add(DECIMAL);
             }
             String typeName = String.join(PIPE, unionTypes);
+            schemaToTypeMap.put(schema, typeName);
             return typeName;
         }
 
@@ -265,6 +284,7 @@ public class Generator {
                 })
                 .collect(Collectors.joining(PIPE));
 
+        schemaToTypeMap.put(schema, typeName);
         return typeName;
     }
 
