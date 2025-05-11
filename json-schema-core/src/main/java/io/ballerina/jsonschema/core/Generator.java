@@ -141,6 +141,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.processRequiredFields;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveConstMapping;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveNameConflicts;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveTypeNameForTypedesc;
+import static io.ballerina.jsonschema.core.Schema.deepCopy;
 import static io.ballerina.jsonschema.core.SchemaUtils.convertToAbsoluteUri;
 import static io.ballerina.jsonschema.core.SchemaUtils.fetchSchemaId;
 import static io.ballerina.jsonschema.core.SchemaUtils.getSchemaById;
@@ -187,15 +188,15 @@ public class Generator {
                     if (schema.getIdKeyword() == null) {
                         throw new Exception("All the schemas must have an id if there are multiple schema files.");
                     }
-                    fetchSchemaId(schemaObject, URI.create(""), this.idToSchemaMap);
+                    fetchSchemaId(deepCopy(schemaObject), URI.create(""), this.idToSchemaMap);
                     //! id is definitely not null here
                     //! Add all schemas and sub schemas mapped to their id's.
                     // Don't need to always have an id, as that exception is handled in the upper part.
                 }
             } else if (schema.getIdKeyword() != null) {
-                fetchSchemaId(schema, URI.create(""), this.idToSchemaMap); //! id is definitely not null here
+                fetchSchemaId(deepCopy(schema), URI.create(""), this.idToSchemaMap); //! id is definitely not null here
             } else {
-                fetchSchemaId(schema, URI.create("dummy:/"), this.idToSchemaMap);
+                fetchSchemaId(deepCopy(schema), URI.create("dummy:/"), this.idToSchemaMap);
             }
 
             // Convert the uri of each schema to absolute uri's
