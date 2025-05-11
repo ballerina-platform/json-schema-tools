@@ -20,7 +20,6 @@ package io.ballerina.jsonschema.core;
 
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
-import com.google.gson.internal.LinkedTreeMap;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
