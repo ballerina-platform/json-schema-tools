@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static io.ballerina.jsonschema.core.Schema.deepCopy;
+
 /**
  * Util methods to handle Schema keywords.
  *
@@ -39,7 +41,7 @@ public class SchemaUtils {
     private static final List<String> SUPPORTED_DRAFTS = List.of(DRAFT_2020_12);
 
     public static void fetchSchemaId(Object schemaObject, URI baseUri, Map<URI, Schema> idToSchemaMap) {
-        if (!(schemaObject instanceof Schema schema)) {
+        if (!(deepCopy(schemaObject) instanceof Schema schema)) {
             return;
         }
 

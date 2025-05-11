@@ -20,8 +20,10 @@ package io.ballerina.jsonschema.core;
 
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.internal.LinkedTreeMap;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -859,6 +861,122 @@ class Schema {
                 exclusiveMinimum, maxLength, minLength, pattern, maxItems, minItems, uniqueItems,
                 maxContains, minContains, maxProperties, minProperties, required, dependentRequired
         );
+    }
+
+    public static Object deepCopy(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+
+        if (obj instanceof Boolean || obj instanceof String || obj instanceof Number) {
+            return obj;
+        }
+
+        if (obj instanceof List) {
+            List<Object> originalList = (List<Object>) obj;
+            List<Object> copiedList = new ArrayList<>();
+            for (Object element : originalList) {
+                copiedList.add(deepCopy(element));
+            }
+            return copiedList;
+        }
+
+//        if (obj instanceof LinkedTreeMap){
+//            LinkedTreeMap<String, Object> originalMap = (LinkedTreeMap<String, Object>) obj;
+//            LinkedTreeMap<String, Object> copiedMap = new LinkedTreeMap<>();
+//            for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
+//                copiedMap.put(entry.getKey(), deepCopy(entry.getValue()));
+//            }
+//            return copiedMap;
+//        }
+
+        if (obj instanceof Map) {
+            Map<String, Object> originalMap = (Map<String, Object>) obj;
+            Map<String, Object> copiedMap = new LinkedHashMap<>();
+            for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
+                copiedMap.put(entry.getKey(), deepCopy(entry.getValue()));
+            }
+            return copiedMap;
+        }
+
+        if (obj instanceof Schema schema) {
+            Schema copiedSchema = new Schema();
+
+            copiedSchema.setPrefixItems((List<Object>) deepCopy(schema.getPrefixItems()));
+            copiedSchema.setItems(deepCopy(schema.getItems()));
+            copiedSchema.setContains(deepCopy(schema.getContains()));
+            copiedSchema.setAdditionalProperties(deepCopy(schema.getAdditionalProperties()));
+            copiedSchema.setProperties((Map<String, Object>) deepCopy(schema.getProperties()));
+            copiedSchema.setPatternProperties((Map<String, Object>) deepCopy(schema.getPatternProperties()));
+            copiedSchema.setDependentSchema((Map<String, Object>) deepCopy(schema.getDependentSchema()));
+            copiedSchema.setPropertyNames(deepCopy(schema.getPropertyNames()));
+            copiedSchema.setIfKeyword(deepCopy(schema.getIfKeyword()));
+            copiedSchema.setThen(deepCopy(schema.getThen()));
+            copiedSchema.setElseKeyword(deepCopy(schema.getElseKeyword()));
+            copiedSchema.setAllOf((List<Object>) deepCopy(schema.getAllOf()));
+            copiedSchema.setOneOf((List<Object>) deepCopy(schema.getOneOf()));
+            copiedSchema.setAnyOf((List<Object>) deepCopy(schema.getAnyOf()));
+            copiedSchema.setNot(deepCopy(schema.getNot()));
+
+            copiedSchema.setContentEncoding(schema.getContentEncoding());
+            copiedSchema.setContentMediaType(schema.getContentMediaType());
+            copiedSchema.setContent(deepCopy(schema.getContent()));
+
+            copiedSchema.setIdKeyword(schema.getIdKeyword());
+            copiedSchema.setSchemaKeyword(schema.getSchemaKeyword());
+            copiedSchema.setRefKeyword(schema.getRefKeyword());
+            copiedSchema.setAnchorKeyword(schema.getAnchorKeyword());
+            copiedSchema.setDynamicRefKeyword(schema.getDynamicRefKeyword());
+            copiedSchema.setDynamicAnchorKeyword(schema.getDynamicAnchorKeyword());
+            copiedSchema.setVocabularyKeyword(schema.getVocabularyKeyword());
+            copiedSchema.setCommentKeyword(schema.getCommentKeyword());
+            copiedSchema.setDefsKeyword((Map<String, Object>) deepCopy(schema.getDefsKeyword()));
+
+            copiedSchema.setFormat(schema.getFormat());
+
+            copiedSchema.setTitle(schema.getTitle());
+            copiedSchema.setDescription(schema.getDescription());
+            copiedSchema.setDefaultKeyword(deepCopy(schema.getDefaultKeyword()));
+            copiedSchema.setDeprecated(schema.getDeprecated());
+            copiedSchema.setReadOnly(schema.getReadOnly());
+            copiedSchema.setWriteOnly(schema.getWriteOnly());
+            copiedSchema.setExamples((List<Object>) deepCopy(schema.getExamples()));
+
+            copiedSchema.setUnevaluatedItems(deepCopy(schema.getUnevaluatedItems()));
+            copiedSchema.setUnevaluatedProperties(deepCopy(schema.getUnevaluatedProperties()));
+
+            copiedSchema.setType(schema.getType() == null ? null : new ArrayList<>(schema.getType()));
+            copiedSchema.setConstKeyword(deepCopy(schema.getConstKeyword()));
+            copiedSchema.setEnumKeyword(schema.getEnumKeyword() == null ?
+                    null : new ArrayList<>(schema.getEnumKeyword()));
+
+            copiedSchema.setMultipleOf(schema.getMultipleOf());
+            copiedSchema.setMaximum(schema.getMaximum());
+            copiedSchema.setExclusiveMaximum(schema.getExclusiveMaximum());
+            copiedSchema.setMinimum(schema.getMinimum());
+            copiedSchema.setExclusiveMinimum(schema.getExclusiveMinimum());
+
+            copiedSchema.setMaxLength(schema.getMaxLength());
+            copiedSchema.setMinLength(schema.getMinLength());
+            copiedSchema.setPattern(schema.getPattern());
+
+            copiedSchema.setMaxItems(schema.getMaxItems());
+            copiedSchema.setMinItems(schema.getMinItems());
+            copiedSchema.setUniqueItems(schema.getUniqueItems());
+            copiedSchema.setMaxContains(schema.getMaxContains());
+            copiedSchema.setMinContains(schema.getMinContains());
+
+            copiedSchema.setMaxProperties(schema.getMaxProperties());
+            copiedSchema.setMinProperties(schema.getMinProperties());
+            copiedSchema.setRequired(schema.getRequired() == null ? null : new ArrayList<>(schema.getRequired()));
+            copiedSchema.setDependentRequired(
+                    schema.getDependentRequired() == null ? null : new LinkedHashMap<>(schema.getDependentRequired())
+            );
+
+            return copiedSchema;
+        }
+
+        throw new UnsupportedOperationException("Unsupported type for deep copy: " + obj.getClass());
     }
 
 }
