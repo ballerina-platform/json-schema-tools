@@ -131,7 +131,7 @@ class Schema {
     private Boolean readOnly;
     private Boolean writeOnly;
 
-    private List<Object> examples;
+    private ArrayList<Object> examples;
 
     // Unevaluated
     @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
@@ -142,7 +142,7 @@ class Schema {
 
     // Validation
     @JsonAdapter(SchemaDeserializers.TypeDeserializer.class)
-    private ArrayList<String> type;
+    private List<String> type;
 
     @SerializedName("const")
     private Object constKeyword;
@@ -225,7 +225,7 @@ class Schema {
             Boolean deprecated,
             Boolean readOnly,
             Boolean writeOnly,
-            List<Object> examples,
+            ArrayList<Object> examples,
 
             // Unevaluated
             Object unevaluatedItems,
@@ -596,7 +596,7 @@ class Schema {
         return examples;
     }
 
-    public void setExamples(List<Object> examples) {
+    public void setExamples(ArrayList<Object> examples) {
         this.examples = examples;
     }
 
@@ -618,7 +618,7 @@ class Schema {
     }
 
     // Validation
-    public ArrayList<String> getType() {
+    public List<String> getType() {
         return type;
     }
 
@@ -880,15 +880,6 @@ class Schema {
             return copiedList;
         }
 
-//        if (obj instanceof LinkedTreeMap){
-//            LinkedTreeMap<String, Object> originalMap = (LinkedTreeMap<String, Object>) obj;
-//            LinkedTreeMap<String, Object> copiedMap = new LinkedTreeMap<>();
-//            for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
-//                copiedMap.put(entry.getKey(), deepCopy(entry.getValue()));
-//            }
-//            return copiedMap;
-//        }
-
         if (obj instanceof Map) {
             Map<String, Object> originalMap = (Map<String, Object>) obj;
             Map<String, Object> copiedMap = new LinkedHashMap<>();
@@ -939,7 +930,7 @@ class Schema {
             copiedSchema.setDeprecated(schema.getDeprecated());
             copiedSchema.setReadOnly(schema.getReadOnly());
             copiedSchema.setWriteOnly(schema.getWriteOnly());
-            copiedSchema.setExamples((List<Object>) deepCopy(schema.getExamples()));
+            copiedSchema.setExamples((ArrayList<Object>) deepCopy(schema.getExamples()));
 
             copiedSchema.setUnevaluatedItems(deepCopy(schema.getUnevaluatedItems()));
             copiedSchema.setUnevaluatedProperties(deepCopy(schema.getUnevaluatedProperties()));

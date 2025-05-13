@@ -440,6 +440,7 @@ public class SchemaUtils {
         // TODO: Implement for undefined keywords
     }
 
+
     public static class InvalidJsonSchemaException extends Exception {
         public InvalidJsonSchemaException(String message) {
             super(message);
