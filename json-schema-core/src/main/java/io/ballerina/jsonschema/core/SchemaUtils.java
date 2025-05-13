@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static io.ballerina.jsonschema.core.Schema.deepCopy;
+
 /**
  * Util methods to handle Schema keywords.
  *
@@ -37,6 +39,32 @@ public class SchemaUtils {
     private static final String DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema";
 
     private static final List<String> SUPPORTED_DRAFTS = List.of(DRAFT_2020_12);
+
+    public static Object parseJsonSchema(String jsonString) throws Exception {
+        Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+        jsonString = jsonString.trim();
+
+        if (jsonString.isEmpty()) {
+            throw new EmptyJsonSchemaException("JSON schema is empty");
+        }
+
+        if (jsonString.equals("true")) {
+            return Boolean.TRUE;
+        }
+        if (jsonString.equals("false")) {
+            return Boolean.FALSE;
+        }
+        if (jsonString.startsWith("{") && jsonString.endsWith("}")) {
+            Schema tmpschema = gson.fromJson(jsonString, Schema.class);
+
+            if (tmpschema.getSchemaKeyword() == null ||
+                    !SUPPORTED_DRAFTS.contains(tmpschema.getSchemaKeyword())) {
+                throw new RuntimeException("Schema draft not supported");
+            }
+            return tmpschema;
+        }
+        throw new InvalidJsonSchemaException("JSON schema is not valid");
+    }
 
     public static void fetchSchemaId(Object schemaObject, URI baseUri, Map<URI, Schema> idToSchemaMap) {
         if (!(schemaObject instanceof Schema schema)) {
@@ -52,7 +80,7 @@ public class SchemaUtils {
             baseUri = uri;
         }
         if (schema.getAnchorKeyword() != null) {
-            // TODO: validate the anchor syntax
+            // TODO: validate the anchor expression
             URI uri = URI.create("#" + schema.getAnchorKeyword());
             if (idToSchemaMap.containsKey(uri)) {
                 throw new RuntimeException("Schema anchor \"" + schema.getAnchorKeyword() + "\" is not unique");
@@ -60,7 +88,7 @@ public class SchemaUtils {
             idToSchemaMap.put(baseUri.resolve(uri), schema);
         }
         if (schema.getDynamicAnchorKeyword() != null) {
-            // TODO: validate the anchor syntax
+            // TODO: validate the anchor expression
             URI uri = URI.create("#" + schema.getDynamicAnchorKeyword());
             if (idToSchemaMap.containsKey(uri)) {
                 throw new RuntimeException("Schema anchor \"" + schema.getDynamicAnchorKeyword() + "\" is not unique");
@@ -311,10 +339,11 @@ public class SchemaUtils {
     public static Object getSchemaById(Map<URI, Schema> idToSchemaMap, String uri) throws Exception {
         URI id = URI.create(uri);
         if (idToSchemaMap.containsKey(id)) {
-            return idToSchemaMap.get(id);
+            return deepCopy(idToSchemaMap.get(id));
         }
 
         URI nearestUri = URI.create("");
+
         for (URI key : idToSchemaMap.keySet()) {
             if (uri.startsWith(key.toString()) && key.toString().length() > nearestUri.toString().length()) {
                 nearestUri = key;
@@ -325,7 +354,7 @@ public class SchemaUtils {
             throw new RuntimeException("No matching schema found for " + uri);
         }
 
-        Schema schema = idToSchemaMap.get(nearestUri);
+        Schema schema = (Schema) deepCopy(idToSchemaMap.get(nearestUri));
 
         String basePath = nearestUri.toString();
         String relativePath = uri.substring(basePath.length());
@@ -358,6 +387,18 @@ public class SchemaUtils {
                 String key = pathList.removeFirst();
                 return getSchemaByKeyword(schema.getDefsKeyword().get(key), pathList);
             }
+            case "prefixItems" -> {
+                // TODO: Complete this
+                try {
+                    List<Object> prefixItems = schema.getPrefixItems();
+                    String key = pathList.removeFirst();
+                    long index = Long.parseLong(key);
+                    return getSchemaByKeyword(prefixItems.get((int) index), pathList);
+                } catch (Exception e) {
+                    throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+                }
+            }
+
             case "items" -> {
                 return getSchemaByKeyword(schema.getItems(), pathList);
             }
@@ -396,33 +437,7 @@ public class SchemaUtils {
             // TODO: Handle other cases.
             default -> throw new RuntimeException("Invalid path: " + String.join("/", pathList));
         }
-        // TODO: For other paths that are not mentioned here.
-    }
-
-    public static Object parseJsonSchema(String jsonString) throws Exception {
-        Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
-        jsonString = jsonString.trim();
-
-        if (jsonString.isEmpty()) {
-            throw new EmptyJsonSchemaException("JSON schema is empty");
-        }
-
-        if (jsonString.equals("true")) {
-            return Boolean.TRUE;
-        }
-        if (jsonString.equals("false")) {
-            return Boolean.FALSE;
-        }
-        if (jsonString.startsWith("{") && jsonString.endsWith("}")) {
-            Schema tmpschema = gson.fromJson(jsonString, Schema.class);
-
-            if (tmpschema.getSchemaKeyword() == null ||
-                    !SUPPORTED_DRAFTS.contains(tmpschema.getSchemaKeyword())) {
-                throw new RuntimeException("Schema draft not supported");
-            }
-            return tmpschema;
-        }
-        throw new InvalidJsonSchemaException("JSON schema is not valid");
+        // TODO: Implement for undefined keywords
     }
 
     public static class InvalidJsonSchemaException extends Exception {

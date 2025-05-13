@@ -901,7 +901,7 @@ class Schema {
         if (obj instanceof Schema schema) {
             Schema copiedSchema = new Schema();
 
-            copiedSchema.setPrefixItems((List<Object>) deepCopy(schema.getPrefixItems()));
+            copiedSchema.setPrefixItems((ArrayList<Object>) deepCopy(schema.getPrefixItems()));
             copiedSchema.setItems(deepCopy(schema.getItems()));
             copiedSchema.setContains(deepCopy(schema.getContains()));
             copiedSchema.setAdditionalProperties(deepCopy(schema.getAdditionalProperties()));

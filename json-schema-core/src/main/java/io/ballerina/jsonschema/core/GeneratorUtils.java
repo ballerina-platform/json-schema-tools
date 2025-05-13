@@ -88,6 +88,11 @@ public class GeneratorUtils {
     public static final String PATTERN_RECORD = ANNOTATION_MODULE + COLON + "PatternPropertiesElement";
     public static final String VALUE = "value";
 
+    public static final String READ_ONLY = "@" + ANNOTATION_MODULE + COLON + "ReadOnly";
+    public static final String WRITE_ONLY = "@" + ANNOTATION_MODULE + COLON + "WriteOnly";
+    public static final String READ_ONLY_FIELD = "readonly ";
+    public static final String DEPRECATED = "@deprecated";
+
     public static final String ANNOTATION_FORMAT = "@%s:%s{%n\t%s%n}";
     public static final String TYPE_FORMAT = "public type %s %s;";
     public static final String FIELD_ANNOTATION_FORMAT = "@%s:%s{%n\tvalue: %s%n}";
@@ -157,6 +162,8 @@ public class GeneratorUtils {
         private String dependentSchema;
         private String defaultValue;
         private String description;
+        private boolean readOnly;
+        private boolean deprecated;
 
         RecordField(String type, boolean required) {
             this.type = type;
@@ -164,6 +171,8 @@ public class GeneratorUtils {
             this.dependentRequired = new ArrayList<>();
             this.dependentSchema = null;
             this.defaultValue = null;
+            this.readOnly = false;
+            this.deprecated = false;
         }
 
         String getType() {
@@ -209,13 +218,29 @@ public class GeneratorUtils {
         String getDefaultValue() {
             return defaultValue;
         }
-        
+
         void setDescription(String description) {
             this.description = description;
         }
-        
+
         String getDescription() {
             return description;
+        }
+
+        boolean isReadOnly() {
+            return readOnly;
+        }
+
+        void setReadOnly(boolean readOnly) {
+            this.readOnly = readOnly;
+        }
+
+        boolean isDeprecated() {
+            return deprecated;
+        }
+
+        void setDeprecated(boolean deprecated) {
+            this.deprecated = deprecated;
         }
     }
 
@@ -264,7 +289,7 @@ public class GeneratorUtils {
             RecordField value = entry.getValue();
 
             ArrayList<String> fieldAnnotation = new ArrayList<>();
-            
+
             if (value.getDescription() != null) {
                 fieldAnnotation.add("# " + value.getDescription());
             }
@@ -287,15 +312,18 @@ public class GeneratorUtils {
                 fieldAnnotation.add(dependentRequired);
             }
 
+            String readOnly = value.isReadOnly() ? READ_ONLY_FIELD : "";
+            String deprecated = value.isDeprecated() ? DEPRECATED + NEW_LINE : "";
+
             if (value.isRequired()) {
                 if (value.getDefaultValue() != null) {
-                    fieldAnnotation.add(String.join(WHITE_SPACE, value.getType(), key, EQUAL,
+                    fieldAnnotation.add(deprecated + readOnly + String.join(WHITE_SPACE, value.getType(), key, EQUAL,
                             value.getDefaultValue()));
                 } else {
-                    fieldAnnotation.add(value.getType() + WHITE_SPACE + key);
+                    fieldAnnotation.add(deprecated + readOnly + value.getType() + WHITE_SPACE + key);
                 }
             } else {
-                fieldAnnotation.add(value.getType() + WHITE_SPACE + key + QUESTION_MARK);
+                fieldAnnotation.add(deprecated + readOnly + value.getType() + WHITE_SPACE + key + QUESTION_MARK);
             }
 
             recordBody.add(String.join(NEW_LINE, fieldAnnotation) + SEMI_COLON);

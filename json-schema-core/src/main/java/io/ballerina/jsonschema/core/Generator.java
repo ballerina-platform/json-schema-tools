@@ -62,6 +62,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.COMMENT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CONTAINS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPENDENT_SCHEMA;
+import static io.ballerina.jsonschema.core.GeneratorUtils.DEPRECATED;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DESCRIPTION;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DOUBLE_QUOTATION;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_ARRAY;
@@ -105,6 +106,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.PIPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PROPERTY_NAMES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PROPERTY_NAMES_SUFFIX;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PUBLIC;
+import static io.ballerina.jsonschema.core.GeneratorUtils.READ_ONLY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.RECORD;
 import static io.ballerina.jsonschema.core.GeneratorUtils.REGEX_PREFIX;
 import static io.ballerina.jsonschema.core.GeneratorUtils.REST;
@@ -124,6 +126,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_ARRAY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_OBJECT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.VALUE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.WRITE_ONLY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ZERO;
 import static io.ballerina.jsonschema.core.GeneratorUtils.addIfNotNull;
 import static io.ballerina.jsonschema.core.GeneratorUtils.addIfNotNullString;
@@ -178,8 +181,9 @@ public class Generator {
     }
 
     public Response convertBaseSchema(ArrayList<Object> schemaObjectList) throws Exception {
+        // If there are multiple schemas (Starting with a non-boolean schema), validate the presence of id's in all
+        // References are stored as deepCopies to avoid modifications in the later part of the code
         if (schemaObjectList.getFirst() instanceof Schema schema) {
-            //! This doesn't fetch the schema id if there is only one file or if the first file is a boolean
             if (schemaObjectList.size() > 1) {
                 for (Object schemaObject : schemaObjectList) {
                     if (schemaObject instanceof Boolean) {
@@ -189,30 +193,25 @@ public class Generator {
                         throw new Exception("All the schemas must have an id if there are multiple schema files.");
                     }
                     fetchSchemaId(deepCopy(schemaObject), URI.create(""), this.idToSchemaMap);
-                    //! id is definitely not null here
-                    //! Add all schemas and sub schemas mapped to their id's.
-                    // Don't need to always have an id, as that exception is handled in the upper part.
                 }
             } else if (schema.getIdKeyword() != null) {
-                fetchSchemaId(deepCopy(schema), URI.create(""), this.idToSchemaMap); //! id is definitely not null here
+                fetchSchemaId(deepCopy(schema), URI.create(""), this.idToSchemaMap);
             } else {
                 fetchSchemaId(deepCopy(schema), URI.create("dummy:/"), this.idToSchemaMap);
             }
 
-            // Convert the uri of each schema to absolute uri's
+            // Convert all the uri values to absolute uris
             for (Object schemaObject : schemaObjectList) {
                 convertToAbsoluteUri(schemaObject, URI.create("dummy:/"));
             }
         }
 
-
-        // Generate the ballerina code based on the first element.
+        // Generate the ballerina code based on the first element
         Object schemaObject = schemaObjectList.getFirst();
         String generatedTypeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
 
         if (!generatedTypeName.equals(DEFAULT_SCHEMA_NAME)) {
-            String schemaDefinition = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE
-                    + DEFAULT_SCHEMA_NAME + WHITE_SPACE + generatedTypeName + SEMI_COLON;
+            String schemaDefinition = String.format(TYPE_FORMAT, DEFAULT_SCHEMA_NAME, generatedTypeName);
             ModuleMemberDeclarationNode schemaNode = NodeParser.parseModuleMemberDeclaration(schemaDefinition);
             this.nodes.put(DEFAULT_SCHEMA_NAME, schemaNode);
         }
@@ -247,11 +246,14 @@ public class Generator {
             Object obj = getSchemaById(idToSchemaMap, schema.getDynamicRefKeyword());
             return convert(obj, name);
         }
-        // TODO: Handle the condition with additional constraints.
 
         if (schemaToTypeMap.containsKey(schema)) {
             return schemaToTypeMap.get(schema);
         }
+
+        // TODO: Handle AllOf, OneOf, AnyOf, Not
+
+        // TODO: Handle if-then-else
 
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
         List<Object> schemaType = balTypes.typeList();
@@ -270,7 +272,7 @@ public class Generator {
                 String typeName = createType(name, schema, schemaType.getFirst());
                 String finalType = processMetaData(schema, typeName, name, type);
                 schemaToTypeMap.put(schema, finalType);
-                return typeName;
+                return finalType;
             }
 
             Set<String> unionTypes = new LinkedHashSet<>();
@@ -315,11 +317,23 @@ public class Generator {
     }
 
     private String processMetaData(Schema schema, String type, String name, AnnotType typeAnnot) throws Exception {
-        if (areAllNull(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples())) {
+        // Convert all boolean values to "null" or "true" (Default null value represents false)
+        if (Boolean.FALSE.equals(schema.getWriteOnly())) {
+            schema.setWriteOnly(null);
+        }
+        if (Boolean.FALSE.equals(schema.getReadOnly())) {
+            schema.setReadOnly(null);
+        }
+        if (Boolean.FALSE.equals(schema.getDeprecated())) {
+            schema.setDeprecated(null);
+        }
+
+        // Early return if the metadata fields and annotations are empty
+        if (areAllNull(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(), schema.getWriteOnly())) {
             if (typeAnnot == AnnotType.FIELD) {
                 return type;
             }
-            if (schema.getDescription() == null) {
+            if (areAllNull(schema.getDescription(), schema.getReadOnly(), schema.getDeprecated())) {
                 return type;
             }
         }
@@ -343,15 +357,30 @@ public class Generator {
         }
 
         String annotationFields = String.join(COMMA + NEW_LINE + TAB, annotationParts);
-        String annotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, META_DATA, annotationFields);
+
+        List<String> annotations = new ArrayList<>();
+
+        if (!annotationFields.isEmpty()) {
+            annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, META_DATA, annotationFields));
+        }
+        if (schema.getDeprecated() != null && typeAnnot != AnnotType.FIELD) {
+            annotations.add(DEPRECATED);
+        }
+        if (schema.getWriteOnly() != null) {
+            annotations.add(WRITE_ONLY);
+        }
+        if (schema.getReadOnly() != null && typeAnnot != AnnotType.FIELD) {
+            annotations.add(READ_ONLY);
+        }
+        String annotString = String.join(NEW_LINE, annotations);
 
         if (this.nodes.containsKey(type)) {
-            this.nodes.put(type, NodeParser.parseModuleMemberDeclaration(annotation +
+            this.nodes.put(type, NodeParser.parseModuleMemberDeclaration(annotString +
                     NEW_LINE + this.nodes.get(type)));
             return type;
         } else {
             String resolvedName = resolveNameConflicts(name, this);
-            this.nodes.put(resolvedName, NodeParser.parseModuleMemberDeclaration(annotation + NEW_LINE +
+            this.nodes.put(resolvedName, NodeParser.parseModuleMemberDeclaration(annotString + NEW_LINE +
                     String.format(TYPE_FORMAT, resolvedName, type)));
             return resolvedName;
         }
@@ -657,8 +686,16 @@ public class Generator {
                         recordField.setDescription(schema.getDescription());
                     }
                     recordFields.put(key, recordField);
-                    if (value instanceof Schema schema && schema.getDefaultKeyword() != null) {
-                        recordField.setDefaultValue(this.generateStringRepresentation(schema.getDefaultKeyword()));
+                    if (value instanceof Schema schema) {
+                        if (schema.getDefaultKeyword() != null) {
+                            recordField.setDefaultValue(this.generateStringRepresentation(schema.getDefaultKeyword()));
+                        }
+                        if (schema.getReadOnly() != null && schema.getReadOnly()) {
+                            recordField.setReadOnly(true);
+                        }
+                        if (schema.getDeprecated() != null && schema.getDeprecated()) {
+                            recordField.setDeprecated(true);
+                        }
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
