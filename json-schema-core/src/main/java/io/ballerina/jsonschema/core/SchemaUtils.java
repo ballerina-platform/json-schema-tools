@@ -379,67 +379,67 @@ public class SchemaUtils {
 
         String nextPath = pathList.removeFirst();
 
-        switch (nextPath) {
-            case "$defs" -> {
-                if (schema.getDefsKeyword() == null) {
-                    throw new RuntimeException("Invalid path: " + String.join("/", pathList));
-                }
-                String key = pathList.removeFirst();
-                return getSchemaByKeyword(schema.getDefsKeyword().get(key), pathList);
-            }
-            case "prefixItems" -> {
-                // TODO: Complete this
-                try {
-                    List<Object> prefixItems = schema.getPrefixItems();
+        try {
+            switch (nextPath) {
+                case "$defs" -> {
+                    if (schema.getDefsKeyword() == null) {
+                        throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+                    }
                     String key = pathList.removeFirst();
-                    long index = Long.parseLong(key);
-                    return getSchemaByKeyword(prefixItems.get((int) index), pathList);
-                } catch (Exception e) {
-                    throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+                    return getSchemaByKeyword(schema.getDefsKeyword().get(key), pathList);
                 }
-            }
+                case "prefixItems" -> {
+                    return getPathForList(schema.getPrefixItems(), pathList);
+                }
 
-            case "items" -> {
-                return getSchemaByKeyword(schema.getItems(), pathList);
-            }
-            case "contains" -> {
-                return getSchemaByKeyword(schema.getContains(), pathList);
-            }
-            case "additionalProperties" -> {
-                return getSchemaByKeyword(schema.getAdditionalProperties(), pathList);
-            }
-            case "properties" -> {
-                if (schema.getProperties() == null) {
-                    throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+                case "items" -> {
+                    return getSchemaByKeyword(schema.getItems(), pathList);
                 }
-                String key = pathList.removeFirst();
-                return getSchemaByKeyword(schema.getProperties().get(key), pathList);
-            }
-            case "dependentSchema" -> {
-                if (schema.getDependentSchema() == null) {
-                    throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+                case "contains" -> {
+                    return getSchemaByKeyword(schema.getContains(), pathList);
                 }
-                String key = pathList.removeFirst();
-                return getSchemaByKeyword(schema.getDependentSchema().get(key), pathList);
+                case "additionalProperties" -> {
+                    return getSchemaByKeyword(schema.getAdditionalProperties(), pathList);
+                }
+                case "properties" -> {
+                    return getPathForMap(schema.getProperties(), pathList);
+                }
+                case "dependentSchema" -> {
+                    return getPathForMap(schema.getDependentSchema(), pathList);
+                }
+                case "propertyNames" -> {
+                    return getSchemaByKeyword(schema.getPropertyNames(), pathList);
+                }
+                case "if" -> {
+                    return getSchemaByKeyword(schema.getIfKeyword(), pathList);
+                }
+                case "then" -> {
+                    return getSchemaByKeyword(schema.getThen(), pathList);
+                }
+                case "else" -> {
+                    return getSchemaByKeyword(schema.getElseKeyword(), pathList);
+                }
+                // TODO: Handle other cases.
+                default -> throw new RuntimeException("Invalid path: " + String.join("/", pathList));
             }
-            case "propertyNames" -> {
-                return getSchemaByKeyword(schema.getPropertyNames(), pathList);
-            }
-            case "if" -> {
-                return getSchemaByKeyword(schema.getIfKeyword(), pathList);
-            }
-            case "then" -> {
-                return getSchemaByKeyword(schema.getThen(), pathList);
-            }
-            case "else" -> {
-                return getSchemaByKeyword(schema.getElseKeyword(), pathList);
-            }
-            // TODO: Handle other cases.
-            default -> throw new RuntimeException("Invalid path: " + String.join("/", pathList));
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid path: " + String.join("/", pathList));
         }
         // TODO: Implement for undefined keywords
     }
 
+    public static Object getPathForList(Object objectList, ArrayList<String> pathList) throws Exception {
+        List<Object> itemList = (List<Object>) objectList;
+        String key = pathList.removeFirst();
+        long index = Long.parseLong(key);
+        return getSchemaByKeyword(itemList.get((int) index), pathList);
+    }
+
+    public static Object getPathForMap(Object objectMap, ArrayList<String> pathList) throws Exception {
+        Map<String, Object> map = (Map<String, Object>) objectMap;
+        String key = pathList.removeFirst();
+        return getSchemaByKeyword(map.get(key), pathList);
+    }
 
     public static class InvalidJsonSchemaException extends Exception {
         public InvalidJsonSchemaException(String message) {
