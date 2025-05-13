@@ -345,11 +345,11 @@ public class Generator {
         List<String> annotationParts = new ArrayList<>();
 
         if (typeAnnot != AnnotType.FIELD) {
-            addIfNotNullString(annotationParts, DESCRIPTION, "\"" + schema.getDescription() + "\"");
+            addIfNotNullString(annotationParts, DESCRIPTION, schema.getDescription());
         }
 
-        addIfNotNullString(annotationParts, TITLE, "\"" + schema.getTitle() + "\"");
-        addIfNotNullString(annotationParts, COMMENT, "\"" + schema.getCommentKeyword() + "\"");
+        addIfNotNullString(annotationParts, TITLE, schema.getTitle());
+        addIfNotNullString(annotationParts, COMMENT, schema.getCommentKeyword());
 
         if (schema.getExamples() != null) {
             List<String> examples = new ArrayList<>();
@@ -522,8 +522,8 @@ public class Generator {
         if (!areAllNull(contentEncoding, contentMediaType, contentSchema)) {
             List<String> annotationParts = new ArrayList<>();
 
-            addIfNotNullString(annotationParts, CONTENT_ENCODING, "\"" + contentEncoding + "\"");
-            addIfNotNullString(annotationParts, CONTENT_MEDIA_TYPE, "\"" + contentMediaType + "\"");
+            addIfNotNullString(annotationParts, CONTENT_ENCODING, contentEncoding);
+            addIfNotNullString(annotationParts, CONTENT_MEDIA_TYPE, contentMediaType);
 
             if (contentSchema != null) {
                 String contentSchemaName = finalType + convertToPascalCase(CONTENT_SCHEMA);

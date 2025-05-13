@@ -369,8 +369,8 @@ public class GeneratorUtils {
     }
 
     static void addIfNotNullString(List<String> list, String key, Object value) {
-        if (!value.equals("\"null\"")) {
-            list.add(key + ": " + value);
+        if (value != null) {
+            list.add(key + ": " + "\"" + value + "\"");
         }
     }
 
