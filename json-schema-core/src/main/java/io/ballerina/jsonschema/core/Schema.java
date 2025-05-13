@@ -86,7 +86,7 @@ class Schema {
     private String contentMediaType;
 
     @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
-    private Object content;
+    private Object contentSchema;
 
     // Core
     @SerializedName("$id")
@@ -202,7 +202,7 @@ class Schema {
             // Content
             String contentEncoding,
             String contentMediaType,
-            Object content,
+            Object contentSchema,
 
             // Core
             String idKeyword,
@@ -270,7 +270,7 @@ class Schema {
         this.not = not;
         this.contentEncoding = contentEncoding;
         this.contentMediaType = contentMediaType;
-        this.content = content;
+        this.contentSchema = contentSchema;
         this.idKeyword = idKeyword;
         this.schemaKeyword = schemaKeyword;
         this.refKeyword = refKeyword;
@@ -453,12 +453,12 @@ class Schema {
         this.contentMediaType = contentMediaType;
     }
 
-    public Object getContent() {
-        return content;
+    public Object getContentSchema() {
+        return contentSchema;
     }
 
-    public void setContent(Object content) {
-        this.content = content;
+    public void setContentSchema(Object contentSchema) {
+        this.contentSchema = contentSchema;
     }
 
     // Core
@@ -805,7 +805,7 @@ class Schema {
                 Objects.equals(not, schema.not) &&
                 Objects.equals(contentEncoding, schema.contentEncoding) &&
                 Objects.equals(contentMediaType, schema.contentMediaType) &&
-                Objects.equals(content, schema.content) &&
+                Objects.equals(contentSchema, schema.contentSchema) &&
                 Objects.equals(idKeyword, schema.idKeyword) &&
                 Objects.equals(schemaKeyword, schema.schemaKeyword) &&
                 Objects.equals(refKeyword, schema.refKeyword) &&
@@ -852,7 +852,7 @@ class Schema {
         return Objects.hash(
                 prefixItems, items, contains, additionalProperties, properties, patternProperties,
                 dependentSchema, propertyNames, ifKeyword, then, elseKeyword, allOf, oneOf, anyOf, not,
-                contentEncoding, contentMediaType, content, idKeyword, schemaKeyword, refKeyword,
+                contentEncoding, contentMediaType, contentSchema, idKeyword, schemaKeyword, refKeyword,
                 anchorKeyword, dynamicRefKeyword, dynamicAnchorKeyword, vocabularyKeyword,
                 commentKeyword, defsKeyword, format, title, description, defaultKeyword, deprecated,
                 readOnly, writeOnly, examples, unevaluatedItems, unevaluatedProperties, type,
@@ -919,7 +919,7 @@ class Schema {
 
             copiedSchema.setContentEncoding(schema.getContentEncoding());
             copiedSchema.setContentMediaType(schema.getContentMediaType());
-            copiedSchema.setContent(deepCopy(schema.getContent()));
+            copiedSchema.setContentSchema(deepCopy(schema.getContentSchema()));
 
             copiedSchema.setIdKeyword(schema.getIdKeyword());
             copiedSchema.setSchemaKeyword(schema.getSchemaKeyword());

@@ -184,8 +184,8 @@ public class SchemaUtils {
         }
 
         // content
-        if (schema.getContent() != null) {
-            fetchSchemaId(schema.getContent(), baseUri, idToSchemaMap);
+        if (schema.getContentSchema() != null) {
+            fetchSchemaId(schema.getContentSchema(), baseUri, idToSchemaMap);
         }
 
         // $defs
@@ -314,8 +314,8 @@ public class SchemaUtils {
         }
 
         // content
-        if (schema.getContent() != null) {
-            convertToAbsoluteUri(schema.getContent(), baseUri);
+        if (schema.getContentSchema() != null) {
+            convertToAbsoluteUri(schema.getContentSchema(), baseUri);
         }
 
         // $defs

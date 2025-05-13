@@ -60,6 +60,9 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.COLON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COMMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COMMENT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CONTAINS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_ENCODING;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_MEDIA_TYPE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_SCHEMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPENDENT_SCHEMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPRECATED;
@@ -114,6 +117,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.REST_TYPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.SEMI_COLON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING_CONSTRAINTS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.STRING_ENCODING;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING_FORMATS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.TAB;
 import static io.ballerina.jsonschema.core.GeneratorUtils.TITLE;
@@ -403,7 +407,8 @@ public class Generator {
         }
         if (type == String.class) {
             return createString(name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(),
-                    schema.getPattern());
+                    schema.getPattern(), schema.getContentEncoding(), schema.getContentMediaType(),
+                    schema.getContentSchema());
         }
         if (type == ArrayList.class) {
             return createArray(name, schema.getPrefixItems(), schema.getItems(), schema.getContains(),
@@ -480,34 +485,59 @@ public class Generator {
     }
 
     private String createString(String name, String format, Long minLength, Long maxLength,
-                                String pattern) {
-        if (areAllNull(format, minLength, maxLength, pattern)) {
+                                String pattern, String contentEncoding, String contentMediaType, Object contentSchema)
+                                throws Exception {
+        if (areAllNull(format, minLength, maxLength, pattern, contentEncoding, contentMediaType, contentSchema)) {
             return STRING;
         }
 
         addImports(BAL_JSON_DATA_MODULE, this);
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
 
-        List<String> annotationParts = new ArrayList<>();
+        List<String> annotations = new ArrayList<>();
 
-        if (format != null) {
-            if (!STRING_FORMATS.contains(format)) {
-                throw new IllegalArgumentException("Invalid format: " + format);
+        if (!areAllNull(format, minLength, maxLength, pattern)) {
+            List<String> annotationParts = new ArrayList<>();
+
+            if (format != null) {
+                if (!STRING_FORMATS.contains(format)) {
+                    throw new IllegalArgumentException("Invalid format: " + format);
+                }
+                annotationParts.add(FORMAT + COLON + DOUBLE_QUOTATION +
+                        format + DOUBLE_QUOTATION);
             }
-            annotationParts.add(FORMAT + COLON + DOUBLE_QUOTATION +
-                    format + DOUBLE_QUOTATION);
+
+            addIfNotNull(annotationParts, MIN_LENGTH, minLength);
+            addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
+
+            if (pattern != null) {
+                annotationParts.add(PATTERN + COLON + REGEX_PREFIX +
+                        BACK_TICK + pattern + BACK_TICK);
+            }
+
+            annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, STRING_CONSTRAINTS,
+                    String.join(COMMA, annotationParts)));
         }
 
-        addIfNotNull(annotationParts, MIN_LENGTH, minLength);
-        addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
+        if (!areAllNull(contentEncoding, contentMediaType, contentSchema)) {
+            List<String> annotationParts = new ArrayList<>();
 
-        if (pattern != null) {
-            annotationParts.add(PATTERN + COLON + REGEX_PREFIX +
-                    BACK_TICK + pattern + BACK_TICK);
+            addIfNotNullString(annotationParts, CONTENT_ENCODING, "\"" + contentEncoding + "\"");
+            addIfNotNullString(annotationParts, CONTENT_MEDIA_TYPE, "\"" + contentMediaType + "\"");
+
+            if (contentSchema != null) {
+                String contentSchemaName = finalType + convertToPascalCase(CONTENT_SCHEMA);
+                String contentSchemaType = this.convert(contentSchema, contentSchemaName);
+                annotationParts.add(CONTENT_SCHEMA + COLON + DOUBLE_QUOTATION +
+                        resolveTypeNameForTypedesc(contentSchemaName, contentSchemaType, this));
+            }
+
+            annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, STRING_ENCODING,
+                    String.join(COMMA, annotationParts)));
         }
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts,
-                STRING_CONSTRAINTS, finalType, STRING);
+        String formattedAnnotation = String.join(NEW_LINE, annotations) + NEW_LINE +
+                String.format(TYPE_FORMAT, finalType, STRING);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         this.nodes.put(finalType, moduleNode);

@@ -133,6 +133,11 @@ public class GeneratorUtils {
     public static final String WHITESPACE_PATTERN = "\\s";
     public static final String SPECIAL_CHARS_PATTERN = "[!@$%^&*()_\\-|]";
 
+    public static final String STRING_ENCODING = "StringEncodedData";
+    public static final String CONTENT_ENCODING = "contentEncoding";
+    public static final String CONTENT_MEDIA_TYPE = "contentMediaType";
+    public static final String CONTENT_SCHEMA = "contentSchema";
+
     public static final String ITEM_SUFFIX = "Item";
     public static final String NAME_REST_ITEM = "RestItem";
     public static final String REST_TYPE = "RestType";
