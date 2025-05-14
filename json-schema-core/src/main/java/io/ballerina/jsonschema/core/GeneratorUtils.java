@@ -251,21 +251,21 @@ public class GeneratorUtils {
             ArrayList<String> fieldAnnotation = new ArrayList<>();
 
             if (value.getDependentSchema() != null) {
-                addImports(BAL_JSON_DATA_MODULE, generator);
+                generator.addJsonDataImport();
                 String dependentSchema = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE, DEPENDENT_SCHEMA,
                         value.getDependentSchema());
-                addImports(BAL_JSON_DATA_MODULE, generator);
                 fieldAnnotation.add(dependentSchema);
             }
 
-            if (value.getDependentRequired() != null && !value.getDependentRequired().isEmpty()) {
-                addImports(BAL_JSON_DATA_MODULE, generator);
-                String dependentArray = value.getDependentRequired().stream()
+            List<String> dependentRequired = value.getDependentRequired();
+            if (dependentRequired != null && !dependentRequired.isEmpty()) {
+                generator.addJsonDataImport();
+                String dependentArray = dependentRequired.stream()
                         .map(name -> DOUBLE_QUOTATION + name + DOUBLE_QUOTATION)
                         .collect(Collectors.joining(", ", "[", "]"));
-                String dependentRequired = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE,
+                String dependentRequiredString = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE,
                         DEPENDENT_REQUIRED, dependentArray);
-                fieldAnnotation.add(dependentRequired);
+                fieldAnnotation.add(dependentRequiredString);
             }
 
             if (value.isRequired()) {
@@ -285,20 +285,6 @@ public class GeneratorUtils {
         return recordBody;
     }
 
-    static String getRecordRestType(String name, Object additionalProperties, Object unevaluatedProperties,
-                                    Generator generator) throws Exception {
-        if (additionalProperties != null) {
-            return generator.convert(additionalProperties,
-                    resolveNameConflicts(name + ADDITIONAL_PROPS, generator));
-        }
-        if (unevaluatedProperties != null) {
-            return generator.convert(unevaluatedProperties,
-                    resolveNameConflicts((name + UNEVALUATED_PROPS), generator));
-        }
-        return JSON;
-    }
-
-    // Handle union values by enclosing them in parentheses.
     static String handleUnion(String type) {
         if (type.contains(PIPE) && !type.startsWith(OPEN_BRACKET)) {
             return OPEN_BRACKET + type + CLOSE_BRACKET;
@@ -323,7 +309,7 @@ public class GeneratorUtils {
                 String.format(TYPE_FORMAT, typeName, balType);
     }
 
-    static boolean isNumberLimitInvalid(Double minimum, Double exclusiveMinimum, Double maximum,
+    static boolean isInvalidNumberLimit(Double minimum, Double exclusiveMinimum, Double maximum,
                                         Double exclusiveMaximum) {
         return (minimum != null && maximum != null && maximum < minimum) ||
                 (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
@@ -384,13 +370,6 @@ public class GeneratorUtils {
 
     static boolean isCustomTypeNotRequired(Object... objects) {
         return Arrays.stream(objects).allMatch(Objects::isNull);
-    }
-
-    static void addImports(String module, Generator generator) {
-        String importDeclaration = IMPORT + WHITE_SPACE + module + SEMI_COLON;
-        if (!generator.imports.contains(importDeclaration)) {
-            generator.imports.add(importDeclaration);
-        }
     }
 
     static void addDiagnostic(JsonSchemaDiagnostic diagnostic, Generator generator) {

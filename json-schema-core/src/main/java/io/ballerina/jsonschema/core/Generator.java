@@ -67,6 +67,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.EXCLUSIVE_MAXIMUM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EXCLUSIVE_MINIMUM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.FLOAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.FORMAT;
+import static io.ballerina.jsonschema.core.GeneratorUtils.IMPORT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.INTEGER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ITEM_SUFFIX;
 import static io.ballerina.jsonschema.core.GeneratorUtils.JSON;
@@ -112,6 +113,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.TYPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.TYPE_FORMAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNEVALUATED_ITEMS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNEVALUATED_ITEMS_SUFFIX;
+import static io.ballerina.jsonschema.core.GeneratorUtils.UNEVALUATED_PROPS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNIQUE_ITEMS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_ARRAY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_OBJECT;
@@ -119,14 +121,12 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.VALUE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ZERO;
 import static io.ballerina.jsonschema.core.GeneratorUtils.addIfNotNull;
-import static io.ballerina.jsonschema.core.GeneratorUtils.addImports;
 import static io.ballerina.jsonschema.core.GeneratorUtils.convertToCamelCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.convertToPascalCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.getFormattedAnnotation;
-import static io.ballerina.jsonschema.core.GeneratorUtils.getRecordRestType;
 import static io.ballerina.jsonschema.core.GeneratorUtils.handleUnion;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isCustomTypeNotRequired;
-import static io.ballerina.jsonschema.core.GeneratorUtils.isNumberLimitInvalid;
+import static io.ballerina.jsonschema.core.GeneratorUtils.isInvalidNumberLimit;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isPrimitiveBalType;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRecordFields;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRequiredFields;
@@ -174,7 +174,7 @@ public class Generator {
         return new Response(generatedTypes, this.diagnostics);
     }
 
-    public String convert(Object schemaObject, String name) throws Exception {
+    String convert(Object schemaObject, String name) throws Exception {
         // JSON Schema allows a schema to be a boolean: `true` allows any value, `false` allows none.
         // It is handled here before processing object-based schemas.
         if (schemaObject instanceof Boolean boolValue) {
@@ -195,8 +195,7 @@ public class Generator {
                 schemaType.remove(Long.class);
             }
             if (schemaType.size() == 1) {
-                String typeName = createType(name, schema, schemaType.getFirst());
-                return typeName;
+                return createType(name, schema, schemaType.getFirst());
             }
 
             Set<String> unionTypes = new LinkedHashSet<>();
@@ -215,12 +214,12 @@ public class Generator {
                 unionTypes.add(FLOAT);
                 unionTypes.add(DECIMAL);
             }
-            String typeName = String.join(PIPE, unionTypes);
-            return typeName;
+            return String.join(PIPE, unionTypes);
         }
 
         //TODO: Validate constraints on enums
-        String typeName = schemaType.stream()
+
+        return schemaType.stream()
                 .map(element -> {
                     try {
                         return generateStringRepresentation(element);
@@ -229,8 +228,6 @@ public class Generator {
                     }
                 })
                 .collect(Collectors.joining(PIPE));
-
-        return typeName;
     }
 
     private String createType(String name, Schema schema, Object type) throws Exception {
@@ -241,42 +238,39 @@ public class Generator {
             return BOOLEAN;
         }
         if (type == Long.class) {
-            return createInteger(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
-                    schema.getExclusiveMaximum(), schema.getMultipleOf());
+            return createInteger(name, schema);
         }
         if (type == Double.class) {
-            return createNumber(name, schema.getMinimum(), schema.getExclusiveMinimum(), schema.getMaximum(),
-                    schema.getExclusiveMaximum(), schema.getMultipleOf());
+            return createNumber(name, schema);
         }
         if (type == String.class) {
-            return createString(name, schema.getFormat(), schema.getMinLength(), schema.getMaxLength(),
-                    schema.getPattern());
+            return createString(name, schema);
         }
         if (type == ArrayList.class) {
-            return createArray(name, schema.getPrefixItems(), schema.getItems(), schema.getContains(),
-                    schema.getMinItems(), schema.getMaxItems(), schema.getUniqueItems(), schema.getMaxContains(),
-                    schema.getMinContains(), schema.getUnevaluatedItems());
+            return createArray(name, schema);
         }
         if (type == Map.class) {
-            return createObject(name, schema.getAdditionalProperties(), schema.getProperties(),
-                    schema.getPatternProperties(), schema.getDependentSchema(), schema.getPropertyNames(),
-                    schema.getUnevaluatedProperties(), schema.getMaxProperties(), schema.getMinProperties(),
-                    schema.getDependentRequired(), schema.getRequired());
+            return createObject(name, schema);
         }
         throw new RuntimeException("Type currently not supported");
     }
 
-    private String createInteger(String name, Double minimum, Double exclusiveMinimum, Double maximum,
-                                       Double exclusiveMaximum, Double multipleOf) {
+    private String createInteger(String name, Schema schema) {
+        Double minimum = schema.getMinimum();
+        Double exclusiveMinimum = schema.getExclusiveMinimum();
+        Double maximum = schema.getMaximum();
+        Double exclusiveMaximum = schema.getExclusiveMaximum();
+        Double multipleOf = schema.getMultipleOf();
+
         if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
 
-        if (isNumberLimitInvalid(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
+        if (isInvalidNumberLimit(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
             return NEVER;
         }
 
-        addImports(BAL_JSON_DATA_MODULE, this);
+        this.addJsonDataImport();
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
 
         List<String> annotationParts = new ArrayList<>();
@@ -296,17 +290,22 @@ public class Generator {
         return finalType;
     }
 
-    private String createNumber(String name, Double minimum, Double exclusiveMinimum, Double maximum,
-                                      Double exclusiveMaximum, Double multipleOf) {
+    private String createNumber(String name, Schema schema) {
+        Double minimum = schema.getMinimum();
+        Double exclusiveMinimum = schema.getExclusiveMinimum();
+        Double maximum = schema.getMaximum();
+        Double exclusiveMaximum = schema.getExclusiveMaximum();
+        Double multipleOf = schema.getMultipleOf();
+
         if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return NUMBER;
         }
 
-        if (isNumberLimitInvalid(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
+        if (isInvalidNumberLimit(minimum, exclusiveMinimum, maximum, exclusiveMaximum)) {
             return NEVER;
         }
 
-        addImports(BAL_JSON_DATA_MODULE, this);
+        this.addJsonDataImport();
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
 
         List<String> annotationParts = new ArrayList<>();
@@ -326,13 +325,17 @@ public class Generator {
         return finalType;
     }
 
-    private String createString(String name, String format, Long minLength, Long maxLength,
-                                      String pattern) {
+    private String createString(String name, Schema schema) {
+        String format = schema.getFormat();
+        Long minLength = schema.getMinLength();
+        Long maxLength = schema.getMaxLength();
+        String pattern = schema.getPattern();
+
         if (isCustomTypeNotRequired(format, minLength, maxLength, pattern)) {
             return STRING;
         }
 
-        addImports(BAL_JSON_DATA_MODULE, this);
+        this.addJsonDataImport();
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
 
         List<String> annotationParts = new ArrayList<>();
@@ -362,9 +365,17 @@ public class Generator {
         return finalType;
     }
 
-    private String createArray(String name, List<Object> prefixItems, Object items, Object contains,
-                                     Long minItems, Long maxItems, Boolean uniqueItems, Long maxContains,
-                                     Long minContains, Object unevaluatedItems) throws Exception {
+    private String createArray(String name, Schema schema) throws Exception {
+        List<Object> prefixItems = schema.getPrefixItems();
+        Object items = schema.getItems();
+        Object contains = schema.getContains();
+        Long minItems = schema.getMinItems();
+        Long maxItems = schema.getMaxItems();
+        Boolean uniqueItems = schema.getUniqueItems();
+        Long maxContains = schema.getMaxContains();
+        Long minContains = schema.getMinContains();
+        Object unevaluatedItems = schema.getUnevaluatedItems();
+
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
         this.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
 
@@ -443,7 +454,7 @@ public class Generator {
             return String.join(PIPE, tupleList);
         }
 
-        addImports(BAL_JSON_DATA_MODULE, this);
+        this.addJsonDataImport();
         List<String> annotationParts = new ArrayList<>();
 
         addIfNotNull(annotationParts, MIN_ITEMS, minItems);
@@ -498,11 +509,18 @@ public class Generator {
         return finalType;
     }
 
-    private String createObject(String name, Object additionalProperties, Map<String, Object> properties,
-                                      Map<String, Object> patternProperties, Map<String, Object> dependentSchema,
-                                      Object propertyNames, Object unevaluatedProperties, Long maxProperties,
-                                      Long minProperties, Map<String, List<String>> dependentRequired,
-                                      List<String> required) throws Exception {
+    private String createObject(String name, Schema schema) throws Exception {
+        Object additionalProperties = schema.getAdditionalProperties();
+        Map<String, Object> properties = schema.getProperties();
+        Map<String, Object> patternProperties = schema.getPatternProperties();
+        Map<String, Object> dependentSchema = schema.getDependentSchema();
+        Object propertyNames = schema.getPropertyNames();
+        Object unevaluatedProperties = schema.getUnevaluatedProperties();
+        Long maxProperties = schema.getMaxProperties();
+        Long minProperties = schema.getMinProperties();
+        Map<String, List<String>> dependentRequired = schema.getDependentRequired();
+        List<String> required = schema.getRequired();
+
         if (Boolean.FALSE.equals(propertyNames)) {
             return EMPTY_RECORD;
         }
@@ -530,8 +548,8 @@ public class Generator {
                     GeneratorUtils.RecordField recordField =
                             new GeneratorUtils.RecordField(this.convert(value, fieldName), false);
                     recordFields.put(key, recordField);
-                    if (value instanceof Schema schema && schema.getDefaultKeyword() != null) {
-                        recordField.setDefaultValue(this.generateStringRepresentation(schema.getDefaultKeyword()));
+                    if (value instanceof Schema fieldSchema && fieldSchema.getDefaultKeyword() != null) {
+                        recordField.setDefaultValue(this.generateStringRepresentation(fieldSchema.getDefaultKeyword()));
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -543,7 +561,7 @@ public class Generator {
                 unevaluatedProperties, this);
 
         if (patternProperties != null && !patternProperties.isEmpty()) {
-            addImports(BAL_JSON_DATA_MODULE, this);
+            this.addJsonDataImport();
 
             List<String> propertyPatternTypes = new ArrayList<>();
             Set<String> patternTypes = new HashSet<>();
@@ -606,7 +624,7 @@ public class Generator {
         }
 
         if (maxProperties != null || minProperties != null || propertyNames != null) {
-            addImports(BAL_JSON_DATA_MODULE, this);
+            this.addJsonDataImport();
             List<String> objectProperties = new ArrayList<>();
 
             addIfNotNull(objectProperties, MIN_PROPERTIES, minProperties);
@@ -766,6 +784,19 @@ public class Generator {
         throw new InvalidDataTypeException("Type not supported");
     }
 
+    static String getRecordRestType(String name, Object additionalProperties, Object unevaluatedProperties,
+                                    Generator generator) throws Exception {
+        if (additionalProperties != null) {
+            return generator.convert(additionalProperties,
+                    resolveNameConflicts(name + ADDITIONAL_PROPS, generator));
+        }
+        if (unevaluatedProperties != null) {
+            return generator.convert(unevaluatedProperties,
+                    resolveNameConflicts((name + UNEVALUATED_PROPS), generator));
+        }
+        return JSON;
+    }
+
     private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
                                           List<String> type) {
         Set<Class<?>> typeList = new LinkedHashSet<>();
@@ -888,5 +919,12 @@ public class Generator {
 
     private List<String> getImports() {
         return Collections.unmodifiableList(this.imports);
+    }
+
+    void addJsonDataImport() {
+        String importDeclaration = IMPORT + WHITE_SPACE + BAL_JSON_DATA_MODULE + SEMI_COLON;
+        if (!this.imports.contains(importDeclaration)) {
+            this.imports.add(importDeclaration);
+        }
     }
 }
