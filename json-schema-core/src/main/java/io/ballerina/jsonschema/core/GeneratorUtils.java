@@ -258,14 +258,15 @@ public class GeneratorUtils {
                 RecordField keyRecord = recordFields.get(key);
                 RecordField value = entry.getValue();
 
-                if (value.getDependentRequired() == null || !keyRecord.isRequired()) {
+                List<String> dependentRequired = value.getDependentRequired();
+                if (dependentRequired == null || !keyRecord.isRequired()) {
                     continue;
                 }
 
-                // If there are dependentRequired items iterate through them
-                for (String dependentRequired : value.getDependentRequired()) {
-                    if (!recordFields.get(dependentRequired).isRequired()) {
-                        recordFields.get(dependentRequired).setRequired();
+                for (String item : dependentRequired) {
+                    RecordField itemRecord = recordFields.get(item);
+                    if (!itemRecord.isRequired()) {
+                        itemRecord.setRequired();
                         changeFlag = true;
                     }
                 }
@@ -279,8 +280,7 @@ public class GeneratorUtils {
             return typeName;
         }
         String newType = resolveNameConflicts(name, generator);
-        String typeDeclaration = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + newType + WHITE_SPACE + typeName +
-                SEMI_COLON;
+        String typeDeclaration = String.format(TYPE_FORMAT, newType, typeName);
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDeclaration);
         generator.nodes.put(newType, moduleNode);
         return newType;
@@ -299,22 +299,23 @@ public class GeneratorUtils {
                 fieldAnnotation.add("# " + value.getDescription());
             }
 
-            if (value.getDependentSchema() != null) {
-                addImports(BAL_JSON_DATA_MODULE, generator);
-                String dependentSchema = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE, DEPENDENT_SCHEMA,
-                        value.getDependentSchema());
-                addImports(BAL_JSON_DATA_MODULE, generator);
-                fieldAnnotation.add(dependentSchema);
+            String dependentSchema = value.getDependentSchema();
+            if (dependentSchema != null) {
+                generator.addJsonDataImport();
+                String dependentSchemaString = String.format(
+                        FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE, DEPENDENT_SCHEMA, dependentSchema);
+                fieldAnnotation.add(dependentSchemaString);
             }
 
-            if (value.getDependentRequired() != null && !value.getDependentRequired().isEmpty()) {
-                addImports(BAL_JSON_DATA_MODULE, generator);
-                String dependentArray = value.getDependentRequired().stream()
+            List<String> dependentRequired = value.getDependentRequired();
+            if (dependentRequired != null && !dependentRequired.isEmpty()) {
+                generator.addJsonDataImport();
+                String dependentArray = dependentRequired.stream()
                         .map(name -> DOUBLE_QUOTATION + name + DOUBLE_QUOTATION)
                         .collect(Collectors.joining(", ", "[", "]"));
-                String dependentRequired = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE,
+                String dependentRequiredString = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE,
                         DEPENDENT_REQUIRED, dependentArray);
-                fieldAnnotation.add(dependentRequired);
+                fieldAnnotation.add(dependentRequiredString);
             }
 
             String readOnly = value.isReadOnly() ? READ_ONLY_FIELD : "";
@@ -322,8 +323,8 @@ public class GeneratorUtils {
 
             if (value.isRequired()) {
                 if (value.getDefaultValue() != null) {
-                    fieldAnnotation.add(deprecated + readOnly + String.join(WHITE_SPACE, value.getType(), key, EQUAL,
-                            value.getDefaultValue()));
+                    fieldAnnotation.add(deprecated + readOnly + String.join(WHITE_SPACE, value.getType(),
+                            key, EQUAL, value.getDefaultValue()));
                 } else {
                     fieldAnnotation.add(deprecated + readOnly + value.getType() + WHITE_SPACE + key);
                 }
@@ -332,25 +333,11 @@ public class GeneratorUtils {
             }
 
             recordBody.add(String.join(NEW_LINE, fieldAnnotation) + SEMI_COLON);
-        }
 
+        }
         return recordBody;
     }
 
-    static String getRecordRestType(String name, Object additionalProperties, Object unevaluatedProperties,
-                                    Generator generator) throws Exception {
-        if (additionalProperties != null) {
-            return generator.convert(additionalProperties,
-                    resolveNameConflicts(name + ADDITIONAL_PROPS, generator));
-        }
-        if (unevaluatedProperties != null) {
-            return generator.convert(unevaluatedProperties,
-                    resolveNameConflicts((name + UNEVALUATED_PROPS), generator));
-        }
-        return JSON;
-    }
-
-    // Handle union values by enclosing them in parentheses.
     static String handleUnion(String type) {
         if (type.contains(PIPE) && !type.startsWith(OPEN_BRACKET)) {
             return OPEN_BRACKET + type + CLOSE_BRACKET;
@@ -381,7 +368,7 @@ public class GeneratorUtils {
                 String.format(TYPE_FORMAT, typeName, balType);
     }
 
-    static boolean isNumberLimitInvalid(Double minimum, Double exclusiveMinimum, Double maximum,
+    static boolean isInvalidNumberLimit(Double minimum, Double exclusiveMinimum, Double maximum,
                                         Double exclusiveMaximum) {
         return (minimum != null && maximum != null && maximum < minimum) ||
                 (minimum != null && exclusiveMaximum != null && exclusiveMaximum <= minimum) ||
@@ -442,13 +429,6 @@ public class GeneratorUtils {
 
     static boolean areAllNull(Object... objects) {
         return Arrays.stream(objects).allMatch(Objects::isNull);
-    }
-
-    static void addImports(String module, Generator generator) {
-        String importDeclaration = IMPORT + WHITE_SPACE + module + SEMI_COLON;
-        if (!generator.imports.contains(importDeclaration)) {
-            generator.imports.add(importDeclaration);
-        }
     }
 
     static void addDiagnostic(JsonSchemaDiagnostic diagnostic, Generator generator) {
