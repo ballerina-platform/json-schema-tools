@@ -684,10 +684,9 @@ public class Generator {
                                     DEPENDENT_SCHEMA, this);
                     String dependentSchemaType = this.convert(value, schemaName);
 
-                    if (!dependentSchemaType.equals(schemaName) &&
-                            !isPrimitiveBalType(dependentSchemaType)) {
-                        dependentSchemaType = resolveTypeNameForTypedesc(schemaName,
-                                dependentSchemaType, this);
+                    if (!dependentSchemaType.equals(schemaName) && !isPrimitiveBalType(dependentSchemaType)) {
+                        dependentSchemaType =
+                                resolveTypeNameForTypedesc(schemaName, dependentSchemaType, this);
                     }
 
                     recordFields.get(key).setDependentSchema(dependentSchemaType);

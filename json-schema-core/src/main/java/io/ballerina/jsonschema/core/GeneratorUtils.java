@@ -213,14 +213,15 @@ public class GeneratorUtils {
                 RecordField keyRecord = recordFields.get(key);
                 RecordField value = entry.getValue();
 
-                if (value.getDependentRequired() == null || !keyRecord.isRequired()) {
+                List<String> dependentRequired = value.getDependentRequired();
+                if (dependentRequired == null || !keyRecord.isRequired()) {
                     continue;
                 }
 
-                // If there are dependentRequired items iterate through them
-                for (String dependentRequired : value.getDependentRequired()) {
-                    if (!recordFields.get(dependentRequired).isRequired()) {
-                        recordFields.get(dependentRequired).setRequired();
+                for (String item : dependentRequired) {
+                    RecordField itemRecord = recordFields.get(item);
+                    if (!itemRecord.isRequired()) {
+                        itemRecord.setRequired();
                         changeFlag = true;
                     }
                 }
@@ -234,8 +235,7 @@ public class GeneratorUtils {
             return typeName;
         }
         String newType = resolveNameConflicts(name, generator);
-        String typeDeclaration = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + newType + WHITE_SPACE + typeName +
-                SEMI_COLON;
+        String typeDeclaration = String.format(TYPE_FORMAT, newType, typeName);
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(typeDeclaration);
         generator.nodes.put(newType, moduleNode);
         return newType;
@@ -250,11 +250,12 @@ public class GeneratorUtils {
 
             ArrayList<String> fieldAnnotation = new ArrayList<>();
 
-            if (value.getDependentSchema() != null) {
+            String dependentSchema = value.getDependentSchema();
+            if (dependentSchema != null) {
                 generator.addJsonDataImport();
-                String dependentSchema = String.format(FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE, DEPENDENT_SCHEMA,
-                        value.getDependentSchema());
-                fieldAnnotation.add(dependentSchema);
+                String dependentSchemaString = String.format(
+                        FIELD_ANNOTATION_FORMAT, ANNOTATION_MODULE, DEPENDENT_SCHEMA, dependentSchema);
+                fieldAnnotation.add(dependentSchemaString);
             }
 
             List<String> dependentRequired = value.getDependentRequired();
