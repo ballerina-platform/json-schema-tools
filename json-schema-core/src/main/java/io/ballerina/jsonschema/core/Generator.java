@@ -198,10 +198,11 @@ public class Generator {
                     }
                     fetchSchemaId(deepCopy(schemaObject), URI.create(""), this.idToSchemaMap);
                 }
-            } else if (schema.getIdKeyword() != null) {
-                fetchSchemaId(deepCopy(schema), URI.create(""), this.idToSchemaMap);
             } else {
-                fetchSchemaId(deepCopy(schema), URI.create("dummy:/"), this.idToSchemaMap);
+                if (schema.getIdKeyword() == null) {
+                    schema.setIdKeyword("dummy:/");
+                }
+                fetchSchemaId(deepCopy(schema), URI.create(""), this.idToSchemaMap);
             }
 
             // Convert all the uri values to absolute uris
@@ -356,7 +357,7 @@ public class Generator {
             for (Object example : schema.getExamples()) {
                 examples.add(generateStringRepresentation(example));
             }
-            String exampleString = "\"" + String.join(COMMA, examples) + "\"";
+            String exampleString = "[" + String.join(COMMA, examples) + "]";
             annotationParts.add(EXAMPLES + COLON + exampleString);
         }
 

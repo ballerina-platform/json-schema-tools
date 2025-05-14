@@ -371,8 +371,12 @@ public class SchemaUtils {
 
     public static Object getSchemaByKeyword(Object schemaObject, ArrayList<String> pathList) throws Exception {
         if (pathList.isEmpty()) {
-            return schemaObject;
+            if (schemaObject instanceof Schema || schemaObject instanceof Boolean) {
+                return schemaObject;
+            }
+            throw new RuntimeException("Path does not refer to a schema");
         }
+
         if (!(schemaObject instanceof Schema schema)) {
             throw new RuntimeException("Invalid path: " + String.join("/", pathList));
         }
@@ -381,17 +385,9 @@ public class SchemaUtils {
 
         try {
             switch (nextPath) {
-                case "$defs" -> {
-                    if (schema.getDefsKeyword() == null) {
-                        throw new RuntimeException("Invalid path: " + String.join("/", pathList));
-                    }
-                    String key = pathList.removeFirst();
-                    return getSchemaByKeyword(schema.getDefsKeyword().get(key), pathList);
-                }
                 case "prefixItems" -> {
-                    return getPathForList(schema.getPrefixItems(), pathList);
+                    return fetchSchemaForList(schema.getPrefixItems(), pathList);
                 }
-
                 case "items" -> {
                     return getSchemaByKeyword(schema.getItems(), pathList);
                 }
@@ -402,10 +398,13 @@ public class SchemaUtils {
                     return getSchemaByKeyword(schema.getAdditionalProperties(), pathList);
                 }
                 case "properties" -> {
-                    return getPathForMap(schema.getProperties(), pathList);
+                    return fetchSchemaForMap(schema.getProperties(), pathList);
+                }
+                case "patternProperties" -> {
+                    return fetchSchemaForMap(schema.getPatternProperties(), pathList);
                 }
                 case "dependentSchema" -> {
-                    return getPathForMap(schema.getDependentSchema(), pathList);
+                    return fetchSchemaForMap(schema.getDependentSchema(), pathList);
                 }
                 case "propertyNames" -> {
                     return getSchemaByKeyword(schema.getPropertyNames(), pathList);
@@ -419,7 +418,30 @@ public class SchemaUtils {
                 case "else" -> {
                     return getSchemaByKeyword(schema.getElseKeyword(), pathList);
                 }
-                // TODO: Handle other cases.
+                case "allOf" -> {
+                    return fetchSchemaForList(schema.getAllOf(), pathList);
+                }
+                case "oneOf" -> {
+                    return fetchSchemaForList(schema.getOneOf(), pathList);
+                }
+                case "anyOf" -> {
+                    return fetchSchemaForList(schema.getAnyOf(), pathList);
+                }
+                case "not" -> {
+                    return getSchemaByKeyword(schema.getNot(), pathList);
+                }
+                case "contentSchema" -> {
+                    return getSchemaByKeyword(schema.getContentSchema(), pathList);
+                }
+                case "$defs" -> {
+                    return fetchSchemaForMap(schema.getDefsKeyword(), pathList);
+                }
+                case "unevaluatedItems" -> {
+                    return getSchemaByKeyword(schema.getUnevaluatedItems(), pathList);
+                }
+                case "unevaluatedProperties" -> {
+                    return getSchemaByKeyword(schema.getUnevaluatedProperties(), pathList);
+                }
                 default -> throw new RuntimeException("Invalid path: " + String.join("/", pathList));
             }
         } catch (Exception e) {
@@ -428,14 +450,14 @@ public class SchemaUtils {
         // TODO: Implement for undefined keywords
     }
 
-    public static Object getPathForList(Object objectList, ArrayList<String> pathList) throws Exception {
+    public static Object fetchSchemaForList(Object objectList, ArrayList<String> pathList) throws Exception {
         List<Object> itemList = (List<Object>) objectList;
         String key = pathList.removeFirst();
         long index = Long.parseLong(key);
         return getSchemaByKeyword(itemList.get((int) index), pathList);
     }
 
-    public static Object getPathForMap(Object objectMap, ArrayList<String> pathList) throws Exception {
+    public static Object fetchSchemaForMap(Object objectMap, ArrayList<String> pathList) throws Exception {
         Map<String, Object> map = (Map<String, Object>) objectMap;
         String key = pathList.removeFirst();
         return getSchemaByKeyword(map.get(key), pathList);
