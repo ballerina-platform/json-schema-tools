@@ -212,13 +212,24 @@ public class SchemaUtils {
         }
 
         // Resolving $ref and $dynamicRef
-        if (schema.getRefKeyword() != null) {
-            URI uri = URI.create(schema.getRefKeyword());
-            schema.setRefKeyword(baseUri.resolve(uri).toString());
+        String refKeyword = schema.getRefKeyword();
+        if (refKeyword != null) {
+            if (refKeyword.equals("#")) {
+                schema.setRefKeyword(baseUri.toString());
+            } else {
+                URI uri = URI.create(schema.getRefKeyword());
+                schema.setRefKeyword(baseUri.resolve(uri).toString());
+            }
         }
-        if (schema.getDynamicRefKeyword() != null) {
-            URI uri = URI.create(schema.getDynamicRefKeyword());
-            schema.setDynamicRefKeyword(baseUri.resolve(uri).toString());
+
+        String dynamicRefKeyword = schema.getDynamicRefKeyword();
+        if (dynamicRefKeyword != null) {
+            if (dynamicRefKeyword.equals("#")) {
+                schema.setDynamicRefKeyword(baseUri.toString());
+            } else {
+                URI uri = URI.create(schema.getDynamicRefKeyword());
+                schema.setDynamicRefKeyword(baseUri.resolve(uri).toString());
+            }
         }
 
         // Change the base URI for the sub schemas

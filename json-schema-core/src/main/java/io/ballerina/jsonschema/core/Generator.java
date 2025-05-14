@@ -702,7 +702,7 @@ public class Generator {
         }
 
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
-        this.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
+        this.allocateTypeToSchema(finalType, null);
 
         List<String> objectAnnotations = new ArrayList<>();
 
@@ -959,6 +959,11 @@ public class Generator {
             return objName;
         }
         throw new InvalidDataTypeException("Type not supported");
+    }
+
+    private void allocateTypeToSchema(String name, Schema schema) {
+        this.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+        this.schemaToTypeMap.put(schema, name);
     }
 
     private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
