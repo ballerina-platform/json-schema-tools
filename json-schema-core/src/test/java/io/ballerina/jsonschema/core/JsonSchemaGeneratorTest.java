@@ -109,7 +109,9 @@ public class JsonSchemaGeneratorTest {
                 {"73_dynamic_anchors.json", "73_dynamic_anchors.bal"},
                 {"74_dynamic_anchors.json", "74_dynamic_anchors.bal"},
                 {"75_anchors.json", "75_anchors.bal"},
-                {"76_anchors.json", "76_anchors.bal"}
+                {"76_anchors.json", "76_anchors.bal"},
+                {"77_string_encoding.json", "77_string_encoding.bal"},
+                {"78_string_encoding.json", "78_string_encoding.bal"}
         };
     }
 
