@@ -88,6 +88,7 @@ public class JsonSchemaGeneratorTest {
                 {"51_min_max_properties.json", "51_min_max_properties.bal"},
                 {"52_default_value.json", "52_default_value.bal"},
                 {"53_defs.json", "53_defs.bal"},
+                {"54_recursive_array_referencing.json", "54_recursive_array_referencing.bal"}
         };
     }
 

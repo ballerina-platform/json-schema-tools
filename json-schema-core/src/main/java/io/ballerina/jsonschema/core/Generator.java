@@ -206,12 +206,12 @@ public class Generator {
                 fetchSchemaId(schema, URI.create(""), this.idToSchemaMap);
             }
 
-            // Convert all the uri values to absolute uris
             for (Object schemaObject : schemaObjectList) {
                 convertToAbsoluteUri(schemaObject, URI.create("dummy:/"));
             }
         }
 
+        // Create a copy list to facilitate future schema mutations.
         for (Object schemaObject : schemaObjectList) {
             schemaCopyList.add(deepCopy(schemaObject));
         }
@@ -571,7 +571,7 @@ public class Generator {
         Object unevaluatedItems = schema.getUnevaluatedItems();
 
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
-        this.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
+        allocateTypeToSchema(finalType, schema);
 
         ArrayList<String> arrayItems = new ArrayList<>();
 
@@ -972,7 +972,7 @@ public class Generator {
         }
         if (obj instanceof Map) {
             String objName = resolveConstMapping(this);
-            this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(""));
+            allocateTypeToSchema(objName, obj);
 
             List<String> result = new ArrayList<>();
             for (Map.Entry<String, Object> entry : ((Map<String, Object>) obj).entrySet()) {
@@ -1002,9 +1002,15 @@ public class Generator {
         return JSON;
     }
 
-    private void allocateTypeToSchema(String name, Schema schema) {
-        this.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
-        this.schemaToTypeMap.put(schema, name);
+    private void allocateTypeToSchema(String name, Object schemaObject) {
+        if (schemaObject instanceof Boolean schemaBoolean) {
+            String booleanString = schemaBoolean.toString();
+            this.nodes.put(name, NodeParser.parseModuleMemberDeclaration(booleanString));
+        }
+        if (schemaObject instanceof Schema schema) {
+            this.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+            this.schemaToTypeMap.put(schema, name);
+        }
     }
 
     private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
