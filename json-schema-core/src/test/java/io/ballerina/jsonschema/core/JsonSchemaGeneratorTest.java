@@ -95,7 +95,15 @@ public class JsonSchemaGeneratorTest {
                 {"59_array_type_description.json", "59_array_type_description.bal"},
                 {"60_title_on_object_and_fields.json", "60_title_on_object_and_fields.bal"},
                 {"61_title_on_array_and_items.json", "61_title_on_array_and_items.bal"},
-                {"62_title_on_basic_type.json", "62_title_on_basic_type.bal"}
+                {"62_title_on_basic_type.json", "62_title_on_basic_type.bal"},
+                {"63_comments_and_examples.json", "63_comments_and_examples.bal"},
+                {"64_combined_meta_data.json", "64_combined_meta_data.bal"},
+                {"65_readonly_fields.json", "65_readonly_fields.bal"},
+                {"66_readonly_basic_type.json", "66_readonly_basic_type.bal"},
+                {"67_false_readonly_basic_type.json", "67_false_readonly_basic_type.bal"},
+                {"68_writeonly_basic_type.json", "68_writeonly_basic_type.bal"},
+                {"69_false_writeonly_basic_type.json", "69_false_writeonly_basic_type.bal"},
+                {"70_writeonly_fields.json", "70_writeonly_fields.bal"},
         };
     }
 
