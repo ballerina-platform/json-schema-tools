@@ -111,22 +111,8 @@ public class JsonSchemaGeneratorTest {
 
     @Test(dataProvider = "multiJsonSchemaProvider")
     public void testMultipleJsonSchemasToSingleRecord(String[] jsonFilePaths, String balFilePath) throws Exception {
-        ArrayList<Object> schemas = new ArrayList<>();
-        for (String jsonFile : jsonFilePaths) {
-            Path path = RES_DIR.resolve(JSON_SCHEMA_DIR).resolve(jsonFile);
-            String content = Files.readString(path);
-            Object schema = SchemaUtils.parseJsonSchema(content);
-            schemas.add(schema);
-        }
-
         Path expectedPath = RES_DIR.resolve(EXPECTED_DIR).resolve(balFilePath);
-        String expectedContent = Files.readString(expectedPath);
-
-        Generator generator = new Generator();
-        Response result = generator.convertBaseSchema(schemas);
-
-        Assert.assertTrue(result.getDiagnostics().isEmpty(), "Diagnostics should be empty");
-        Assert.assertEquals(result.getTypes(), expectedContent, "Generated types do not match expected output");
+        validateMultiple(jsonFilePaths, expectedPath, new Generator());
     }
 
     private void validate(Path sample, Path expected, Generator generator) throws Exception {
@@ -136,5 +122,21 @@ public class JsonSchemaGeneratorTest {
         Assert.assertTrue(result.getDiagnostics().isEmpty(), "Diagnostics should be empty");
         String expectedValue = Files.readString(expected);
         Assert.assertEquals(result.getTypes(), expectedValue, "Generated types do not match expected output");
+    }
+
+    private void validateMultiple(String[] jsonFilePaths, Path expected, Generator generator) throws Exception {
+        ArrayList<Object> schemas = new ArrayList<>();
+        for (String jsonFile : jsonFilePaths) {
+            Path path = RES_DIR.resolve(JSON_SCHEMA_DIR).resolve(jsonFile);
+            String content = Files.readString(path);
+            Object schema = SchemaUtils.parseJsonSchema(content);
+            schemas.add(schema);
+        }
+
+        Response result = generator.convertBaseSchema(schemas);
+
+        Assert.assertTrue(result.getDiagnostics().isEmpty(), "Diagnostics should be empty");
+        String expectedContent = Files.readString(expected);
+        Assert.assertEquals(result.getTypes(), expectedContent, "Generated types do not match expected output");
     }
 }
