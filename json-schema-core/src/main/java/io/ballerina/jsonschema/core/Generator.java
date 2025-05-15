@@ -372,7 +372,6 @@ public class Generator {
         }
 
         if (schema.getDeprecated() != null && typeAnnot != AnnotType.FIELD) {
-            addJsonDataImport();
             annotations.add(DEPRECATED);
         }
         if (schema.getWriteOnly() != null) {
@@ -973,7 +972,7 @@ public class Generator {
         }
         if (obj instanceof Map) {
             String objName = resolveConstMapping(this);
-            allocateTypeToSchema(objName, obj);
+            this.nodes.put(objName, NodeParser.parseModuleMemberDeclaration(""));
 
             List<String> result = new ArrayList<>();
             for (Map.Entry<String, Object> entry : ((Map<String, Object>) obj).entrySet()) {

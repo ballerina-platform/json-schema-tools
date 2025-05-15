@@ -87,7 +87,7 @@ public class JsonSchemaGeneratorTest {
                 {"50_min_max_properties.json", "50_min_max_properties.bal"},
                 {"51_min_max_properties.json", "51_min_max_properties.bal"},
                 {"52_default_value.json", "52_default_value.bal"},
-                {"53_defs.json", "53_defs.bal"},
+                {"53_simple_referencing.json", "53_simple_referencing.bal"},
                 {"54_recursive_array_referencing.json", "54_recursive_array_referencing.bal"},
                 {"55_recursive_object_referencing.json", "55_recursive_object_referencing.bal"},
                 {"57_field_descriptions.json", "57_field_descriptions.bal"},
@@ -104,6 +104,12 @@ public class JsonSchemaGeneratorTest {
                 {"68_writeonly_basic_type.json", "68_writeonly_basic_type.bal"},
                 {"69_false_writeonly_basic_type.json", "69_false_writeonly_basic_type.bal"},
                 {"70_writeonly_fields.json", "70_writeonly_fields.bal"},
+                {"71_deprecated_basic_type.json", "71_deprecated_basic_type.bal"},
+                {"72_deprecated_fields.json", "72_deprecated_fields.bal"},
+                {"73_dynamic_anchors.json", "73_dynamic_anchors.bal"},
+                {"74_dynamic_anchors.json", "74_dynamic_anchors.bal"},
+                {"75_anchors.json", "75_anchors.bal"},
+                {"76_anchors.json", "76_anchors.bal"}
         };
     }
 
