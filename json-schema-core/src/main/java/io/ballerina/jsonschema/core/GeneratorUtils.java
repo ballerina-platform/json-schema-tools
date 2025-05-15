@@ -122,7 +122,6 @@ public class GeneratorUtils {
     public static final String PROPERTY_NAMES = "propertyNames";
 
     public static final String TITLE = "title";
-    public static final String DESCRIPTION = "description";
     public static final String COMMENT = "comment";
     public static final String EXAMPLES = "examples";
 

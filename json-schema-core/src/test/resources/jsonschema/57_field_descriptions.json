@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "The unique username of the user."
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The age of the user. Must be a non-negative integer."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "The user's email address in valid format."
+    }
+  },
+  "required": ["username", "email"],
+  "description": "A schema representing a basic user object with username, age, and email."
+}

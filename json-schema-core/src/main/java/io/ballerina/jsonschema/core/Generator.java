@@ -66,7 +66,6 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_SCHEMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPENDENT_SCHEMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPRECATED;
-import static io.ballerina.jsonschema.core.GeneratorUtils.DESCRIPTION;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DOUBLE_QUOTATION;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_ARRAY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_RECORD;
@@ -349,15 +348,15 @@ public class Generator {
             }
         }
 
-        List<String> annotationParts = new ArrayList<>();
+        List<String> annotations = new ArrayList<>();
 
-        if (typeAnnot != AnnotType.FIELD) {
-            addIfNotNullString(annotationParts, DESCRIPTION, schema.getDescription());
+        if (typeAnnot != AnnotType.FIELD && schema.getDescription() != null) {
+            annotations.add("# " + schema.getDescription());
         }
 
+        List<String> annotationParts = new ArrayList<>();
         addIfNotNullString(annotationParts, TITLE, schema.getTitle());
         addIfNotNullString(annotationParts, COMMENT, schema.getCommentKeyword());
-
         if (schema.getExamples() != null) {
             List<String> examples = new ArrayList<>();
             for (Object example : schema.getExamples()) {
@@ -366,23 +365,25 @@ public class Generator {
             String exampleString = "[" + String.join(COMMA, examples) + "]";
             annotationParts.add(EXAMPLES + COLON + exampleString);
         }
-
         String annotationFields = String.join(COMMA + NEW_LINE + TAB, annotationParts);
-
-        List<String> annotations = new ArrayList<>();
-
         if (!annotationFields.isEmpty()) {
+            addJsonDataImport();
             annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, META_DATA, annotationFields));
         }
+
         if (schema.getDeprecated() != null && typeAnnot != AnnotType.FIELD) {
+            addJsonDataImport();
             annotations.add(DEPRECATED);
         }
         if (schema.getWriteOnly() != null) {
+            addJsonDataImport();
             annotations.add(WRITE_ONLY);
         }
         if (schema.getReadOnly() != null && typeAnnot != AnnotType.FIELD) {
+            addJsonDataImport();
             annotations.add(READ_ONLY);
         }
+
         String annotString = String.join(NEW_LINE, annotations);
 
         if (this.nodes.containsKey(type)) {

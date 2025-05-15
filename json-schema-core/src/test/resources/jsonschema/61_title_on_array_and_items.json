@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "User Roles List",
+  "type": "array",
+  "prefixItems": [
+    {
+      "type": "string",
+      "title": "Primary Role"
+    },
+    {
+      "type": "string",
+      "title": "Secondary Role"
+    }
+  ],
+  "items": {
+    "type": "string",
+    "title": "Additional Role"
+  },
+  "minItems": 2
+}

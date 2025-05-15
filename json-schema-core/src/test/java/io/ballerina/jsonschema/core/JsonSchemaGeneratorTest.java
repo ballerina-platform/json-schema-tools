@@ -89,7 +89,13 @@ public class JsonSchemaGeneratorTest {
                 {"52_default_value.json", "52_default_value.bal"},
                 {"53_defs.json", "53_defs.bal"},
                 {"54_recursive_array_referencing.json", "54_recursive_array_referencing.bal"},
-                {"55_recursive_object_referencing.json", "55_recursive_object_referencing.bal"}
+                {"55_recursive_object_referencing.json", "55_recursive_object_referencing.bal"},
+                {"57_field_descriptions.json", "57_field_descriptions.bal"},
+                {"58_basic_type_description.json", "58_basic_type_description.bal"},
+                {"59_array_type_description.json", "59_array_type_description.bal"},
+                {"60_title_on_object_and_fields.json", "60_title_on_object_and_fields.bal"},
+                {"61_title_on_array_and_items.json", "61_title_on_array_and_items.bal"},
+                {"62_title_on_basic_type.json", "62_title_on_basic_type.bal"}
         };
     }
 
