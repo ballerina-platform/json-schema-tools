@@ -197,13 +197,13 @@ public class Generator {
                     if (schema.getIdKeyword() == null) {
                         throw new Exception("All the schemas must have an id if there are multiple schema files.");
                     }
-                    fetchSchemaId(deepCopy(schemaObject), URI.create(""), this.idToSchemaMap);
+                    fetchSchemaId(schemaObject, URI.create(""), this.idToSchemaMap);
                 }
             } else {
                 if (schema.getIdKeyword() == null) {
                     schema.setIdKeyword("dummy:/");
                 }
-                fetchSchemaId(deepCopy(schema), URI.create(""), this.idToSchemaMap);
+                fetchSchemaId(schema, URI.create(""), this.idToSchemaMap);
             }
 
             // Convert all the uri values to absolute uris
