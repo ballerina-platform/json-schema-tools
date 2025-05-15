@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Encoded User Info",
+  "type": "object",
+  "properties": {
+    "userInfo": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "contentMediaType": "application/json",
+      "contentSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "email": { "type": "string", "format": "email" }
+        },
+        "required": ["id", "email"]
+      },
+      "description": "Base64-encoded JSON object containing user information."
+    }
+  },
+  "required": ["userInfo"]
+}

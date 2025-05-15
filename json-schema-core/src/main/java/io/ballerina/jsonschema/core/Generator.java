@@ -501,7 +501,7 @@ public class Generator {
         String contentMediaType = schema.getContentMediaType();
         Object contentSchema = schema.getContentSchema();
 
-        if (areAllNull(format, minLength, maxLength, pattern)) {
+        if (areAllNull(format, minLength, maxLength, pattern, contentEncoding, contentMediaType, contentSchema)) {
             return STRING;
         }
 
@@ -542,7 +542,7 @@ public class Generator {
             if (contentSchema != null) {
                 String contentSchemaName = finalType + convertToPascalCase(CONTENT_SCHEMA);
                 String contentSchemaType = this.convert(contentSchema, contentSchemaName);
-                annotationParts.add(CONTENT_SCHEMA + COLON + DOUBLE_QUOTATION +
+                annotationParts.add(CONTENT_SCHEMA + COLON +
                         resolveTypeNameForTypedesc(contentSchemaName, contentSchemaType, this));
             }
 
