@@ -88,7 +88,18 @@ public class JsonSchemaGeneratorTest {
                 {"51_min_max_properties.json", "51_min_max_properties.bal"},
                 {"52_default_value.json", "52_default_value.bal"},
                 {"53_defs.json", "53_defs.bal"},
-                {"54_recursive_array_referencing.json", "54_recursive_array_referencing.bal"}
+                {"54_recursive_array_referencing.json", "54_recursive_array_referencing.bal"},
+                {"55_recursive_object_referencing.json", "55_recursive_object_referencing.bal"}
+        };
+    }
+
+    @DataProvider(name = "multiJsonSchemaProvider")
+    public Object[][] provideMultiJsonTestPaths() {
+        return new Object[][]{
+                {
+                        new String[]{"56_ref_across_files_0.json", "56_ref_across_files_1.json"},
+                        "56_ref_across_files.bal"
+                }
         };
     }
 
@@ -96,6 +107,26 @@ public class JsonSchemaGeneratorTest {
     public void testJsonSchemaToRecord(String jsonFilePath, String balFilePath) throws Exception {
         validate(RES_DIR.resolve(JSON_SCHEMA_DIR).resolve(jsonFilePath),
                 RES_DIR.resolve(EXPECTED_DIR).resolve(balFilePath), new Generator());
+    }
+
+    @Test(dataProvider = "multiJsonSchemaProvider")
+    public void testMultipleJsonSchemasToSingleRecord(String[] jsonFilePaths, String balFilePath) throws Exception {
+        ArrayList<Object> schemas = new ArrayList<>();
+        for (String jsonFile : jsonFilePaths) {
+            Path path = RES_DIR.resolve(JSON_SCHEMA_DIR).resolve(jsonFile);
+            String content = Files.readString(path);
+            Object schema = SchemaUtils.parseJsonSchema(content);
+            schemas.add(schema);
+        }
+
+        Path expectedPath = RES_DIR.resolve(EXPECTED_DIR).resolve(balFilePath);
+        String expectedContent = Files.readString(expectedPath);
+
+        Generator generator = new Generator();
+        Response result = generator.convertBaseSchema(schemas);
+
+        Assert.assertTrue(result.getDiagnostics().isEmpty(), "Diagnostics should be empty");
+        Assert.assertEquals(result.getTypes(), expectedContent, "Generated types do not match expected output");
     }
 
     private void validate(Path sample, Path expected, Generator generator) throws Exception {
