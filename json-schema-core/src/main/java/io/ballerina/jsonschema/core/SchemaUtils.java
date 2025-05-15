@@ -28,8 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.ballerina.jsonschema.core.Schema.deepCopy;
-
 /**
  * Util methods to handle Schema keywords.
  *
@@ -350,7 +348,7 @@ public class SchemaUtils {
     public static Object getSchemaById(Map<URI, Schema> idToSchemaMap, String uri) throws Exception {
         URI id = URI.create(uri);
         if (idToSchemaMap.containsKey(id)) {
-            return deepCopy(idToSchemaMap.get(id));
+            return idToSchemaMap.get(id);
         }
 
         URI nearestUri = URI.create("");
@@ -365,7 +363,7 @@ public class SchemaUtils {
             throw new RuntimeException("No matching schema found for " + uri);
         }
 
-        Schema schema = (Schema) deepCopy(idToSchemaMap.get(nearestUri));
+        Schema schema = idToSchemaMap.get(nearestUri);
 
         String basePath = nearestUri.toString();
         String relativePath = uri.substring(basePath.length());

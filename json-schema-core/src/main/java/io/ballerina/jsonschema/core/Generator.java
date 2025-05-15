@@ -187,6 +187,7 @@ public class Generator {
     public Response convertBaseSchema(ArrayList<Object> schemaObjectList) throws Exception {
         // If there are multiple schemas (Starting with a non-boolean schema), validate the presence of id's in all
         // References are stored as deepCopies to avoid modifications in the later part of the code
+        ArrayList<Object> schemaCopyList = new ArrayList<>();
         if (schemaObjectList.getFirst() instanceof Schema schema) {
             if (schemaObjectList.size() > 1) {
                 for (Object schemaObject : schemaObjectList) {
@@ -211,8 +212,12 @@ public class Generator {
             }
         }
 
+        for (Object schemaObject : schemaObjectList) {
+            schemaCopyList.add(deepCopy(schemaObject));
+        }
+
         // Generate the ballerina code based on the first element
-        Object schemaObject = schemaObjectList.getFirst();
+        Object schemaObject = schemaCopyList.getFirst();
         String generatedTypeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
 
         if (!generatedTypeName.equals(DEFAULT_SCHEMA_NAME)) {
@@ -725,7 +730,7 @@ public class Generator {
         }
 
         String finalType = resolveNameConflicts(convertToPascalCase(name), this);
-        this.nodes.put(finalType, NodeParser.parseModuleMemberDeclaration(""));
+        allocateTypeToSchema(finalType, schema);
 
         List<String> objectAnnotations = new ArrayList<>();
 
