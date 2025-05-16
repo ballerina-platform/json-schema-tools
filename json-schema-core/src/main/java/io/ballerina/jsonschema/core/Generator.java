@@ -171,10 +171,7 @@ public class Generator {
     final ArrayList<String> imports = new ArrayList<>();
     final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
-    //! This is definitely a schema as id's can only be assigned to schema values
     final Map<URI, Schema> idToSchemaMap = new HashMap<>();
-
-    //! Add a comment for this mapping ( If it works )
     final Map<Schema, String> schemaToTypeMap = new HashMap<>();
 
     private int constCounter = 0;
@@ -594,7 +591,7 @@ public class Generator {
             }
         }
 
-        //TODO: Create sub-schemas before all the early return types for schema reference implementation.
+        //TODO: Create sub-schemas before all the early return types
 
         if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
             this.nodes.remove(type);

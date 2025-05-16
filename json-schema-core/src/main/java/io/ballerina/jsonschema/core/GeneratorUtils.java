@@ -273,8 +273,7 @@ public class GeneratorUtils {
         }
     }
 
-    // Create a new type with the union of typedesc and return the new type name.
-    static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
+        static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
         if (!typeName.contains(PIPE)) {
             return typeName;
         }
