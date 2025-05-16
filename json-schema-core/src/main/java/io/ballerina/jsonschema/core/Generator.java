@@ -44,12 +44,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.ballerina.jsonschema.core.GeneratorUtils.ADDITIONAL_PROPS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ALL_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ANNOTATION_FORMAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ANNOTATION_MODULE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.ANY_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ARRAY_CONSTRAINTS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.AT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.BACK_TICK;
@@ -99,6 +101,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.NULL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER_CONSTRAINTS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OBJECT_CONSTRAINTS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.ONE_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_BRACES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_SQUARE_BRACKET;
@@ -265,12 +268,18 @@ public class Generator {
         extractCombiningSchemas(schema);
 
         // Combining keywords should be handled and returned here.
-//        Object oneOf = schema.getOneOf();
-//        Object anyOf = schema.getAnyOf();
 
         List<Object> allOf = schema.getAllOf();
+        List<Object> oneOf = schema.getOneOf();
+        List<Object> anyOf = schema.getAnyOf();
         if (allOf != null && !allOf.isEmpty()) {
-            return generateCombinedCode(name, schema, allOf, ALL_OF);
+            return generateCombinedCode(name, schema, allOf, ALL_OF, s -> s.setAllOf(null));
+        }
+        if (oneOf != null && !oneOf.isEmpty()) {
+            return generateCombinedCode(name, schema, oneOf, ONE_OF, s -> s.setOneOf(null));
+        }
+        if (anyOf != null && !anyOf.isEmpty()) {
+            return generateCombinedCode(name, schema, anyOf, ANY_OF, s -> s.setAnyOf(null));
         }
 
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
@@ -342,15 +351,15 @@ public class Generator {
         }
     }
 
-    private String generateCombinedCode(String name, Schema schema, List<Object> allOf, String combType)
-            throws Exception {
-        schema.setAllOf(null);
+    private String generateCombinedCode(String name, Schema schema, List<Object> combiningList, String combType,
+                                        Consumer<Schema> schemaMutator) throws Exception {
+        schemaMutator.accept(schema);
         name = resolveNameConflicts(name, this);
         String mainType = convert(schema, name + "MainType");
 
         List<String> allOfElements = new ArrayList<>();
         int count = 0;
-        for (Object obj : allOf) {
+        for (Object obj : combiningList) {
             transferType(schema, obj);
             String elementName;
             do {
@@ -361,10 +370,10 @@ public class Generator {
         }
 
         addJsonDataImport();
-
         String subTypesName = resolveNameConflicts(name + "SubTypes", this);
-        String subTypeWithAnnot = AT + ANNOTATION_MODULE + COLON + ALL_OF + NEW_LINE +
-                String.format(TYPE_FORMAT, subTypesName, String.join(PIPE, allOfElements));
+        String annotSuffix = combType.equals(ANY_OF) ? "" : AT + ANNOTATION_MODULE + COLON + combType + NEW_LINE;
+        String subTypeWithAnnot = annotSuffix + String.format(TYPE_FORMAT, subTypesName,
+                String.join(PIPE, allOfElements));
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(subTypeWithAnnot);
         nodes.put(subTypesName, moduleNode);
