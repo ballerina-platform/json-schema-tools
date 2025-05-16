@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "default": "Anonymous"
+    },
+    "age": {
+      "type": "number",
+      "default": 18
+    },
+    "subscribed": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": ["name"]
+}

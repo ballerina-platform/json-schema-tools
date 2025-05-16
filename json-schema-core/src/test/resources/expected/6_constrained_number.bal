@@ -1,6 +1,6 @@
 import ballerina/data.jsondata;
 
-@jsondata:NumberValidation {
+@jsondata:NumberConstraints {
     minimum: 20.0,
     multipleOf: 5.0
 }

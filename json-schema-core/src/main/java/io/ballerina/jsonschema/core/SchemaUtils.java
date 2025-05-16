@@ -22,9 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.ToNumberPolicy;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Util methods to handle Schema keywords.
@@ -35,9 +33,6 @@ public class SchemaUtils {
     private static final String DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema";
 
     private static final List<String> SUPPORTED_DRAFTS = List.of(DRAFT_2020_12);
-
-    // Reference Ballerina types through schema ID.
-    static final Map<String, String> ID_TO_TYPE_MAP = new HashMap<>();
 
     public static Object parseJsonSchema(String jsonString) throws Exception {
         Gson gson = new GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
