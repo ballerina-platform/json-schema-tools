@@ -125,6 +125,11 @@ public class GeneratorUtils {
     public static final String COMMENT = "comment";
     public static final String EXAMPLES = "examples";
 
+    public static final String ALL_OF = "AllOf";
+    public static final String ONE_OF = "OneOf";
+    public static final String ANY_OF = "AnyOf";
+    public static final String NOT = "Not";
+
     public static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
     public static final String DIGIT_PATTERN = ".*\\d.*";
     public static final String STARTS_WITH_DIGIT_PATTERN = "^\\d.*";

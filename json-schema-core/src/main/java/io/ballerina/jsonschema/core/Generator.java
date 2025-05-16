@@ -35,7 +35,6 @@ import org.ballerinalang.formatter.core.options.FormattingOptions;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,9 +47,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.ballerina.jsonschema.core.GeneratorUtils.ADDITIONAL_PROPS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.ALL_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ANNOTATION_FORMAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ANNOTATION_MODULE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ARRAY_CONSTRAINTS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.AT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.BACK_TICK;
 import static io.ballerina.jsonschema.core.GeneratorUtils.BAL_JSON_DATA_MODULE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.BOOLEAN;
@@ -261,67 +262,15 @@ public class Generator {
             return schemaToTypeMap.get(schema);
         }
 
-        // TODO: Handle if-then-else
-        List<Object> combinedSchema = new ArrayList<>(List.of());
-        int keywordCount = 0;
+        extractCombiningSchemas(schema);
 
-        List<Object> ifResolved = new ArrayList<>();
-        if (schema.getIfKeyword() != null) {
-            Object ifCondition = schema.getIfKeyword();
-            Object thenCondition = schema.getThen();
-            Object elseCondition = schema.getElseKeyword();
+        // Combining keywords should be handled and returned here.
+//        Object oneOf = schema.getOneOf();
+//        Object anyOf = schema.getAnyOf();
 
-            List<Object> allOfList1 = new ArrayList<>();
-            allOfList1.add(ifCondition);
-            allOfList1.add(thenCondition);
-            Schema allOf1 = new Schema();
-            allOf1.setAllOf(allOfList1);
-
-            List<Object> allOfList2 = new ArrayList<>();
-            Schema notSchema = new Schema();
-            notSchema.setNot(ifCondition);
-            allOfList1.add(notSchema);
-            allOfList1.add(elseCondition);
-            Schema allOf2 = new Schema();
-            allOf2.setAllOf(allOfList2);
-
-            ifResolved.add(allOf1);
-            ifResolved.add(allOf2);
-
-            if (schema.getOneOf() != null) {
-                Schema ifOneOf = new Schema();
-                ifOneOf.setOneOf(ifResolved);
-                combinedSchema.add(ifOneOf);
-                keywordCount++;
-            } else {
-                schema.setOneOf(ifResolved);
-            }
-        }
-
-        // TODO: Handle AllOf, OneOf, AnyOf, Not
-        if (schema.getAnyOf() != null) {
-            keywordCount++;
-            Schema AnyOfSchema = new Schema();
-            AnyOfSchema.setAnyOf(schema.getAnyOf());
-            combinedSchema.add(AnyOfSchema);
-        }
-        if (schema.getOneOf() != null) {
-            keywordCount++;
-            Schema OneOfSchema = new Schema();
-            OneOfSchema.setOneOf(schema.getOneOf());
-            combinedSchema.add(OneOfSchema);
-        }
-        if (schema.getAllOf() != null) {
-            keywordCount++;
-            Schema AllOfSchema = new Schema();
-            AllOfSchema.setAllOf(schema.getAllOf());
-            combinedSchema.add(AllOfSchema);
-        }
-
-        if (keywordCount > 1) {
-            schema.setAllOf(combinedSchema);
-            schema.setAnyOf(null);
-            schema.setOneOf(null);
+        List<Object> allOf = schema.getAllOf();
+        if (allOf != null && !allOf.isEmpty()) {
+            return generateCombinedCode(name, schema, allOf, ALL_OF);
         }
 
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
@@ -384,6 +333,112 @@ public class Generator {
         String finalType = processMetaData(schema, typeName, name, type);
         schemaToTypeMap.put(schema, finalType);
         return finalType;
+    }
+
+    private void transferType(Schema mainObj, Object subObj) {
+        if (subObj instanceof Schema schema && schema.getType() == null) {
+            List<String> typeList = mainObj.getType();
+            schema.setType(new ArrayList<>(typeList));
+        }
+    }
+
+    private String generateCombinedCode(String name, Schema schema, List<Object> allOf, String combType)
+            throws Exception {
+        schema.setAllOf(null);
+        name = resolveNameConflicts(name, this);
+        String mainType = convert(schema, name + "MainType");
+
+        List<String> allOfElements = new ArrayList<>();
+        int count = 0;
+        for (Object obj : allOf) {
+            transferType(schema, obj);
+            String elementName;
+            do {
+                elementName = name + combType + (++count);
+            } while (this.nodes.containsKey(elementName));
+            String allOfElement = convert(obj, elementName);
+            allOfElements.add(allOfElement);
+        }
+
+        addJsonDataImport();
+
+        String subTypesName = resolveNameConflicts(name + "SubTypes", this);
+        String subTypeWithAnnot = AT + ANNOTATION_MODULE + COLON + ALL_OF + NEW_LINE +
+                String.format(TYPE_FORMAT, subTypesName, String.join(PIPE, allOfElements));
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(subTypeWithAnnot);
+        nodes.put(subTypesName, moduleNode);
+
+        String fullDeclaration = AT + ANNOTATION_MODULE + COLON + ALL_OF + NEW_LINE +
+                String.format(TYPE_FORMAT, name, mainType + PIPE + subTypesName);
+        ModuleMemberDeclarationNode moduleNodeMain = NodeParser.parseModuleMemberDeclaration(fullDeclaration);
+        nodes.put(name, moduleNodeMain);
+        return name;
+    }
+
+    private static void extractCombiningSchemas(Schema schema) {
+        // Handle if-then-else
+        List<Object> combinedSchema = new ArrayList<>(List.of());
+        int keywordCount = 0;
+
+        List<Object> ifResolved = new ArrayList<>();
+        if (schema.getIfKeyword() != null) {
+            Object ifCondition = schema.getIfKeyword();
+            Object thenCondition = schema.getThen();
+            Object elseCondition = schema.getElseKeyword();
+
+            List<Object> allOfList1 = new ArrayList<>();
+            allOfList1.add(ifCondition);
+            allOfList1.add(thenCondition);
+            Schema allOf1 = new Schema();
+            allOf1.setAllOf(allOfList1);
+
+            List<Object> allOfList2 = new ArrayList<>();
+            Schema notSchema = new Schema();
+            notSchema.setNot(ifCondition);
+            allOfList1.add(notSchema);
+            allOfList1.add(elseCondition);
+            Schema allOf2 = new Schema();
+            allOf2.setAllOf(allOfList2);
+
+            ifResolved.add(allOf1);
+            ifResolved.add(allOf2);
+
+            if (schema.getOneOf() != null) {
+                Schema ifOneOf = new Schema();
+                ifOneOf.setOneOf(ifResolved);
+                combinedSchema.add(ifOneOf);
+                keywordCount++;
+            } else {
+                schema.setOneOf(ifResolved);
+            }
+        }
+
+        // Handle AllOf, OneOf, AnyOf
+        if (schema.getAnyOf() != null) {
+            keywordCount++;
+            Schema anyOfSchema = new Schema();
+            anyOfSchema.setAnyOf(schema.getAnyOf());
+            combinedSchema.add(anyOfSchema);
+        }
+        if (schema.getOneOf() != null) {
+            keywordCount++;
+            Schema oneOfSchema = new Schema();
+            oneOfSchema.setOneOf(schema.getOneOf());
+            combinedSchema.add(oneOfSchema);
+        }
+        if (schema.getAllOf() != null) {
+            keywordCount++;
+            Schema allOfSchema = new Schema();
+            allOfSchema.setAllOf(schema.getAllOf());
+            combinedSchema.add(allOfSchema);
+        }
+
+        if (keywordCount > 1) {
+            schema.setAllOf(combinedSchema);
+            schema.setAnyOf(null);
+            schema.setOneOf(null);
+        }
     }
 
     private String processMetaData(Schema schema, String type, String name, AnnotType typeAnnot) throws Exception {
