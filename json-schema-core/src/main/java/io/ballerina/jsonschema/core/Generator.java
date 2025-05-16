@@ -35,6 +35,7 @@ import org.ballerinalang.formatter.core.options.FormattingOptions;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -260,9 +261,68 @@ public class Generator {
             return schemaToTypeMap.get(schema);
         }
 
-        // TODO: Handle AllOf, OneOf, AnyOf, Not
-
         // TODO: Handle if-then-else
+        List<Object> combinedSchema = new ArrayList<>(List.of());
+        int keywordCount = 0;
+
+        List<Object> ifResolved = new ArrayList<>();
+        if (schema.getIfKeyword() != null) {
+            Object ifCondition = schema.getIfKeyword();
+            Object thenCondition = schema.getThen();
+            Object elseCondition = schema.getElseKeyword();
+
+            List<Object> allOfList1 = new ArrayList<>();
+            allOfList1.add(ifCondition);
+            allOfList1.add(thenCondition);
+            Schema allOf1 = new Schema();
+            allOf1.setAllOf(allOfList1);
+
+            List<Object> allOfList2 = new ArrayList<>();
+            Schema notSchema = new Schema();
+            notSchema.setNot(ifCondition);
+            allOfList1.add(notSchema);
+            allOfList1.add(elseCondition);
+            Schema allOf2 = new Schema();
+            allOf2.setAllOf(allOfList2);
+
+            ifResolved.add(allOf1);
+            ifResolved.add(allOf2);
+
+            if (schema.getOneOf() != null) {
+                Schema ifOneOf = new Schema();
+                ifOneOf.setOneOf(ifResolved);
+                combinedSchema.add(ifOneOf);
+                keywordCount++;
+            } else {
+                schema.setOneOf(ifResolved);
+            }
+        }
+
+        // TODO: Handle AllOf, OneOf, AnyOf, Not
+        if (schema.getAnyOf() != null) {
+            keywordCount++;
+            Schema AnyOfSchema = new Schema();
+            AnyOfSchema.setAnyOf(schema.getAnyOf());
+            combinedSchema.add(AnyOfSchema);
+        }
+        if (schema.getOneOf() != null) {
+            keywordCount++;
+            Schema OneOfSchema = new Schema();
+            OneOfSchema.setOneOf(schema.getOneOf());
+            combinedSchema.add(OneOfSchema);
+        }
+        if (schema.getAllOf() != null) {
+            keywordCount++;
+            Schema AllOfSchema = new Schema();
+            AllOfSchema.setAllOf(schema.getAllOf());
+            combinedSchema.add(AllOfSchema);
+        }
+
+        if (keywordCount > 1) {
+            schema.setAllOf(combinedSchema);
+            schema.setAnyOf(null);
+            schema.setOneOf(null);
+        }
 
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
         List<Object> schemaType = balTypes.typeList();
