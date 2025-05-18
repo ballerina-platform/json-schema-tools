@@ -339,9 +339,32 @@ public class Generator {
                 })
                 .collect(Collectors.joining(PIPE));
 
-        String finalType = processMetaData(schema, typeName, name, type);
-        schemaToTypeMap.put(schema, finalType);
-        return finalType;
+        Schema duplicateSchema = (Schema) deepCopy(schema);
+        removeMetaDataAndTypeInfo(duplicateSchema);
+
+        if (duplicateSchema.equals(new Schema())) {
+            String finalType = processMetaData(schema, typeName, name, type);
+            schemaToTypeMap.put(schema, finalType);
+            return finalType;
+        }
+
+        throw new Exception("Constraints on enums and constants are not currently supported");
+    }
+
+    private static void removeMetaDataAndTypeInfo(Schema schema) {
+        schema.setType(null);
+        schema.setConstKeyword(null);
+        schema.setEnumKeyword(null);
+        schema.setIdKeyword(null);
+        schema.setSchemaKeyword(null);
+        schema.setAnchorKeyword(null);
+        schema.setDynamicRefKeyword(null);
+        schema.setVocabularyKeyword(null);
+        schema.setCommentKeyword(null);
+        schema.setTitle(null);
+        schema.setDescription(null);
+        schema.setExamples(null);
+        schema.setDefaultKeyword(null);
     }
 
     private void transferType(Schema mainObj, Object subObj) {
@@ -395,7 +418,7 @@ public class Generator {
         Object thenCondition = schema.getThen();
         Object elseCondition = schema.getElseKeyword();
         if (ifCondition != null && (thenCondition != null || elseCondition != null)) {
-            if (thenCondition != null){
+            if (thenCondition != null) {
                 List<Object> allOfList1 = new ArrayList<>();
                 allOfList1.add(ifCondition);
                 allOfList1.add(thenCondition);
@@ -403,7 +426,7 @@ public class Generator {
                 allOf1.setAllOf(allOfList1);
                 ifResolved.add(allOf1);
             }
-            if (elseCondition != null){
+            if (elseCondition != null) {
                 List<Object> allOfList2 = new ArrayList<>();
                 Schema notSchema = new Schema();
                 notSchema.setNot(ifCondition);
@@ -1221,25 +1244,24 @@ public class Generator {
         };
     }
 
-    private static String getJsonType(Class<?> clazz) {
-        if (clazz == null) {
-            return "null";
-        } else if (Long.class.isAssignableFrom(clazz)) {
-            return "integer";
-        } else if (Double.class.isAssignableFrom(clazz)) {
-            return "number";
-        } else if (Boolean.class.isAssignableFrom(clazz)) {
-            return "boolean";
-        } else if (String.class.isAssignableFrom(clazz)) {
-            return "string";
-        } else if (ArrayList.class.isAssignableFrom(clazz)) {
-            return "array";
-        } else if (Map.class.isAssignableFrom(clazz)) {
-            return "object";
-        }
-        throw new RuntimeException("Unsupported class: " + clazz);
-    }
-
+//    private static String getJsonType(Class<?> clazz) {
+//        if (clazz == null) {
+//            return "null";
+//        } else if (Long.class.isAssignableFrom(clazz)) {
+//            return "integer";
+//        } else if (Double.class.isAssignableFrom(clazz)) {
+//            return "number";
+//        } else if (Boolean.class.isAssignableFrom(clazz)) {
+//            return "boolean";
+//        } else if (String.class.isAssignableFrom(clazz)) {
+//            return "string";
+//        } else if (ArrayList.class.isAssignableFrom(clazz)) {
+//            return "array";
+//        } else if (Map.class.isAssignableFrom(clazz)) {
+//            return "object";
+//        }
+//        throw new RuntimeException("Unsupported class: " + clazz);
+//    }
 
     private static String getBallerinaType(Object type) {
         if (type == Long.class) {
