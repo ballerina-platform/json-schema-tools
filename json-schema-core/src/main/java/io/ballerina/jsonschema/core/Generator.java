@@ -391,28 +391,28 @@ public class Generator {
         int keywordCount = 0;
 
         List<Object> ifResolved = new ArrayList<>();
-        if (schema.getIfKeyword() != null) {
-            Object ifCondition = schema.getIfKeyword();
-            Object thenCondition = schema.getThen();
-            Object elseCondition = schema.getElseKeyword();
-
-            List<Object> allOfList1 = new ArrayList<>();
-            allOfList1.add(ifCondition);
-            allOfList1.add(thenCondition);
-            Schema allOf1 = new Schema();
-            allOf1.setAllOf(allOfList1);
-
-            List<Object> allOfList2 = new ArrayList<>();
-            Schema notSchema = new Schema();
-            notSchema.setNot(ifCondition);
-            allOfList2.add(notSchema);
-            allOfList2.add(elseCondition);
-            Schema allOf2 = new Schema();
-            allOf2.setAllOf(allOfList2);
-
-            ifResolved.add(allOf1);
-            ifResolved.add(allOf2);
-
+        Object ifCondition = schema.getIfKeyword();
+        Object thenCondition = schema.getThen();
+        Object elseCondition = schema.getElseKeyword();
+        if (ifCondition != null && (thenCondition != null || elseCondition != null)) {
+            if (thenCondition != null){
+                List<Object> allOfList1 = new ArrayList<>();
+                allOfList1.add(ifCondition);
+                allOfList1.add(thenCondition);
+                Schema allOf1 = new Schema();
+                allOf1.setAllOf(allOfList1);
+                ifResolved.add(allOf1);
+            }
+            if (elseCondition != null){
+                List<Object> allOfList2 = new ArrayList<>();
+                Schema notSchema = new Schema();
+                notSchema.setNot(ifCondition);
+                allOfList2.add(notSchema);
+                allOfList2.add(elseCondition);
+                Schema allOf2 = new Schema();
+                allOf2.setAllOf(allOfList2);
+                ifResolved.add(allOf2);
+            }
             if (schema.getOneOf() != null) {
                 Schema ifOneOf = new Schema();
                 ifOneOf.setOneOf(ifResolved);
@@ -1220,6 +1220,26 @@ public class Generator {
             default -> throw new RuntimeException("Unsupported type: " + type);
         };
     }
+
+    private static String getJsonType(Class<?> clazz) {
+        if (clazz == null) {
+            return "null";
+        } else if (Long.class.isAssignableFrom(clazz)) {
+            return "integer";
+        } else if (Double.class.isAssignableFrom(clazz)) {
+            return "number";
+        } else if (Boolean.class.isAssignableFrom(clazz)) {
+            return "boolean";
+        } else if (String.class.isAssignableFrom(clazz)) {
+            return "string";
+        } else if (ArrayList.class.isAssignableFrom(clazz)) {
+            return "array";
+        } else if (Map.class.isAssignableFrom(clazz)) {
+            return "object";
+        }
+        throw new RuntimeException("Unsupported class: " + clazz);
+    }
+
 
     private static String getBallerinaType(Object type) {
         if (type == Long.class) {
