@@ -97,6 +97,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.MULTIPLE_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NAME_REST_ITEM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NEVER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NEW_LINE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.NOT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NULL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER_CONSTRAINTS;
@@ -267,11 +268,10 @@ public class Generator {
 
         extractCombiningSchemas(schema);
 
-        // Combining keywords should be handled and returned here.
-
         List<Object> allOf = schema.getAllOf();
         List<Object> oneOf = schema.getOneOf();
         List<Object> anyOf = schema.getAnyOf();
+
         if (allOf != null && !allOf.isEmpty()) {
             return generateCombinedCode(name, schema, allOf, ALL_OF, s -> s.setAllOf(null));
         }
@@ -405,8 +405,8 @@ public class Generator {
             List<Object> allOfList2 = new ArrayList<>();
             Schema notSchema = new Schema();
             notSchema.setNot(ifCondition);
-            allOfList1.add(notSchema);
-            allOfList1.add(elseCondition);
+            allOfList2.add(notSchema);
+            allOfList2.add(elseCondition);
             Schema allOf2 = new Schema();
             allOf2.setAllOf(allOfList2);
 
@@ -421,6 +421,10 @@ public class Generator {
             } else {
                 schema.setOneOf(ifResolved);
             }
+
+            schema.setIfKeyword(null);
+            schema.setThen(null);
+            schema.setElseKeyword(null);
         }
 
         // Handle AllOf, OneOf, AnyOf
@@ -451,6 +455,8 @@ public class Generator {
     }
 
     private String processMetaData(Schema schema, String type, String name, AnnotType typeAnnot) throws Exception {
+        //TODO: Extract all the necessary keywords here.
+
         // Convert all boolean values to "null" or "true" (Default null value represents false)
         if (Boolean.FALSE.equals(schema.getWriteOnly())) {
             schema.setWriteOnly(null);
@@ -462,8 +468,9 @@ public class Generator {
             schema.setDeprecated(null);
         }
 
-        // Early return if the metadata fields and annotations are empty
-        if (areAllNull(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(), schema.getWriteOnly())) {
+        // Early return if the metadata fields, not keyword and annotations are empty
+        if (areAllNull(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(), schema.getWriteOnly(),
+                schema.getNot())) {
             if (typeAnnot == AnnotType.FIELD) {
                 return type;
             }
@@ -473,6 +480,12 @@ public class Generator {
         }
 
         List<String> annotations = new ArrayList<>();
+
+        if (schema.getNot() != null) {
+            annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, NOT,
+                    VALUE + COLON + resolveTypeNameForTypedesc(
+                            this.convert(schema.getNot(), name + NOT), name + NOT, this)));
+        }
 
         if (typeAnnot != AnnotType.FIELD && schema.getDescription() != null) {
             annotations.add("# " + schema.getDescription());
