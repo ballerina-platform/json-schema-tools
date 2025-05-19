@@ -239,10 +239,18 @@ public class Generator {
     }
 
     public String convert(Object schemaObject, String name) throws Exception {
-        return convert(schemaObject, name, AnnotType.TYPE);
+        return convert(schemaObject, name, AnnotType.TYPE, false);
     }
 
     public String convert(Object schemaObject, String name, AnnotType type) throws Exception {
+        return convert(schemaObject, name, type, false);
+    }
+
+    public String convert(Object schemaObject, String name, boolean uneval) throws Exception {
+        return convert(schemaObject, name, AnnotType.TYPE, uneval);
+    }
+
+    public String convert(Object schemaObject, String name, AnnotType type, boolean uneval) throws Exception {
         // JSON Schema allows a schema to be a boolean: `true` allows any value, `false` allows none.
         // It is handled here before processing object-based schemas.
         if (schemaObject instanceof Boolean boolValue) {
@@ -263,6 +271,11 @@ public class Generator {
             return schemaToTypeMap.get(schema);
         }
 
+        if (schema.getAdditionalProperties() == null && schema.getUnevaluatedProperties() != null &&
+                hasPropertyKeywordsNested(schema, true)) {
+            uneval = true;
+        }
+
         extractCombiningSchemas(schema);
 
         List<Object> allOf = schema.getAllOf();
@@ -270,13 +283,13 @@ public class Generator {
         List<Object> anyOf = schema.getAnyOf();
 
         if (allOf != null && !allOf.isEmpty()) {
-            return generateCombinedCode(name, schema, allOf, ALL_OF, s -> s.setAllOf(null));
+            return generateCombinedCode(name, schema, allOf, ALL_OF, s -> s.setAllOf(null), uneval);
         }
         if (oneOf != null && !oneOf.isEmpty()) {
-            return generateCombinedCode(name, schema, oneOf, ONE_OF, s -> s.setOneOf(null));
+            return generateCombinedCode(name, schema, oneOf, ONE_OF, s -> s.setOneOf(null), uneval);
         }
         if (anyOf != null && !anyOf.isEmpty()) {
-            return generateCombinedCode(name, schema, anyOf, ANY_OF, s -> s.setAnyOf(null));
+            return generateCombinedCode(name, schema, anyOf, ANY_OF, s -> s.setAnyOf(null), uneval);
         }
 
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
@@ -293,7 +306,7 @@ public class Generator {
                 schemaType.remove(Long.class);
             }
             if (schemaType.size() == 1) {
-                String typeName = createType(name, schema, schemaType.getFirst());
+                String typeName = createType(name, schema, schemaType.getFirst(), uneval);
                 String finalType = processCommonTypeAnnotations(schema, typeName, name, type);
                 schemaToTypeMap.put(schema, finalType);
                 return finalType;
@@ -303,10 +316,9 @@ public class Generator {
 
             for (Object element : schemaType) {
                 String subtypeName = name + getBallerinaTypeName(element);
-                unionTypes.add(createType(subtypeName, schema, element));
+                unionTypes.add(createType(subtypeName, schema, element, uneval));
             }
-            if (unionTypes.containsAll(
-                    Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
+            if (unionTypes.containsAll(Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
                 String finalType = processCommonTypeAnnotations(schema, JSON, name, type);
                 schemaToTypeMap.put(schema, finalType);
                 return finalType;
@@ -403,11 +415,11 @@ public class Generator {
     }
 
     private String generateCombinedCode(String name, Schema schema, List<Object> combiningList, String combType,
-                                        Consumer<Schema> schemaMutator) throws Exception {
+                                        Consumer<Schema> schemaMutator, boolean uneval) throws Exception {
         schemaMutator.accept(schema);
         name = resolveNameConflicts(name, this);
         String mainTypeName = name + "MainType";
-        String mainType = resolveTypeNameForTypedesc(mainTypeName, convert(schema, mainTypeName), this);
+        String mainType = resolveTypeNameForTypedesc(mainTypeName, convert(schema, mainTypeName, uneval), this);
 
         List<String> allOfElements = new ArrayList<>();
         int count = 0;
@@ -587,7 +599,7 @@ public class Generator {
         }
     }
 
-    private String createType(String name, Schema schema, Object type) throws Exception {
+    private String createType(String name, Schema schema, Object type, boolean uneval) throws Exception {
         if (type == null) {
             return NULL;
         }
@@ -607,7 +619,7 @@ public class Generator {
             return createArray(name, schema);
         }
         if (type == Map.class) {
-            return createObject(name, schema);
+            return createObject(name, schema, uneval);
         }
         throw new RuntimeException("Type currently not supported");
     }
@@ -891,7 +903,7 @@ public class Generator {
         return type;
     }
 
-    private String createObject(String name, Schema schema) throws Exception {
+    private String createObject(String name, Schema schema, boolean uneval) throws Exception {
         Object additionalProperties = schema.getAdditionalProperties();
         Map<String, Object> properties = schema.getProperties();
         Map<String, Object> patternProperties = schema.getPatternProperties();
@@ -953,6 +965,14 @@ public class Generator {
 
         String restType = getRecordRestType(type, additionalProperties,
                 unevaluatedProperties, this);
+
+        if (uneval) {
+            String unevalPropName = resolveNameConflicts(type + UNEVALUATED_PROPS, this);
+            String unevalAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, UNEVALUATED_PROPS,
+                    VALUE + COLON + resolveTypeNameForTypedesc(unevalPropName, restType, this));
+            objectAnnotations.add(unevalAnnotation);
+            restType = JSON;
+        }
 
         if (patternProperties != null && !patternProperties.isEmpty()) {
             this.addJsonDataImport();
@@ -1349,5 +1369,59 @@ public class Generator {
         if (!this.imports.contains(importDeclaration)) {
             this.imports.add(importDeclaration);
         }
+    }
+
+    private boolean hasPropertyKeywordsNested(Object schemaObject, boolean baseSchema) {
+        if (schemaObject instanceof Boolean) {
+            return false;
+        }
+        assert schemaObject instanceof Schema;
+        Schema schema = (Schema) schemaObject;
+
+        if (!baseSchema && ((schema.getProperties() != null && !schema.getProperties().isEmpty()) ||
+                (schema.getPatternProperties() != null && !schema.getPatternProperties().isEmpty()))) {
+            return true;
+        }
+
+        List<Object> allOf = schema.getAllOf();
+        List<Object> oneOf = schema.getOneOf();
+        List<Object> anyOf = schema.getAnyOf();
+        Object ifKeyword = schema.getIfKeyword();
+        Object then = schema.getThen();
+        Object elseKeyword = schema.getElseKeyword();
+
+        if (allOf != null) {
+            for (Object obj : allOf) {
+                if (hasPropertyKeywordsNested(obj, false)) {
+                    return true;
+                }
+            }
+        }
+
+        if (oneOf != null) {
+            for (Object obj : oneOf) {
+                if (hasPropertyKeywordsNested(obj, false)) {
+                    return true;
+                }
+            }
+        }
+
+        if (anyOf != null) {
+            for (Object obj : anyOf) {
+                if (hasPropertyKeywordsNested(obj, false)) {
+                    return true;
+                }
+            }
+        }
+
+        if (ifKeyword != null && hasPropertyKeywordsNested(ifKeyword, false)) {
+            return true;
+        }
+
+        if (then != null && hasPropertyKeywordsNested(then, false)) {
+            return true;
+        }
+
+        return elseKeyword != null && hasPropertyKeywordsNested(elseKeyword, false);
     }
 }
