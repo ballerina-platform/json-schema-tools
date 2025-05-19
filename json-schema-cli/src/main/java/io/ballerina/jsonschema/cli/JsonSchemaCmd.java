@@ -123,7 +123,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
             if (!Files.isDirectory(Path.of(inputPath))) {
                 handleSingleFile(outputDirPath, inputPath);
             } else {
-                //TODO: Implement for Directories
+                // TODO: Implement for Directories
                 outStream.println("Creating Ballerina types for multiple schema files is not yet supported");
             }
         } catch (IOException e) {

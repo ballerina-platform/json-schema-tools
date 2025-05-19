@@ -346,8 +346,40 @@ public class Generator {
             return finalType;
         }
 
-        // TODO: Validate constriants on enums.
-        throw new Exception("Constraints on enums and constants are not currently supported");
+        Set<String> typeSet = new LinkedHashSet<>();
+
+        for (Object value : schemaType) {
+            if (value == null) {
+                typeSet.add("null");
+            } else {
+                Class<?> clazz = value.getClass();
+                String jsonType = getJsonType(clazz); // your existing method
+                typeSet.add(jsonType);
+            }
+        }
+
+        return handleEnumWithConstraints(name, schema, typeSet);
+    }
+
+    private String handleEnumWithConstraints(String name, Schema schema, Set<String> typeSet) throws Exception {
+        Schema enumSchema = new Schema();
+        enumSchema.setType(new ArrayList<>(schema.getType()));
+        enumSchema.setEnumKeyword(schema.getEnumKeyword());
+        enumSchema.setConstKeyword(schema.getConstKeyword());
+
+        Schema constraintsSchema = (Schema) deepCopy(schema);
+        constraintsSchema.setType(new ArrayList<>(typeSet));
+        constraintsSchema.setEnumKeyword(null);
+        constraintsSchema.setConstKeyword(null);
+
+        ArrayList<Object> enumAllOf = new ArrayList<>();
+        enumAllOf.add(enumSchema);
+        enumAllOf.add(constraintsSchema);
+
+        Schema newSchema = new Schema();
+        newSchema.setAllOf(enumAllOf);
+
+        return convert(newSchema, name);
     }
 
     private static void removeMetaDataAndTypeInfo(Schema schema) {
@@ -387,7 +419,7 @@ public class Generator {
             do {
                 elementName = name + combType + (++count);
             } while (this.nodes.containsKey(elementName));
-            String allOfElement = convert(obj, elementName);
+            String allOfElement = resolveTypeNameForTypedesc(convert(obj, elementName), elementName, this);
             allOfElements.add(allOfElement);
         }
 
@@ -480,7 +512,7 @@ public class Generator {
 
     private String processCommonTypeAnnotations(Schema schema, String type, String name, AnnotType typeAnnot)
             throws Exception {
-        //TODO: Extract all the necessary keywords here.
+        // TODO: Extract all the necessary keywords here.
 
         // Convert all boolean values to "null" or "true" (Default null value represents false)
         if (Boolean.FALSE.equals(schema.getWriteOnly())) {
@@ -1244,24 +1276,24 @@ public class Generator {
         };
     }
 
-//    private static String getJsonType(Class<?> clazz) {
-//        if (clazz == null) {
-//            return "null";
-//        } else if (Long.class.isAssignableFrom(clazz)) {
-//            return "integer";
-//        } else if (Double.class.isAssignableFrom(clazz)) {
-//            return "number";
-//        } else if (Boolean.class.isAssignableFrom(clazz)) {
-//            return "boolean";
-//        } else if (String.class.isAssignableFrom(clazz)) {
-//            return "string";
-//        } else if (ArrayList.class.isAssignableFrom(clazz)) {
-//            return "array";
-//        } else if (Map.class.isAssignableFrom(clazz)) {
-//            return "object";
-//        }
-//        throw new RuntimeException("Unsupported class: " + clazz);
-//    }
+    private static String getJsonType(Class<?> clazz) {
+        if (clazz == null) {
+            return "null";
+        } else if (Long.class.isAssignableFrom(clazz)) {
+            return "integer";
+        } else if (Double.class.isAssignableFrom(clazz)) {
+            return "number";
+        } else if (Boolean.class.isAssignableFrom(clazz)) {
+            return "boolean";
+        } else if (String.class.isAssignableFrom(clazz)) {
+            return "string";
+        } else if (ArrayList.class.isAssignableFrom(clazz)) {
+            return "array";
+        } else if (Map.class.isAssignableFrom(clazz)) {
+            return "object";
+        }
+        throw new RuntimeException("Unsupported class: " + clazz);
+    }
 
     private static String getBallerinaType(Object type) {
         if (type == Long.class) {

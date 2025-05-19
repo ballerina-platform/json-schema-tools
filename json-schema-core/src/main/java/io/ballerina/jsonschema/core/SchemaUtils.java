@@ -456,7 +456,7 @@ public class SchemaUtils {
         } catch (Exception e) {
             throw new RuntimeException("Invalid path: " + String.join("/", pathList));
         }
-        // TODO: Implement for undefined keywords
+        // TODO: Implement for undefined keywords.
     }
 
     public static Object fetchSchemaForList(Object objectList, ArrayList<String> pathList) throws Exception {

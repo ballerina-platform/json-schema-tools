@@ -176,9 +176,7 @@ class Schema {
 
     private Map<String, List<String>> dependentRequired;
 
-    // TODO: Extra properties support.
-//    @JsonAdapter(SchemaDeserializers.OtherProperties.class)
-//    transient private Map<String, Object> extraProperties;
+    // TODO: Extra keyword are currently not supported by attributes
 
     // Constructors
     public Schema(
