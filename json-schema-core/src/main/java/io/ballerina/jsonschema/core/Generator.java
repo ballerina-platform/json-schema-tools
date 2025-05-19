@@ -409,7 +409,7 @@ public class Generator {
 
     private void transferType(Schema mainObj, Object subObj) {
         if (subObj instanceof Schema schema && schema.getType() == null) {
-            List<String> typeList = mainObj.getType();
+            List<String> typeList = mainObj.getType() == null ? new ArrayList<>() : mainObj.getType();
             schema.setType(new ArrayList<>(typeList));
         }
     }
@@ -1134,7 +1134,6 @@ public class Generator {
             fields.add(handleUnion(restType) + REST + SEMI_COLON);
         }
 
-        // Additional min/maxProperties check
         if (minProperties != null && (restType.equals(NEVER) && fields.size() < minProperties)) {
             return NEVER;
         }
