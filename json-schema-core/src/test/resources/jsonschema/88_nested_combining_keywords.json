@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" },
+    "code": { "type": "integer" }
+  },
+  "not": {
+    "allOf": [
+      {
+        "allOf": [
+          { "required": ["status"] },
+          {
+            "properties": {
+              "status": { "const": "error" }
+            }
+          }
+        ]
+      },
+      {
+        "properties": {
+          "code": { "minimum": 500 }
+        }
+      }
+    ]
+  }
+}
