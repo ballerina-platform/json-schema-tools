@@ -324,8 +324,6 @@ public class Generator {
             return finalType;
         }
 
-        //TODO: Validate constraints on enums
-
         String typeName = schemaType.stream()
                 .map(element -> {
                     try {
@@ -408,7 +406,8 @@ public class Generator {
                                         Consumer<Schema> schemaMutator) throws Exception {
         schemaMutator.accept(schema);
         name = resolveNameConflicts(name, this);
-        String mainType = convert(schema, name + "MainType");
+        String mainTypeName = name + "MainType";
+        String mainType = resolveTypeNameForTypedesc(mainTypeName, convert(schema, mainTypeName), this);
 
         List<String> allOfElements = new ArrayList<>();
         int count = 0;
