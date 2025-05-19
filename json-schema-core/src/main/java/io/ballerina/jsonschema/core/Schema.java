@@ -777,14 +777,14 @@ class Schema {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (!(o instanceof Schema)) {
+        if (!(obj instanceof Schema)) {
             return false;
         }
-        Schema schema = (Schema) o;
+        Schema schema = (Schema) obj;
 
         return Objects.equals(prefixItems, schema.prefixItems) &&
                 Objects.equals(items, schema.items) &&

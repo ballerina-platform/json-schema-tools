@@ -177,10 +177,7 @@ public class Generator {
     final ArrayList<String> imports = new ArrayList<>();
     final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
-    //! This is definitely a schema as id's can only be assigned to schema values
     final Map<URI, Schema> idToSchemaMap = new HashMap<>();
-
-    //! Add a comment for this mapping ( If it works )
     final Map<Schema, String> schemaToTypeMap = new HashMap<>();
 
     private int constCounter = 0;
@@ -326,6 +323,8 @@ public class Generator {
             schemaToTypeMap.put(schema, finalType);
             return finalType;
         }
+
+        //TODO: Validate constraints on enums
 
         String typeName = schemaType.stream()
                 .map(element -> {
@@ -632,7 +631,7 @@ public class Generator {
         }
 
         this.addJsonDataImport();
-        String finalType = resolveNameConflicts(convertToPascalCase(name), this);
+        String type = resolveNameConflicts(convertToPascalCase(name), this);
 
         List<String> annotationParts = new ArrayList<>();
 
@@ -643,12 +642,12 @@ public class Generator {
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
         String formattedAnnotation = getFormattedAnnotation(
-                annotationParts, NUMBER_CONSTRAINTS, finalType, INTEGER);
+                annotationParts, NUMBER_CONSTRAINTS, type, INTEGER);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        this.nodes.put(finalType, moduleNode);
+        this.nodes.put(type, moduleNode);
 
-        return finalType;
+        return type;
     }
 
     private String createNumber(String name, Schema schema) {
@@ -667,7 +666,7 @@ public class Generator {
         }
 
         this.addJsonDataImport();
-        String finalType = resolveNameConflicts(convertToPascalCase(name), this);
+        String type = resolveNameConflicts(convertToPascalCase(name), this);
 
         List<String> annotationParts = new ArrayList<>();
 
@@ -678,12 +677,12 @@ public class Generator {
         addIfNotNull(annotationParts, MULTIPLE_OF, multipleOf);
 
         String formattedAnnotation = getFormattedAnnotation(
-                annotationParts, NUMBER_CONSTRAINTS, finalType, NUMBER);
+                annotationParts, NUMBER_CONSTRAINTS, type, NUMBER);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        this.nodes.put(finalType, moduleNode);
+        this.nodes.put(type, moduleNode);
 
-        return finalType;
+        return type;
     }
 
     private String createString(String name, Schema schema) throws Exception {
@@ -695,12 +694,12 @@ public class Generator {
         String contentMediaType = schema.getContentMediaType();
         Object contentSchema = schema.getContentSchema();
 
-        if (areAllNull(format, minLength, maxLength, pattern)) {
+        if (areAllNull(format, minLength, maxLength, pattern, contentEncoding, contentMediaType, contentSchema)) {
             return STRING;
         }
 
         this.addJsonDataImport();
-        String finalType = resolveNameConflicts(convertToPascalCase(name), this);
+        String type = resolveNameConflicts(convertToPascalCase(name), this);
 
         List<String> annotations = new ArrayList<>();
 
@@ -734,9 +733,9 @@ public class Generator {
             addIfNotNullString(annotationParts, CONTENT_MEDIA_TYPE, contentMediaType);
 
             if (contentSchema != null) {
-                String contentSchemaName = finalType + convertToPascalCase(CONTENT_SCHEMA);
+                String contentSchemaName = type + convertToPascalCase(CONTENT_SCHEMA);
                 String contentSchemaType = this.convert(contentSchema, contentSchemaName);
-                annotationParts.add(CONTENT_SCHEMA + COLON + DOUBLE_QUOTATION +
+                annotationParts.add(CONTENT_SCHEMA + COLON +
                         resolveTypeNameForTypedesc(contentSchemaName, contentSchemaType, this));
             }
 
@@ -745,12 +744,12 @@ public class Generator {
         }
 
         String formattedAnnotation = String.join(NEW_LINE, annotations) + NEW_LINE +
-                String.format(TYPE_FORMAT, finalType, STRING);
+                String.format(TYPE_FORMAT, type, STRING);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        this.nodes.put(finalType, moduleNode);
+        this.nodes.put(type, moduleNode);
 
-        return finalType;
+        return type;
     }
 
     private String createArray(String name, Schema schema) throws Exception {
@@ -764,15 +763,15 @@ public class Generator {
         Long minContains = schema.getMinContains();
         Object unevaluatedItems = schema.getUnevaluatedItems();
 
-        String finalType = resolveNameConflicts(convertToPascalCase(name), this);
-        allocateTypeToSchema(finalType, schema);
+        String type = resolveNameConflicts(convertToPascalCase(name), this);
+        allocateTypeToSchema(type, schema);
 
         ArrayList<String> arrayItems = new ArrayList<>();
 
         if (prefixItems != null) {
             for (int i = 0; i < prefixItems.size(); i++) {
                 Object item = prefixItems.get(i);
-                arrayItems.add(this.convert(item, finalType + ITEM_SUFFIX + i));
+                arrayItems.add(this.convert(item, type + ITEM_SUFFIX + i));
             }
         }
 
@@ -782,14 +781,14 @@ public class Generator {
 
         String restItem = JSON;
         if (items != null) {
-            restItem = this.convert(items, finalType + NAME_REST_ITEM);
+            restItem = this.convert(items, type + NAME_REST_ITEM);
             if (restItem.contains(PIPE)) {
                 restItem = OPEN_BRACKET + restItem + CLOSE_BRACKET;
             }
         }
 
         if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
-            this.nodes.remove(finalType);
+            this.nodes.remove(type);
             return NEVER;
         }
 
@@ -836,7 +835,7 @@ public class Generator {
         }
 
         if ((minItems == null) && (maxItems == null) && (uniqueItems == null) && (contains == null)) {
-            this.nodes.remove(finalType);
+            this.nodes.remove(type);
             return String.join(PIPE, tupleList);
         }
 
@@ -848,7 +847,7 @@ public class Generator {
         addIfNotNull(annotationParts, UNIQUE_ITEMS, uniqueItems);
 
         if (contains != null) {
-            String containsRecordName = resolveNameConflicts(finalType +
+            String containsRecordName = resolveNameConflicts(type +
                     convertToPascalCase(CONTAINS), this);
             String newType = this.convert(contains, containsRecordName);
 
@@ -879,20 +878,20 @@ public class Generator {
         }
 
         if (unevaluatedItems != null) {
-            String customTypeName = finalType + UNEVALUATED_ITEMS_SUFFIX;
+            String customTypeName = type + UNEVALUATED_ITEMS_SUFFIX;
             String typeName = this.convert(unevaluatedItems, customTypeName);
             annotationParts.add(UNEVALUATED_ITEMS + COLON + WHITE_SPACE +
                     resolveTypeNameForTypedesc(customTypeName, typeName, this));
         }
 
         String formattedAnnotation = getFormattedAnnotation(annotationParts,
-                ARRAY_CONSTRAINTS, finalType,
+                ARRAY_CONSTRAINTS, type,
                 String.join(PIPE, tupleList));
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
-        this.nodes.put(finalType, moduleNode);
+        this.nodes.put(type, moduleNode);
 
-        return finalType;
+        return type;
     }
 
     private String createObject(String name, Schema schema) throws Exception {
@@ -921,8 +920,8 @@ public class Generator {
             return NEVER;
         }
 
-        String finalType = resolveNameConflicts(convertToPascalCase(name), this);
-        allocateTypeToSchema(finalType, schema);
+        String type = resolveNameConflicts(convertToPascalCase(name), this);
+        allocateTypeToSchema(type, schema);
 
         List<String> objectAnnotations = new ArrayList<>();
 
@@ -955,7 +954,7 @@ public class Generator {
             });
         }
 
-        String restType = getRecordRestType(finalType, additionalProperties,
+        String restType = getRecordRestType(type, additionalProperties,
                 unevaluatedProperties, this);
 
         if (patternProperties != null && !patternProperties.isEmpty()) {
@@ -964,7 +963,7 @@ public class Generator {
             List<String> propertyPatternTypes = new ArrayList<>();
             Set<String> patternTypes = new HashSet<>();
 
-            String objectTypePrefix = convertToCamelCase(finalType);
+            String objectTypePrefix = convertToCamelCase(type);
 
             int count = 0;
 
@@ -1007,8 +1006,8 @@ public class Generator {
             objectAnnotations.add(patternAnnotation);
 
             // Handle repeating data types.
-            for (String type : restType.split("\\|")) {
-                patternTypes.add(type.trim());
+            for (String repeatingType : restType.split("\\|")) {
+                patternTypes.add(repeatingType.trim());
             }
             if (patternTypes.contains(JSON)) {
                 patternTypes.clear();
@@ -1032,7 +1031,7 @@ public class Generator {
                 if (propertyNames instanceof Schema propertyNamesSchema) {
                     propertyNamesSchema.setType(new ArrayList<>(List.of("string")));
                     objectProperties.add(PROPERTY_NAMES + ": " +
-                            this.convert(propertyNamesSchema, finalType +
+                            this.convert(propertyNamesSchema, type +
                                     PROPERTY_NAMES_SUFFIX));
                 } else {
                     objectProperties.add(PROPERTY_NAMES + ": " + STRING);
@@ -1126,7 +1125,7 @@ public class Generator {
             return NEVER;
         }
 
-        String record = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + finalType + WHITE_SPACE +
+        String record = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE + type + WHITE_SPACE +
                 RECORD + OPEN_BRACES + PIPE + String.join(NEW_LINE, fields) +
                 PIPE + CLOSE_BRACES + SEMI_COLON;
 
@@ -1135,8 +1134,8 @@ public class Generator {
         }
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(record);
-        this.nodes.put(finalType, moduleNode);
-        return finalType;
+        this.nodes.put(type, moduleNode);
+        return type;
     }
 
     private record BalTypes(List<Object> typeList, boolean types) {
