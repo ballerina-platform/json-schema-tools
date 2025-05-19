@@ -1,21 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "data": {
-      "type": "array",
-      "prefixItems": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "number",
-          "minimum": 10
-        }
-      ],
-      "items" : {
-        "$ref": "#/properties/data/prefixItems/1"
-      }
-    }
-  }
+  "type": "integer",
+  "not": { "multipleOf": 2 }
 }

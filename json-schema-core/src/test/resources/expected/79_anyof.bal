@@ -1,11 +1,16 @@
 import ballerina/data.jsondata;
 
-public type Schema record {|
-    json[0]|[string]|[string, DataItem1, DataItem1...] data?;
-    json...;
-|};
+@jsondata:NumberConstraints {
+    multipleOf: 2.0
+}
+public type SchemaAnyOf1 int;
 
 @jsondata:NumberConstraints {
-    minimum: 10.0
+    multipleOf: 3.0
 }
-public type DataItem1 int|float|decimal;
+public type SchemaAnyOf2 int;
+
+public type SchemaSubTypes SchemaAnyOf1|SchemaAnyOf2;
+
+@jsondata:AllOf
+public type Schema int|SchemaSubTypes;

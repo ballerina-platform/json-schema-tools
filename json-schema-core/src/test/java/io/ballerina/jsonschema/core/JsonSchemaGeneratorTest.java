@@ -109,7 +109,16 @@ public class JsonSchemaGeneratorTest {
                 {"73_dynamic_anchors.json", "73_dynamic_anchors.bal"},
                 {"74_dynamic_anchors.json", "74_dynamic_anchors.bal"},
                 {"75_anchors.json", "75_anchors.bal"},
-                {"76_anchors.json", "76_anchors.bal"}
+                {"76_anchors.json", "76_anchors.bal"},
+                {"77_referencing_array_items.json", "77_referencing_array_items.bal"},
+                {"78_allof.json", "78_allof.bal"},
+                {"80_oneof.json", "80_oneof.bal"},
+                {"81_not.json", "81_not.bal"},
+                {"82_if.json", "82_if.bal"},
+                {"83_if_then.json", "83_if_then.bal"},
+                {"84_if_else.json", "84_if_else.bal"},
+                {"85_if_then_else.json", "85_if_then_else.bal"},
+                {"86_multiple_combined.json", "86_multiple_combined.bal"}
         };
     }
 

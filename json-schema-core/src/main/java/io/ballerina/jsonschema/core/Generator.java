@@ -286,7 +286,7 @@ public class Generator {
         List<Object> schemaType = balTypes.typeList();
 
         if (schemaType.isEmpty()) {
-            String finalType = processMetaData(schema, NEVER, name, type);
+            String finalType = processCommonTypeAnnotations(schema, NEVER, name, type);
             schemaToTypeMap.put(schema, finalType);
             return finalType;
         }
@@ -297,7 +297,7 @@ public class Generator {
             }
             if (schemaType.size() == 1) {
                 String typeName = createType(name, schema, schemaType.getFirst());
-                String finalType = processMetaData(schema, typeName, name, type);
+                String finalType = processCommonTypeAnnotations(schema, typeName, name, type);
                 schemaToTypeMap.put(schema, finalType);
                 return finalType;
             }
@@ -310,7 +310,7 @@ public class Generator {
             }
             if (unionTypes.containsAll(
                     Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
-                String finalType = processMetaData(schema, JSON, name, type);
+                String finalType = processCommonTypeAnnotations(schema, JSON, name, type);
                 schemaToTypeMap.put(schema, finalType);
                 return finalType;
             }
@@ -322,12 +322,10 @@ public class Generator {
             }
 
             String typeName = String.join(PIPE, unionTypes);
-            String finalType = processMetaData(schema, typeName, name, type);
+            String finalType = processCommonTypeAnnotations(schema, typeName, name, type);
             schemaToTypeMap.put(schema, finalType);
             return finalType;
         }
-
-        //TODO: Validate constraints on enums
 
         String typeName = schemaType.stream()
                 .map(element -> {
@@ -343,11 +341,12 @@ public class Generator {
         removeMetaDataAndTypeInfo(duplicateSchema);
 
         if (duplicateSchema.equals(new Schema())) {
-            String finalType = processMetaData(schema, typeName, name, type);
+            String finalType = processCommonTypeAnnotations(schema, typeName, name, type);
             schemaToTypeMap.put(schema, finalType);
             return finalType;
         }
 
+        // TODO: Validate constriants on enums.
         throw new Exception("Constraints on enums and constants are not currently supported");
     }
 
@@ -417,25 +416,27 @@ public class Generator {
         Object ifCondition = schema.getIfKeyword();
         Object thenCondition = schema.getThen();
         Object elseCondition = schema.getElseKeyword();
+
         if (ifCondition != null && (thenCondition != null || elseCondition != null)) {
-            if (thenCondition != null) {
-                List<Object> allOfList1 = new ArrayList<>();
-                allOfList1.add(ifCondition);
-                allOfList1.add(thenCondition);
-                Schema allOf1 = new Schema();
-                allOf1.setAllOf(allOfList1);
-                ifResolved.add(allOf1);
-            }
-            if (elseCondition != null) {
-                List<Object> allOfList2 = new ArrayList<>();
-                Schema notSchema = new Schema();
-                notSchema.setNot(ifCondition);
-                allOfList2.add(notSchema);
-                allOfList2.add(elseCondition);
-                Schema allOf2 = new Schema();
-                allOf2.setAllOf(allOfList2);
-                ifResolved.add(allOf2);
-            }
+            thenCondition = thenCondition == null ? true : thenCondition;
+            elseCondition = elseCondition == null ? true  : elseCondition;
+
+            List<Object> allOfList1 = new ArrayList<>();
+            allOfList1.add(ifCondition);
+            allOfList1.add(thenCondition);
+            Schema allOf1 = new Schema();
+            allOf1.setAllOf(allOfList1);
+            ifResolved.add(allOf1);
+
+            List<Object> allOfList2 = new ArrayList<>();
+            Schema notSchema = new Schema();
+            notSchema.setNot(deepCopy(ifCondition));
+            allOfList2.add(notSchema);
+            allOfList2.add(elseCondition);
+            Schema allOf2 = new Schema();
+            allOf2.setAllOf(allOfList2);
+            ifResolved.add(allOf2);
+
             if (schema.getOneOf() != null) {
                 Schema ifOneOf = new Schema();
                 ifOneOf.setOneOf(ifResolved);
@@ -477,7 +478,8 @@ public class Generator {
         }
     }
 
-    private String processMetaData(Schema schema, String type, String name, AnnotType typeAnnot) throws Exception {
+    private String processCommonTypeAnnotations(Schema schema, String type, String name, AnnotType typeAnnot)
+            throws Exception {
         //TODO: Extract all the necessary keywords here.
 
         // Convert all boolean values to "null" or "true" (Default null value represents false)
@@ -506,8 +508,8 @@ public class Generator {
 
         if (schema.getNot() != null) {
             annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, NOT,
-                    VALUE + COLON + resolveTypeNameForTypedesc(
-                            this.convert(schema.getNot(), name + NOT), name + NOT, this)));
+                    VALUE + COLON + resolveTypeNameForTypedesc(name + NOT,
+                            this.convert(schema.getNot(), name + NOT) , this)));
         }
 
         if (typeAnnot != AnnotType.FIELD && schema.getDescription() != null) {
@@ -753,8 +755,6 @@ public class Generator {
                 restItem = OPEN_BRACKET + restItem + CLOSE_BRACKET;
             }
         }
-
-        //TODO: Create sub-schemas before all the early return types for schema reference implementation.
 
         if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
             this.nodes.remove(finalType);
