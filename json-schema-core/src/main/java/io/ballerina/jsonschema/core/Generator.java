@@ -302,7 +302,7 @@ public class Generator {
             Set<String> unionTypes = new LinkedHashSet<>();
 
             for (Object element : schemaType) {
-                String subtypeName = name + getBallerinaType(element);
+                String subtypeName = name + getBallerinaTypeName(element);
                 unionTypes.add(createType(subtypeName, schema, element));
             }
             if (unionTypes.containsAll(
@@ -352,7 +352,7 @@ public class Generator {
                 typeSet.add("null");
             } else {
                 Class<?> clazz = value.getClass();
-                String jsonType = getJsonType(clazz); // your existing method
+                String jsonType = getJsonType(clazz);
                 typeSet.add(jsonType);
             }
         }
@@ -418,7 +418,7 @@ public class Generator {
             do {
                 elementName = name + combType + (++count);
             } while (this.nodes.containsKey(elementName));
-            String allOfElement = resolveTypeNameForTypedesc(convert(obj, elementName), elementName, this);
+            String allOfElement = resolveTypeNameForTypedesc(elementName, convert(obj, elementName), this);
             allOfElements.add(allOfElement);
         }
 
@@ -450,7 +450,7 @@ public class Generator {
 
         if (ifCondition != null && (thenCondition != null || elseCondition != null)) {
             thenCondition = thenCondition == null ? true : thenCondition;
-            elseCondition = elseCondition == null ? true  : elseCondition;
+            elseCondition = elseCondition == null ? true : elseCondition;
 
             List<Object> allOfList1 = new ArrayList<>();
             allOfList1.add(ifCondition);
@@ -511,8 +511,6 @@ public class Generator {
 
     private String processCommonTypeAnnotations(Schema schema, String type, String name, AnnotType typeAnnot)
             throws Exception {
-        // TODO: Extract all the necessary keywords here.
-
         // Convert all boolean values to "null" or "true" (Default null value represents false)
         if (Boolean.FALSE.equals(schema.getWriteOnly())) {
             schema.setWriteOnly(null);
@@ -540,7 +538,7 @@ public class Generator {
         if (schema.getNot() != null) {
             annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, NOT,
                     VALUE + COLON + resolveTypeNameForTypedesc(name + NOT,
-                            this.convert(schema.getNot(), name + NOT) , this)));
+                            this.convert(schema.getNot(), name + NOT), this)));
         }
 
         if (typeAnnot != AnnotType.FIELD && schema.getDescription() != null) {
@@ -1294,7 +1292,7 @@ public class Generator {
         throw new RuntimeException("Unsupported class: " + clazz);
     }
 
-    private static String getBallerinaType(Object type) {
+    private static String getBallerinaTypeName(Object type) {
         if (type == Long.class) {
             return "Integer";
         }
