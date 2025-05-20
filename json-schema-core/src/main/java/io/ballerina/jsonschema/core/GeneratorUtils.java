@@ -215,7 +215,7 @@ public class GeneratorUtils {
         }
 
         void setDependentRequired(List<String> dependentRequired) {
-            this.dependentRequired = dependentRequired;
+            this.dependentRequired = (dependentRequired != null) ? dependentRequired : new ArrayList<>();
         }
 
         void addDependentRequired(String dependentRequired) {
@@ -265,7 +265,7 @@ public class GeneratorUtils {
                 RecordField value = entry.getValue();
 
                 List<String> dependentRequired = value.getDependentRequired();
-                if (dependentRequired == null || !keyRecord.isRequired()) {
+                if (dependentRequired.isEmpty() || !keyRecord.isRequired()) {
                     continue;
                 }
 
@@ -313,7 +313,7 @@ public class GeneratorUtils {
             }
 
             List<String> dependentRequired = value.getDependentRequired();
-            if (dependentRequired != null && !dependentRequired.isEmpty()) {
+            if (!dependentRequired.isEmpty()) {
                 generator.addJsonDataImport();
                 String dependentArray = dependentRequired.stream()
                         .map(name -> DOUBLE_QUOTATION + name + DOUBLE_QUOTATION)
