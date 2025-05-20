@@ -779,7 +779,7 @@ public class Generator {
 
         ArrayList<String> arrayItems = new ArrayList<>();
 
-        if (prefixItems != null) {
+        if (!prefixItems.isEmpty()) {
             for (int i = 0; i < prefixItems.size(); i++) {
                 Object item = prefixItems.get(i);
                 arrayItems.add(this.convert(item, type + ITEM_SUFFIX + i));

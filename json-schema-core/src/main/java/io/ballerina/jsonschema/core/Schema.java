@@ -35,7 +35,7 @@ import java.util.Objects;
 class Schema {
     // Applicator
     @JsonAdapter(SchemaDeserializers.ListSchemaDeserializer.class)
-    private List<Object> prefixItems;
+    private List<Object> prefixItems = new ArrayList<>();
 
     @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object items;
@@ -327,7 +327,7 @@ class Schema {
     }
 
     public void setPrefixItems(List<Object> prefixItems) {
-        this.prefixItems = prefixItems;
+        this.prefixItems = (prefixItems != null) ? prefixItems : new ArrayList<>();
     }
 
     public Object getContains() {

@@ -95,7 +95,7 @@ public class SchemaUtils {
         }
 
         // prefixItems
-        if (schema.getPrefixItems() != null) {
+        if (!schema.getPrefixItems().isEmpty()) {
             for (Object obj : schema.getPrefixItems()) {
                 fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
@@ -236,7 +236,7 @@ public class SchemaUtils {
         }
 
         // prefixItems
-        if (schema.getPrefixItems() != null) {
+        if (!schema.getPrefixItems().isEmpty()) {
             for (Object obj : schema.getPrefixItems()) {
                 convertToAbsoluteUri(obj, baseUri);
             }
