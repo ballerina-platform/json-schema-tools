@@ -404,7 +404,7 @@ public class Generator {
         schema.setCommentKeyword(null);
         schema.setTitle(null);
         schema.setDescription(null);
-        schema.setExamples(null);
+        schema.setExamples(new ArrayList<>());
         schema.setDefaultKeyword(null);
     }
 
@@ -560,7 +560,7 @@ public class Generator {
         List<String> annotationParts = new ArrayList<>();
         addIfNotNullString(annotationParts, TITLE, schema.getTitle());
         addIfNotNullString(annotationParts, COMMENT, schema.getCommentKeyword());
-        if (schema.getExamples() != null) {
+        if (!schema.getExamples().isEmpty()) {
             List<String> examples = new ArrayList<>();
             for (Object example : schema.getExamples()) {
                 examples.add(generateStringRepresentation(example));

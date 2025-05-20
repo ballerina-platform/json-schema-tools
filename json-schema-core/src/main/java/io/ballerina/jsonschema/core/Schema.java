@@ -131,7 +131,7 @@ class Schema {
     private Boolean readOnly;
     private Boolean writeOnly;
 
-    private List<Object> examples;
+    private List<Object> examples = new ArrayList<>();
 
     // Unevaluated
     @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
@@ -595,7 +595,7 @@ class Schema {
     }
 
     public void setExamples(List<Object> examples) {
-        this.examples = examples;
+        this.examples = (examples != null) ? examples : new ArrayList<>();
     }
 
     // Unevaluated
