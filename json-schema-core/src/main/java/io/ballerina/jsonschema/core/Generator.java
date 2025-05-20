@@ -1063,7 +1063,7 @@ public class Generator {
             objectAnnotations.add(minMaxAnnotation);
         }
 
-        if (restType.equals(NEVER) && required != null) {
+        if (restType.equals(NEVER) && !required.isEmpty()) {
             try {
                 required.forEach((key) -> {
                     if (!recordFields.containsKey(key)) {
@@ -1076,7 +1076,7 @@ public class Generator {
         }
 
         // Add field names that are present in the required array and are not present in the properties' keyword.
-        if (required != null) {
+        if (!required.isEmpty()) {
             String finalRestType = restType;
             required.forEach((key) -> {
                 if (!recordFields.containsKey(key)) {
@@ -1139,7 +1139,7 @@ public class Generator {
         if (minProperties != null && (restType.equals(NEVER) && fields.size() < minProperties)) {
             return NEVER;
         }
-        if (maxProperties != null && required != null && required.size() > maxProperties) {
+        if (maxProperties != null && !required.isEmpty() && required.size() > maxProperties) {
             return NEVER;
         }
 

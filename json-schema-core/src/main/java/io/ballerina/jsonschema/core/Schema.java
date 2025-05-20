@@ -172,7 +172,7 @@ class Schema {
     private Long maxProperties;
     private Long minProperties;
 
-    private List<String> required;
+    private List<String> required = new ArrayList<>();
 
     private Map<String, List<String>> dependentRequired;
 
@@ -765,7 +765,7 @@ class Schema {
     }
 
     public void setRequired(List<String> required) {
-        this.required = required;
+        this.required = (required != null) ? required : new ArrayList<>();
     }
 
     public Map<String, List<String>> getDependentRequired() {
