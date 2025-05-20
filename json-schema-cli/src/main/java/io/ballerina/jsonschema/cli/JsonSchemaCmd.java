@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -154,12 +155,8 @@ public class JsonSchemaCmd implements BLauncherCmd {
         String jsonFileContent = Files.readString(filePath);
         Object schema = SchemaUtils.parseJsonSchema(jsonFileContent);
 
-        ArrayList<Object> schemaList = new ArrayList<>();
-        schemaList.add(schema);
-
         Generator generator = new Generator();
-        Response result = generator.convertBaseSchema(schemaList);
-
+        Response result = generator.convertBaseSchema(schema);
 
         if (!result.getDiagnostics().isEmpty()) {
             result.getDiagnostics().forEach(jsonSchemaDiagnostic ->

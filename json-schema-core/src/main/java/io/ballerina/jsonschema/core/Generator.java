@@ -187,6 +187,13 @@ public class Generator {
         return ++this.constCounter;
     }
 
+    public Response convertBaseSchema(Object schema) throws Exception {
+        if (schema instanceof Schema || schema instanceof Boolean) {
+            return convertBaseSchema(List.of(schema));
+        }
+        throw new Exception("Schema type is invalid");
+    }
+
     public Response convertBaseSchema(ArrayList<Object> schemaObjectList) throws Exception {
         // If there are multiple schemas (Starting with a non-boolean schema), validate the presence of id's in all
         // References are stored as deepCopies to avoid modifications in the later part of the code
