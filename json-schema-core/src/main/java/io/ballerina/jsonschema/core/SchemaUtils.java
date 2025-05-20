@@ -187,7 +187,7 @@ public class SchemaUtils {
         }
 
         // $defs
-        if (schema.getDefsKeyword() != null) {
+        if (!schema.getDefsKeyword().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getDefsKeyword().entrySet()) {
                 fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
@@ -328,7 +328,7 @@ public class SchemaUtils {
         }
 
         // $defs
-        if (schema.getDefsKeyword() != null) {
+        if (!schema.getDefsKeyword().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getDefsKeyword().entrySet()) {
                 convertToAbsoluteUri(entry.getValue(), baseUri);
             }

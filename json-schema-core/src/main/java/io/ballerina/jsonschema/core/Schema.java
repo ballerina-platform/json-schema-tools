@@ -115,7 +115,7 @@ class Schema {
 
     @JsonAdapter(SchemaDeserializers.MapStringSchemaDeserializer.class)
     @SerializedName("$defs")
-    private Map<String, Object> defsKeyword;
+    private Map<String, Object> defsKeyword = new LinkedHashMap<>();
 
     // Format-annotation/ Format-assertion
     private String format;
@@ -529,7 +529,7 @@ class Schema {
     }
 
     public void setDefsKeyword(Map<String, Object> defsKeyword) {
-        this.defsKeyword = defsKeyword;
+        this.defsKeyword = (defsKeyword != null) ? defsKeyword : new LinkedHashMap<>();
     }
 
     // Format-annotation/ Format-assertion
