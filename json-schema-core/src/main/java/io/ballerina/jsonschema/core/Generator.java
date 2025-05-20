@@ -409,8 +409,8 @@ public class Generator {
     }
 
     private void transferType(Schema mainObj, Object subObj) {
-        if (subObj instanceof Schema schema && schema.getType() == null) {
-            List<String> typeList = mainObj.getType() == null ? new ArrayList<>() : mainObj.getType();
+        if (subObj instanceof Schema schema && schema.getType().isEmpty()) {
+            List<String> typeList = mainObj.getType().isEmpty() ? new ArrayList<>() : mainObj.getType();
             schema.setType(new ArrayList<>(typeList));
         }
     }

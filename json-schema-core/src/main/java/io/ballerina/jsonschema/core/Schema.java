@@ -142,7 +142,7 @@ class Schema {
 
     // Validation
     @JsonAdapter(SchemaDeserializers.TypeDeserializer.class)
-    private List<String> type;
+    private List<String> type = new ArrayList<>();
 
     @SerializedName("const")
     private Object constKeyword;
@@ -621,7 +621,7 @@ class Schema {
     }
 
     public void setType(ArrayList<String> type) {
-        this.type = type;
+        this.type = (type != null) ? type : new ArrayList<>();
     }
 
     public Object getConstKeyword() {
@@ -931,7 +931,7 @@ class Schema {
             copiedSchema.setUnevaluatedItems(deepCopy(schema.getUnevaluatedItems()));
             copiedSchema.setUnevaluatedProperties(deepCopy(schema.getUnevaluatedProperties()));
 
-            copiedSchema.setType(schema.getType() == null ? null : new ArrayList<>(schema.getType()));
+            copiedSchema.setType(schema.getType().isEmpty() ? null : new ArrayList<>(schema.getType()));
             copiedSchema.setConstKeyword(deepCopy(schema.getConstKeyword()));
             copiedSchema.setEnumKeyword(schema.getEnumKeyword() == null ?
                     null : new ArrayList<>(schema.getEnumKeyword()));
