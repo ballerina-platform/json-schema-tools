@@ -1112,7 +1112,7 @@ public class Generator {
             });
         }
 
-        if (dependentRequired != null) {
+        if (!dependentRequired.isEmpty()) {
             String finalRestType = restType;
             dependentRequired.forEach((key, value) -> {
                 if (!recordFields.containsKey(key)) {

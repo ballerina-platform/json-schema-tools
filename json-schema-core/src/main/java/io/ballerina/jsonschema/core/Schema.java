@@ -174,7 +174,7 @@ class Schema {
 
     private List<String> required = new ArrayList<>();
 
-    private Map<String, List<String>> dependentRequired;
+    private Map<String, List<String>> dependentRequired = new LinkedHashMap<>();
 
     // TODO: Extra keyword are currently not supported by attributes
 
@@ -773,7 +773,7 @@ class Schema {
     }
 
     public void setDependentRequired(Map<String, List<String>> dependentRequired) {
-        this.dependentRequired = dependentRequired;
+        this.dependentRequired = (dependentRequired != null) ? dependentRequired : new LinkedHashMap<>();
     }
 
     @Override
