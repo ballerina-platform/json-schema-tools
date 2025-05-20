@@ -286,20 +286,23 @@ public class Generator {
             uneval = true;
         }
 
-        extractCombiningSchemas(schema);
+        populateCombiningSchemas(schema);
 
         List<Object> allOf = schema.getAllOf();
         List<Object> oneOf = schema.getOneOf();
         List<Object> anyOf = schema.getAnyOf();
 
         if (!allOf.isEmpty()) {
-            return generateCombinedCode(name, schema, allOf, ALL_OF, s -> s.setAllOf(null), uneval);
+            return generateCombinedCode(name, schema, allOf, ALL_OF,
+                    s -> s.setAllOf(new ArrayList<>()), uneval);
         }
         if (!oneOf.isEmpty()) {
-            return generateCombinedCode(name, schema, oneOf, ONE_OF, s -> s.setOneOf(null), uneval);
+            return generateCombinedCode(name, schema, oneOf, ONE_OF,
+                    s -> s.setOneOf(new ArrayList<>()), uneval);
         }
         if (!anyOf.isEmpty()) {
-            return generateCombinedCode(name, schema, anyOf, ANY_OF, s -> s.setAnyOf(null), uneval);
+            return generateCombinedCode(name, schema, anyOf, ANY_OF,
+                    s -> s.setAnyOf(new ArrayList<>()), uneval);
         }
 
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
@@ -459,7 +462,7 @@ public class Generator {
         return name;
     }
 
-    private static void extractCombiningSchemas(Schema schema) {
+    private static void populateCombiningSchemas(Schema schema) {
         // Handle if-then-else
         List<Object> combinedSchema = new ArrayList<>(List.of());
         int keywordCount = 0;
