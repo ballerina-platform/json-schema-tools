@@ -432,9 +432,11 @@ public class GeneratorUtils {
         return input;
     }
 
-    static boolean areAllNullOrEmptyCollections(Object... objects) {
+    static boolean areAllNullOrEmpty(Object... objects) {
         return Arrays.stream(objects).allMatch(obj ->
-                obj == null || (obj instanceof Collection && ((Collection<?>) obj).isEmpty())
+                obj == null
+                        || (obj instanceof Collection && ((Collection<?>) obj).isEmpty())
+                        || (obj instanceof Map && ((Map<?, ?>) obj).isEmpty())
         );
     }
 

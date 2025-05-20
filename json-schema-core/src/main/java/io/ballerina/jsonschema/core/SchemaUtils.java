@@ -117,14 +117,14 @@ public class SchemaUtils {
         }
 
         // properties
-        if (schema.getProperties() != null) {
+        if (!schema.getProperties().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getProperties().entrySet()) {
                 fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
         }
 
         // patternProperties
-        if (schema.getPatternProperties() != null) {
+        if (!schema.getPatternProperties().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getPatternProperties().entrySet()) {
                 fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
@@ -258,14 +258,14 @@ public class SchemaUtils {
         }
 
         // properties
-        if (schema.getProperties() != null) {
+        if (!schema.getProperties().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getProperties().entrySet()) {
                 convertToAbsoluteUri(entry.getValue(), baseUri);
             }
         }
 
         // patternProperties
-        if (schema.getPatternProperties() != null) {
+        if (!schema.getPatternProperties().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getPatternProperties().entrySet()) {
                 convertToAbsoluteUri(entry.getValue(), baseUri);
             }

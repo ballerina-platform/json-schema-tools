@@ -147,7 +147,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.convertToPascalCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.getFormattedAnnotation;
 import static io.ballerina.jsonschema.core.GeneratorUtils.handleUnion;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isInvalidNumberLimit;
-import static io.ballerina.jsonschema.core.GeneratorUtils.areAllNullOrEmptyCollections;
+import static io.ballerina.jsonschema.core.GeneratorUtils.areAllNullOrEmpty;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isPrimitiveBalType;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRecordFields;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRequiredFields;
@@ -535,12 +535,12 @@ public class Generator {
         }
 
         // Early return if the metadata fields, not keyword and annotations are empty
-        if (areAllNullOrEmptyCollections(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(),
+        if (areAllNullOrEmpty(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(),
                 schema.getWriteOnly(), schema.getNot())) {
             if (typeAnnot == AnnotType.FIELD) {
                 return type;
             }
-            if (areAllNullOrEmptyCollections(schema.getDescription(), schema.getReadOnly(), schema.getDeprecated())) {
+            if (areAllNullOrEmpty(schema.getDescription(), schema.getReadOnly(), schema.getDeprecated())) {
                 return type;
             }
         }
@@ -632,7 +632,7 @@ public class Generator {
         Double exclusiveMaximum = schema.getExclusiveMaximum();
         Double multipleOf = schema.getMultipleOf();
 
-        if (areAllNullOrEmptyCollections(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (areAllNullOrEmpty(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
 
@@ -667,7 +667,7 @@ public class Generator {
         Double exclusiveMaximum = schema.getExclusiveMaximum();
         Double multipleOf = schema.getMultipleOf();
 
-        if (areAllNullOrEmptyCollections(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (areAllNullOrEmpty(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return NUMBER;
         }
 
@@ -704,7 +704,7 @@ public class Generator {
         String contentMediaType = schema.getContentMediaType();
         Object contentSchema = schema.getContentSchema();
 
-        if (areAllNullOrEmptyCollections(format, minLength, maxLength, pattern, contentEncoding, contentMediaType,
+        if (areAllNullOrEmpty(format, minLength, maxLength, pattern, contentEncoding, contentMediaType,
                 contentSchema)) {
             return STRING;
         }
@@ -714,7 +714,7 @@ public class Generator {
 
         List<String> annotations = new ArrayList<>();
 
-        if (!areAllNullOrEmptyCollections(format, minLength, maxLength, pattern)) {
+        if (!areAllNullOrEmpty(format, minLength, maxLength, pattern)) {
             List<String> annotationParts = new ArrayList<>();
 
             if (format != null) {
@@ -737,7 +737,7 @@ public class Generator {
                     String.join(COMMA, annotationParts)));
         }
 
-        if (!areAllNullOrEmptyCollections(contentEncoding, contentMediaType, contentSchema)) {
+        if (!areAllNullOrEmpty(contentEncoding, contentMediaType, contentSchema)) {
             List<String> annotationParts = new ArrayList<>();
 
             addIfNotNullString(annotationParts, CONTENT_ENCODING, contentEncoding);
@@ -921,7 +921,7 @@ public class Generator {
             return EMPTY_RECORD;
         }
 
-        if (areAllNullOrEmptyCollections(additionalProperties, properties, patternProperties,
+        if (areAllNullOrEmpty(additionalProperties, properties, patternProperties,
                 dependentSchema, propertyNames,
                 unevaluatedProperties, maxProperties, minProperties, dependentRequired, required)) {
             return UNIVERSAL_OBJECT;
@@ -937,7 +937,7 @@ public class Generator {
         List<String> objectAnnotations = new ArrayList<>();
 
         Map<String, GeneratorUtils.RecordField> recordFields = new HashMap<>();
-        if (properties != null) {
+        if (!properties.isEmpty()) {
             properties.forEach((key, value) -> {
                 String fieldName = resolveNameConflicts(key, this);
                 try {
@@ -976,7 +976,7 @@ public class Generator {
             restType = JSON;
         }
 
-        if (patternProperties != null && !patternProperties.isEmpty()) {
+        if (!patternProperties.isEmpty()) {
             this.addJsonDataImport();
 
             List<String> propertyPatternTypes = new ArrayList<>();
@@ -1377,8 +1377,7 @@ public class Generator {
         assert schemaObject instanceof Schema;
         Schema schema = (Schema) schemaObject;
 
-        if (!baseSchema && ((schema.getProperties() != null && !schema.getProperties().isEmpty()) ||
-                (schema.getPatternProperties() != null && !schema.getPatternProperties().isEmpty()))) {
+        if (!baseSchema && (!schema.getProperties().isEmpty() || !schema.getPatternProperties().isEmpty())) {
             return true;
         }
 
