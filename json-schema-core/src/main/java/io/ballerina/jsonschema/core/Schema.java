@@ -53,7 +53,7 @@ class Schema {
     private Map<String, Object> patternProperties = new LinkedHashMap<>();
 
     @JsonAdapter(SchemaDeserializers.MapStringSchemaDeserializer.class)
-    private Map<String, Object> dependentSchema;
+    private Map<String, Object> dependentSchema = new LinkedHashMap<>();
 
     @JsonAdapter(SchemaDeserializers.PropertyNameDeserializer.class)
     private Object propertyNames;
@@ -367,7 +367,7 @@ class Schema {
     }
 
     public void setDependentSchema(Map<String, Object> dependentSchema) {
-        this.dependentSchema = dependentSchema;
+        this.dependentSchema = (dependentSchema != null) ? dependentSchema : new LinkedHashMap<>();
     }
 
     public Object getPropertyNames() {

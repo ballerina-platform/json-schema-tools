@@ -131,7 +131,7 @@ public class SchemaUtils {
         }
 
         // dependentSchema
-        if (schema.getDependentSchema() != null) {
+        if (!schema.getDependentSchema().isEmpty()) {
             fetchSchemaId(schema.getDependentSchema(), baseUri, idToSchemaMap);
         }
 
@@ -272,7 +272,7 @@ public class SchemaUtils {
         }
 
         // dependentSchema
-        if (schema.getDependentSchema() != null) {
+        if (!schema.getDependentSchema().isEmpty()) {
             convertToAbsoluteUri(schema.getDependentSchema(), baseUri);
         }
 

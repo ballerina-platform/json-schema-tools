@@ -1088,7 +1088,7 @@ public class Generator {
         }
 
         // Add dependent schema fields that are not specified in the properties' keyword.
-        if ((dependentSchema != null) && (!restType.equals(NEVER))) {
+        if ((!dependentSchema.isEmpty()) && (!restType.equals(NEVER))) {
             String finalRestType = restType;
             dependentSchema.forEach((key, value) -> {
                 if (!recordFields.containsKey(key)) {
