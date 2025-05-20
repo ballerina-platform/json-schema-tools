@@ -148,7 +148,7 @@ class Schema {
     private Object constKeyword;
 
     @SerializedName("enum")
-    private List<Object> enumKeyword;
+    private List<Object> enumKeyword = new ArrayList<>();
 
     private Double multipleOf;
     private Double maximum;
@@ -637,7 +637,7 @@ class Schema {
     }
 
     public void setEnumKeyword(List<Object> enumKeyword) {
-        this.enumKeyword = enumKeyword;
+        this.enumKeyword = (enumKeyword != null) ? enumKeyword : new ArrayList<>();
     }
 
     public Double getMultipleOf() {

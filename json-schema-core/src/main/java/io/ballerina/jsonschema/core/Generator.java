@@ -379,7 +379,7 @@ public class Generator {
 
         Schema constraintsSchema = (Schema) deepCopy(schema);
         constraintsSchema.setType(new ArrayList<>(typeSet));
-        constraintsSchema.setEnumKeyword(null);
+        constraintsSchema.setEnumKeyword(new ArrayList<>());
         constraintsSchema.setConstKeyword(null);
 
         ArrayList<Object> enumAllOf = new ArrayList<>();
@@ -395,7 +395,7 @@ public class Generator {
     private static void removeMetaDataAndTypeInfo(Schema schema) {
         schema.setType(null);
         schema.setConstKeyword(null);
-        schema.setEnumKeyword(null);
+        schema.setEnumKeyword(new ArrayList<>());
         schema.setIdKeyword(null);
         schema.setSchemaKeyword(null);
         schema.setAnchorKeyword(null);
@@ -1245,7 +1245,7 @@ public class Generator {
             typeList.add(Long.class);
         }
 
-        if (enumKeyword == null) {
+        if (enumKeyword.isEmpty()) {
             if (constKeyword == null) {
                 return new BalTypes(new ArrayList<>(typeList), true);
             }
