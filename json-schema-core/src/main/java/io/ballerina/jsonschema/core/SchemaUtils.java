@@ -70,12 +70,11 @@ public class SchemaUtils {
         }
 
         if (schema.getIdKeyword() != null) {
-            URI uri = URI.create(schema.getIdKeyword());
-            if (idToSchemaMap.containsKey(uri)) {
+            baseUri = URI.create(schema.getIdKeyword());
+            if (idToSchemaMap.containsKey(baseUri)) {
                 throw new RuntimeException("Schema id \"" + schema.getIdKeyword() + "\" is not unique");
             }
-            idToSchemaMap.put(uri, schema);
-            baseUri = uri;
+            idToSchemaMap.put(baseUri, schema);
         }
         if (schema.getAnchorKeyword() != null) {
             // TODO: validate the anchor expression
@@ -94,111 +93,92 @@ public class SchemaUtils {
             idToSchemaMap.put(baseUri.resolve(uri), schema);
         }
 
-        // prefixItems
         if (!schema.getPrefixItems().isEmpty()) {
             for (Object obj : schema.getPrefixItems()) {
                 fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
-        // items
         if (schema.getItems() != null) {
             fetchSchemaId(schema.getItems(), baseUri, idToSchemaMap);
         }
 
-        // contains
         if (schema.getContains() != null) {
             fetchSchemaId(schema.getContains(), baseUri, idToSchemaMap);
         }
 
-        // additionalProperties
         if (schema.getAdditionalProperties() != null) {
             fetchSchemaId(schema.getAdditionalProperties(), baseUri, idToSchemaMap);
         }
 
-        // properties
         if (!schema.getProperties().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getProperties().entrySet()) {
                 fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
         }
 
-        // patternProperties
         if (!schema.getPatternProperties().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getPatternProperties().entrySet()) {
                 fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
         }
 
-        // dependentSchema
         if (!schema.getDependentSchema().isEmpty()) {
             fetchSchemaId(schema.getDependentSchema(), baseUri, idToSchemaMap);
         }
 
-        // propertyNames
         if (schema.getPropertyNames() != null) {
             fetchSchemaId(schema.getPropertyNames(), baseUri, idToSchemaMap);
         }
 
-        // if
         if (schema.getIfKeyword() != null) {
             fetchSchemaId(schema.getIfKeyword(), baseUri, idToSchemaMap);
         }
 
-        // then
         if (schema.getThen() != null) {
             fetchSchemaId(schema.getThen(), baseUri, idToSchemaMap);
         }
 
-        // else
         if (schema.getElseKeyword() != null) {
             fetchSchemaId(schema.getElseKeyword(), baseUri, idToSchemaMap);
         }
 
-        // allOf
         if (!schema.getAllOf().isEmpty()) {
             for (Object obj : schema.getAllOf()) {
                 fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
-        // anyOf
         if (!schema.getAnyOf().isEmpty()) {
             for (Object obj : schema.getAnyOf()) {
                 fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
-        // oneOf
         if (!schema.getOneOf().isEmpty()) {
             for (Object obj : schema.getOneOf()) {
                 fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
-        // not
         if (schema.getNot() != null) {
             fetchSchemaId(schema.getNot(), baseUri, idToSchemaMap);
         }
 
-        // content
         if (schema.getContentSchema() != null) {
             fetchSchemaId(schema.getContentSchema(), baseUri, idToSchemaMap);
         }
 
-        // $defs
         if (!schema.getDefsKeyword().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getDefsKeyword().entrySet()) {
                 fetchSchemaId(entry.getValue(), baseUri, idToSchemaMap);
             }
         }
 
-        // unevaluatedItems
         if (schema.getUnevaluatedItems() != null) {
             fetchSchemaId(schema.getUnevaluatedItems(), baseUri, idToSchemaMap);
         }
 
-        // unevaluatedProperties
         if (schema.getUnevaluatedProperties() != null) {
             fetchSchemaId(schema.getUnevaluatedProperties(), baseUri, idToSchemaMap);
         }
@@ -235,111 +215,92 @@ public class SchemaUtils {
             baseUri = URI.create(schema.getIdKeyword());
         }
 
-        // prefixItems
         if (!schema.getPrefixItems().isEmpty()) {
             for (Object obj : schema.getPrefixItems()) {
                 convertToAbsoluteUri(obj, baseUri);
             }
         }
 
-        // items
         if (schema.getItems() != null) {
             convertToAbsoluteUri(schema.getItems(), baseUri);
         }
 
-        // contains
         if (schema.getContains() != null) {
             convertToAbsoluteUri(schema.getContains(), baseUri);
         }
 
-        // additionalProperties
         if (schema.getAdditionalProperties() != null) {
             convertToAbsoluteUri(schema.getAdditionalProperties(), baseUri);
         }
 
-        // properties
         if (!schema.getProperties().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getProperties().entrySet()) {
                 convertToAbsoluteUri(entry.getValue(), baseUri);
             }
         }
 
-        // patternProperties
         if (!schema.getPatternProperties().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getPatternProperties().entrySet()) {
                 convertToAbsoluteUri(entry.getValue(), baseUri);
             }
         }
 
-        // dependentSchema
         if (!schema.getDependentSchema().isEmpty()) {
             convertToAbsoluteUri(schema.getDependentSchema(), baseUri);
         }
 
-        // propertyNames
         if (schema.getPropertyNames() != null) {
             convertToAbsoluteUri(schema.getPropertyNames(), baseUri);
         }
 
-        // if
         if (schema.getIfKeyword() != null) {
             convertToAbsoluteUri(schema.getIfKeyword(), baseUri);
         }
 
-        // then
         if (schema.getThen() != null) {
             convertToAbsoluteUri(schema.getThen(), baseUri);
         }
 
-        // else
         if (schema.getElseKeyword() != null) {
             convertToAbsoluteUri(schema.getElseKeyword(), baseUri);
         }
 
-        // allOf
         if (!schema.getAllOf().isEmpty()) {
             for (Object obj : schema.getAllOf()) {
                 convertToAbsoluteUri(obj, baseUri);
             }
         }
 
-        // anyOf
         if (!schema.getAnyOf().isEmpty()) {
             for (Object obj : schema.getAnyOf()) {
                 convertToAbsoluteUri(obj, baseUri);
             }
         }
 
-        // oneOf
         if (!schema.getOneOf().isEmpty()) {
             for (Object obj : schema.getOneOf()) {
                 convertToAbsoluteUri(obj, baseUri);
             }
         }
 
-        // not
         if (schema.getNot() != null) {
             convertToAbsoluteUri(schema.getNot(), baseUri);
         }
 
-        // content
         if (schema.getContentSchema() != null) {
             convertToAbsoluteUri(schema.getContentSchema(), baseUri);
         }
 
-        // $defs
         if (!schema.getDefsKeyword().isEmpty()) {
             for (Map.Entry<String, Object> entry : schema.getDefsKeyword().entrySet()) {
                 convertToAbsoluteUri(entry.getValue(), baseUri);
             }
         }
 
-        // unevaluatedItems
         if (schema.getUnevaluatedItems() != null) {
             convertToAbsoluteUri(schema.getUnevaluatedItems(), baseUri);
         }
 
-        // unevaluatedProperties
         if (schema.getUnevaluatedProperties() != null) {
             convertToAbsoluteUri(schema.getUnevaluatedProperties(), baseUri);
         }

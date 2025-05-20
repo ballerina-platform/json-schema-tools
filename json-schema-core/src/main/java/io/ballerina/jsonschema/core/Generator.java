@@ -63,6 +63,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_SQUARE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COLON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COMMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COMMENT;
+import static io.ballerina.jsonschema.core.GeneratorUtils.COMMENT_HEADER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CONTAINS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_ENCODING;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_MEDIA_TYPE;
@@ -141,7 +142,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.WRITE_ONLY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ZERO;
 import static io.ballerina.jsonschema.core.GeneratorUtils.addIfNotNull;
-import static io.ballerina.jsonschema.core.GeneratorUtils.addIfNotNullString;
+import static io.ballerina.jsonschema.core.GeneratorUtils.addStringIfNotNull;
 import static io.ballerina.jsonschema.core.GeneratorUtils.convertToCamelCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.convertToPascalCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.getFormattedAnnotation;
@@ -241,24 +242,25 @@ public class Generator {
         return new Response(generatedTypes, this.diagnostics);
     }
 
-    public enum AnnotType {
+    public enum AnnotationAttachmentPoint {
         TYPE,
         FIELD
     }
 
     public String convert(Object schemaObject, String name) throws Exception {
-        return convert(schemaObject, name, AnnotType.TYPE, false);
+        return convert(schemaObject, name, AnnotationAttachmentPoint.TYPE, false);
     }
 
-    public String convert(Object schemaObject, String name, AnnotType type) throws Exception {
+    public String convert(Object schemaObject, String name, AnnotationAttachmentPoint type) throws Exception {
         return convert(schemaObject, name, type, false);
     }
 
     public String convert(Object schemaObject, String name, boolean uneval) throws Exception {
-        return convert(schemaObject, name, AnnotType.TYPE, uneval);
+        return convert(schemaObject, name, AnnotationAttachmentPoint.TYPE, uneval);
     }
 
-    public String convert(Object schemaObject, String name, AnnotType type, boolean uneval) throws Exception {
+    public String convert(Object schemaObject, String name, AnnotationAttachmentPoint type, boolean uneval)
+            throws Exception {
         // JSON Schema allows a schema to be a boolean: `true` allows any value, `false` allows none.
         // It is handled here before processing object-based schemas.
         if (schemaObject instanceof Boolean boolValue) {
@@ -280,7 +282,7 @@ public class Generator {
         }
 
         if (schema.getAdditionalProperties() == null && schema.getUnevaluatedProperties() != null &&
-                hasPropertyKeywordsNested(schema, true)) {
+                hasNestedPropertyKeywords(schema, true)) {
             uneval = true;
         }
 
@@ -528,8 +530,8 @@ public class Generator {
         }
     }
 
-    private String processCommonTypeAnnotations(Schema schema, String type, String name, AnnotType typeAnnot)
-            throws Exception {
+    private String processCommonTypeAnnotations(Schema schema, String type, String name,
+                                                AnnotationAttachmentPoint typeAnnot) throws Exception {
         // Convert all boolean values to "null" or "true" (Default null value represents false)
         if (Boolean.FALSE.equals(schema.getWriteOnly())) {
             schema.setWriteOnly(null);
@@ -544,7 +546,7 @@ public class Generator {
         // Early return if the metadata fields, not keyword and annotations are empty
         if (areAllNullOrEmpty(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(),
                 schema.getWriteOnly(), schema.getNot())) {
-            if (typeAnnot == AnnotType.FIELD) {
+            if (typeAnnot == AnnotationAttachmentPoint.FIELD) {
                 return type;
             }
             if (areAllNullOrEmpty(schema.getDescription(), schema.getReadOnly(), schema.getDeprecated())) {
@@ -560,13 +562,13 @@ public class Generator {
                             this.convert(schema.getNot(), name + NOT), this)));
         }
 
-        if (typeAnnot != AnnotType.FIELD && schema.getDescription() != null) {
-            annotations.add("# " + schema.getDescription());
+        if (typeAnnot != AnnotationAttachmentPoint.FIELD && schema.getDescription() != null) {
+            annotations.add(COMMENT_HEADER + schema.getDescription());
         }
 
         List<String> annotationParts = new ArrayList<>();
-        addIfNotNullString(annotationParts, TITLE, schema.getTitle());
-        addIfNotNullString(annotationParts, COMMENT, schema.getCommentKeyword());
+        addStringIfNotNull(annotationParts, TITLE, schema.getTitle());
+        addStringIfNotNull(annotationParts, COMMENT, schema.getCommentKeyword());
         if (!schema.getExamples().isEmpty()) {
             List<String> examples = new ArrayList<>();
             for (Object example : schema.getExamples()) {
@@ -581,14 +583,14 @@ public class Generator {
             annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, META_DATA, annotationFields));
         }
 
-        if (schema.getDeprecated() != null && typeAnnot != AnnotType.FIELD) {
+        if (schema.getDeprecated() != null && typeAnnot != AnnotationAttachmentPoint.FIELD) {
             annotations.add(DEPRECATED);
         }
         if (schema.getWriteOnly() != null) {
             addJsonDataImport();
             annotations.add(WRITE_ONLY);
         }
-        if (schema.getReadOnly() != null && typeAnnot != AnnotType.FIELD) {
+        if (schema.getReadOnly() != null && typeAnnot != AnnotationAttachmentPoint.FIELD) {
             addJsonDataImport();
             annotations.add(READ_ONLY);
         }
@@ -747,8 +749,8 @@ public class Generator {
         if (!areAllNullOrEmpty(contentEncoding, contentMediaType, contentSchema)) {
             List<String> annotationParts = new ArrayList<>();
 
-            addIfNotNullString(annotationParts, CONTENT_ENCODING, contentEncoding);
-            addIfNotNullString(annotationParts, CONTENT_MEDIA_TYPE, contentMediaType);
+            addStringIfNotNull(annotationParts, CONTENT_ENCODING, contentEncoding);
+            addStringIfNotNull(annotationParts, CONTENT_MEDIA_TYPE, contentMediaType);
 
             if (contentSchema != null) {
                 String contentSchemaName = type + convertToPascalCase(CONTENT_SCHEMA);
@@ -948,8 +950,8 @@ public class Generator {
             properties.forEach((key, value) -> {
                 String fieldName = resolveNameConflicts(key, this);
                 try {
-                    GeneratorUtils.RecordField recordField =
-                            new GeneratorUtils.RecordField(this.convert(value, fieldName, AnnotType.FIELD), false);
+                    GeneratorUtils.RecordField recordField = new GeneratorUtils.RecordField(
+                            this.convert(value, fieldName, AnnotationAttachmentPoint.FIELD), false);
                     if (value instanceof Schema fieldSchema && fieldSchema.getDescription() != null) {
                         recordField.setDescription(fieldSchema.getDescription());
                     }
@@ -1377,7 +1379,7 @@ public class Generator {
         }
     }
 
-    private boolean hasPropertyKeywordsNested(Object schemaObject, boolean baseSchema) {
+    private boolean hasNestedPropertyKeywords(Object schemaObject, boolean baseSchema) {
         if (schemaObject instanceof Boolean) {
             return false;
         }
@@ -1397,7 +1399,7 @@ public class Generator {
 
         if (!allOf.isEmpty()) {
             for (Object obj : allOf) {
-                if (hasPropertyKeywordsNested(obj, false)) {
+                if (hasNestedPropertyKeywords(obj, false)) {
                     return true;
                 }
             }
@@ -1405,7 +1407,7 @@ public class Generator {
 
         if (!oneOf.isEmpty()) {
             for (Object obj : oneOf) {
-                if (hasPropertyKeywordsNested(obj, false)) {
+                if (hasNestedPropertyKeywords(obj, false)) {
                     return true;
                 }
             }
@@ -1413,20 +1415,20 @@ public class Generator {
 
         if (!anyOf.isEmpty()) {
             for (Object obj : anyOf) {
-                if (hasPropertyKeywordsNested(obj, false)) {
+                if (hasNestedPropertyKeywords(obj, false)) {
                     return true;
                 }
             }
         }
 
-        if (ifKeyword != null && hasPropertyKeywordsNested(ifKeyword, false)) {
+        if (ifKeyword != null && hasNestedPropertyKeywords(ifKeyword, false)) {
             return true;
         }
 
-        if (then != null && hasPropertyKeywordsNested(then, false)) {
+        if (then != null && hasNestedPropertyKeywords(then, false)) {
             return true;
         }
 
-        return elseKeyword != null && hasPropertyKeywordsNested(elseKeyword, false);
+        return elseKeyword != null && hasNestedPropertyKeywords(elseKeyword, false);
     }
 }

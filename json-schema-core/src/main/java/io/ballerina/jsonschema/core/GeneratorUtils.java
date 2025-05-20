@@ -88,8 +88,8 @@ public class GeneratorUtils {
     public static final String PATTERN_RECORD = ANNOTATION_MODULE + COLON + "PatternPropertiesElement";
     public static final String VALUE = "value";
 
-    public static final String READ_ONLY = "@" + ANNOTATION_MODULE + COLON + "ReadOnly";
-    public static final String WRITE_ONLY = "@" + ANNOTATION_MODULE + COLON + "WriteOnly";
+    public static final String READ_ONLY = "@" + ANNOTATION_MODULE + ":ReadOnly";
+    public static final String WRITE_ONLY = "@" + ANNOTATION_MODULE + ":WriteOnly";
     public static final String READ_ONLY_FIELD = "readonly ";
     public static final String DEPRECATED = "@deprecated";
 
@@ -154,7 +154,8 @@ public class GeneratorUtils {
     public static final String UNEVALUATED_ITEMS_SUFFIX = "UnevaluatedItems";
     public static final String PROPERTY_NAMES_SUFFIX = "PropertyNames";
 
-    public static final String DUMMY_SCHEME = "dummy:/";
+    public static final String DUMMY_SCHEME = "placeholder:/";
+    public static final String COMMENT_HEADER = "# ";
 
     static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
@@ -301,7 +302,7 @@ public class GeneratorUtils {
             ArrayList<String> fieldAnnotation = new ArrayList<>();
 
             if (value.getDescription() != null) {
-                fieldAnnotation.add("# " + value.getDescription());
+                fieldAnnotation.add(COMMENT_HEADER + value.getDescription());
             }
 
             String dependentSchema = value.getDependentSchema();
@@ -360,7 +361,7 @@ public class GeneratorUtils {
         }
     }
 
-    static void addIfNotNullString(List<String> list, String key, Object value) {
+    static void addStringIfNotNull(List<String> list, String key, Object value) {
         if (value != null) {
             list.add(key + ": " + "\"" + value + "\"");
         }
@@ -435,8 +436,8 @@ public class GeneratorUtils {
     static boolean areAllNullOrEmpty(Object... objects) {
         return Arrays.stream(objects).allMatch(obj ->
                 obj == null
-                        || (obj instanceof Collection && ((Collection<?>) obj).isEmpty())
-                        || (obj instanceof Map && ((Map<?, ?>) obj).isEmpty())
+                        || (obj instanceof Collection<?> collection && collection.isEmpty())
+                        || (obj instanceof Map<?, ?> map && map.isEmpty())
         );
     }
 
