@@ -156,21 +156,21 @@ public class SchemaUtils {
         }
 
         // allOf
-        if (schema.getAllOf() != null) {
+        if (!schema.getAllOf().isEmpty()) {
             for (Object obj : schema.getAllOf()) {
                 fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
         // anyOf
-        if (schema.getAnyOf() != null) {
+        if (!schema.getAnyOf().isEmpty()) {
             for (Object obj : schema.getAnyOf()) {
                 fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
         }
 
         // oneOf
-        if (schema.getOneOf() != null) {
+        if (!schema.getOneOf().isEmpty()) {
             for (Object obj : schema.getOneOf()) {
                 fetchSchemaId(obj, baseUri, idToSchemaMap);
             }
@@ -297,21 +297,21 @@ public class SchemaUtils {
         }
 
         // allOf
-        if (schema.getAllOf() != null) {
+        if (!schema.getAllOf().isEmpty()) {
             for (Object obj : schema.getAllOf()) {
                 convertToAbsoluteUri(obj, baseUri);
             }
         }
 
         // anyOf
-        if (schema.getAnyOf() != null) {
+        if (!schema.getAnyOf().isEmpty()) {
             for (Object obj : schema.getAnyOf()) {
                 convertToAbsoluteUri(obj, baseUri);
             }
         }
 
         // oneOf
-        if (schema.getOneOf() != null) {
+        if (!schema.getOneOf().isEmpty()) {
             for (Object obj : schema.getOneOf()) {
                 convertToAbsoluteUri(obj, baseUri);
             }

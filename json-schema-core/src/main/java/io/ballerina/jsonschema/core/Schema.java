@@ -70,13 +70,13 @@ class Schema {
     private Object elseKeyword;
 
     @JsonAdapter(SchemaDeserializers.ListSchemaDeserializer.class)
-    private List<Object> allOf;
+    private List<Object> allOf = new ArrayList<>();
 
     @JsonAdapter(SchemaDeserializers.ListSchemaDeserializer.class)
-    private List<Object> oneOf;
+    private List<Object> oneOf = new ArrayList<>();
 
     @JsonAdapter(SchemaDeserializers.ListSchemaDeserializer.class)
-    private List<Object> anyOf;
+    private List<Object> anyOf = new ArrayList<>();
 
     @JsonAdapter(SchemaDeserializers.SchemaDeserializer.class)
     private Object not;
@@ -407,7 +407,7 @@ class Schema {
     }
 
     public void setAllOf(List<Object> allOf) {
-        this.allOf = allOf;
+        this.allOf = (allOf != null) ? allOf : new ArrayList<>();
     }
 
     public List<Object> getOneOf() {
@@ -415,7 +415,7 @@ class Schema {
     }
 
     public void setOneOf(List<Object> oneOf) {
-        this.oneOf = oneOf;
+        this.oneOf = (oneOf != null) ? oneOf : new ArrayList<>();
     }
 
     public List<Object> getAnyOf() {
@@ -423,7 +423,7 @@ class Schema {
     }
 
     public void setAnyOf(List<Object> anyOf) {
-        this.anyOf = anyOf;
+        this.anyOf = (anyOf != null) ? anyOf : new ArrayList<>();
     }
 
     public Object getNot() {

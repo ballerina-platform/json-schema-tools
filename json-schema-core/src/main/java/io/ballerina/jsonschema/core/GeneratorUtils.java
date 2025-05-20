@@ -24,9 +24,9 @@ import io.ballerina.jsonschema.core.diagnostic.JsonSchemaDiagnostic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -432,8 +432,10 @@ public class GeneratorUtils {
         return input;
     }
 
-    static boolean areAllNull(Object... objects) {
-        return Arrays.stream(objects).allMatch(Objects::isNull);
+    static boolean areAllNullOrEmptyCollections(Object... objects) {
+        return Arrays.stream(objects).allMatch(obj ->
+                obj == null || (obj instanceof Collection && ((Collection<?>) obj).isEmpty())
+        );
     }
 
     static void addDiagnostic(JsonSchemaDiagnostic diagnostic, Generator generator) {

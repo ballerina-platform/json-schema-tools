@@ -147,7 +147,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.convertToPascalCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.getFormattedAnnotation;
 import static io.ballerina.jsonschema.core.GeneratorUtils.handleUnion;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isInvalidNumberLimit;
-import static io.ballerina.jsonschema.core.GeneratorUtils.areAllNull;
+import static io.ballerina.jsonschema.core.GeneratorUtils.areAllNullOrEmptyCollections;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isPrimitiveBalType;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRecordFields;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRequiredFields;
@@ -283,13 +283,13 @@ public class Generator {
         List<Object> oneOf = schema.getOneOf();
         List<Object> anyOf = schema.getAnyOf();
 
-        if (allOf != null && !allOf.isEmpty()) {
+        if (!allOf.isEmpty()) {
             return generateCombinedCode(name, schema, allOf, ALL_OF, s -> s.setAllOf(null), uneval);
         }
-        if (oneOf != null && !oneOf.isEmpty()) {
+        if (!oneOf.isEmpty()) {
             return generateCombinedCode(name, schema, oneOf, ONE_OF, s -> s.setOneOf(null), uneval);
         }
-        if (anyOf != null && !anyOf.isEmpty()) {
+        if (!anyOf.isEmpty()) {
             return generateCombinedCode(name, schema, anyOf, ANY_OF, s -> s.setAnyOf(null), uneval);
         }
 
@@ -480,7 +480,7 @@ public class Generator {
             allOf2.setAllOf(allOfList2);
             ifResolved.add(allOf2);
 
-            if (schema.getOneOf() != null) {
+            if (!schema.getOneOf().isEmpty()) {
                 Schema ifOneOf = new Schema();
                 ifOneOf.setOneOf(ifResolved);
                 combinedSchema.add(ifOneOf);
@@ -495,19 +495,19 @@ public class Generator {
         }
 
         // Handle AllOf, OneOf, AnyOf
-        if (schema.getAnyOf() != null) {
+        if (!schema.getAnyOf().isEmpty()) {
             keywordCount++;
             Schema anyOfSchema = new Schema();
             anyOfSchema.setAnyOf(schema.getAnyOf());
             combinedSchema.add(anyOfSchema);
         }
-        if (schema.getOneOf() != null) {
+        if (!schema.getOneOf().isEmpty()) {
             keywordCount++;
             Schema oneOfSchema = new Schema();
             oneOfSchema.setOneOf(schema.getOneOf());
             combinedSchema.add(oneOfSchema);
         }
-        if (schema.getAllOf() != null) {
+        if (!schema.getAllOf().isEmpty()) {
             keywordCount++;
             Schema allOfSchema = new Schema();
             allOfSchema.setAllOf(schema.getAllOf());
@@ -535,12 +535,12 @@ public class Generator {
         }
 
         // Early return if the metadata fields, not keyword and annotations are empty
-        if (areAllNull(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(), schema.getWriteOnly(),
-                schema.getNot())) {
+        if (areAllNullOrEmptyCollections(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(),
+                schema.getWriteOnly(), schema.getNot())) {
             if (typeAnnot == AnnotType.FIELD) {
                 return type;
             }
-            if (areAllNull(schema.getDescription(), schema.getReadOnly(), schema.getDeprecated())) {
+            if (areAllNullOrEmptyCollections(schema.getDescription(), schema.getReadOnly(), schema.getDeprecated())) {
                 return type;
             }
         }
@@ -632,7 +632,7 @@ public class Generator {
         Double exclusiveMaximum = schema.getExclusiveMaximum();
         Double multipleOf = schema.getMultipleOf();
 
-        if (areAllNull(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (areAllNullOrEmptyCollections(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
 
@@ -667,7 +667,7 @@ public class Generator {
         Double exclusiveMaximum = schema.getExclusiveMaximum();
         Double multipleOf = schema.getMultipleOf();
 
-        if (areAllNull(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (areAllNullOrEmptyCollections(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return NUMBER;
         }
 
@@ -704,7 +704,8 @@ public class Generator {
         String contentMediaType = schema.getContentMediaType();
         Object contentSchema = schema.getContentSchema();
 
-        if (areAllNull(format, minLength, maxLength, pattern, contentEncoding, contentMediaType, contentSchema)) {
+        if (areAllNullOrEmptyCollections(format, minLength, maxLength, pattern, contentEncoding, contentMediaType,
+                contentSchema)) {
             return STRING;
         }
 
@@ -713,7 +714,7 @@ public class Generator {
 
         List<String> annotations = new ArrayList<>();
 
-        if (!areAllNull(format, minLength, maxLength, pattern)) {
+        if (!areAllNullOrEmptyCollections(format, minLength, maxLength, pattern)) {
             List<String> annotationParts = new ArrayList<>();
 
             if (format != null) {
@@ -736,7 +737,7 @@ public class Generator {
                     String.join(COMMA, annotationParts)));
         }
 
-        if (!areAllNull(contentEncoding, contentMediaType, contentSchema)) {
+        if (!areAllNullOrEmptyCollections(contentEncoding, contentMediaType, contentSchema)) {
             List<String> annotationParts = new ArrayList<>();
 
             addIfNotNullString(annotationParts, CONTENT_ENCODING, contentEncoding);
@@ -920,7 +921,7 @@ public class Generator {
             return EMPTY_RECORD;
         }
 
-        if (areAllNull(additionalProperties, properties, patternProperties,
+        if (areAllNullOrEmptyCollections(additionalProperties, properties, patternProperties,
                 dependentSchema, propertyNames,
                 unevaluatedProperties, maxProperties, minProperties, dependentRequired, required)) {
             return UNIVERSAL_OBJECT;
@@ -1388,7 +1389,7 @@ public class Generator {
         Object then = schema.getThen();
         Object elseKeyword = schema.getElseKeyword();
 
-        if (allOf != null) {
+        if (!allOf.isEmpty()) {
             for (Object obj : allOf) {
                 if (hasPropertyKeywordsNested(obj, false)) {
                     return true;
@@ -1396,7 +1397,7 @@ public class Generator {
             }
         }
 
-        if (oneOf != null) {
+        if (!oneOf.isEmpty()) {
             for (Object obj : oneOf) {
                 if (hasPropertyKeywordsNested(obj, false)) {
                     return true;
@@ -1404,7 +1405,7 @@ public class Generator {
             }
         }
 
-        if (anyOf != null) {
+        if (!anyOf.isEmpty()) {
             for (Object obj : anyOf) {
                 if (hasPropertyKeywordsNested(obj, false)) {
                     return true;
