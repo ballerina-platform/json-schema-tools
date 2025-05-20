@@ -154,6 +154,8 @@ public class GeneratorUtils {
     public static final String UNEVALUATED_ITEMS_SUFFIX = "UnevaluatedItems";
     public static final String PROPERTY_NAMES_SUFFIX = "PropertyNames";
 
+    public static final String DUMMY_SCHEME = "dummy:/";
+
     static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
                     "idn-hostname", "ipv4", "ipv6", "json-pointer", "relative-json-pointer", "uri",
@@ -278,7 +280,7 @@ public class GeneratorUtils {
         }
     }
 
-        static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
+    static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
         if (!typeName.contains(PIPE)) {
             return typeName;
         }

@@ -71,6 +71,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPENDENT_SCHEMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPRECATED;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DOUBLE_QUOTATION;
+import static io.ballerina.jsonschema.core.GeneratorUtils.DUMMY_SCHEME;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_ARRAY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_RECORD;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EXAMPLES;
@@ -203,13 +204,13 @@ public class Generator {
                 }
             } else {
                 if (schema.getIdKeyword() == null) {
-                    schema.setIdKeyword("dummy:/");
+                    schema.setIdKeyword(DUMMY_SCHEME);
                 }
                 fetchSchemaId(schema, URI.create(""), this.idToSchemaMap);
             }
 
             for (Object schemaObject : schemaObjectList) {
-                convertToAbsoluteUri(schemaObject, URI.create("dummy:/"));
+                convertToAbsoluteUri(schemaObject, URI.create(DUMMY_SCHEME));
             }
         }
 
@@ -1292,9 +1293,7 @@ public class Generator {
     }
 
     private static String getJsonType(Class<?> clazz) {
-        if (clazz == null) {
-            return "null";
-        } else if (Long.class.isAssignableFrom(clazz)) {
+        if (Long.class.isAssignableFrom(clazz)) {
             return "integer";
         } else if (Double.class.isAssignableFrom(clazz)) {
             return "number";

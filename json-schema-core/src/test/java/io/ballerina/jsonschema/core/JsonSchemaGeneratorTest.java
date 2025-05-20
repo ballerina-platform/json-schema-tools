@@ -118,7 +118,9 @@ public class JsonSchemaGeneratorTest {
                 {"83_if_then.json", "83_if_then.bal"},
                 {"84_if_else.json", "84_if_else.bal"},
                 {"85_if_then_else.json", "85_if_then_else.bal"},
-                {"86_multiple_combined.json", "86_multiple_combined.bal"}
+                {"86_multiple_combined.json", "86_multiple_combined.bal"},
+                {"87_nested_combining_keywords.json", "87_nested_combining_keywords.bal"},
+                {"88_nested_combining_keywords.json", "88_nested_combining_keywords.bal"}
         };
     }
 
