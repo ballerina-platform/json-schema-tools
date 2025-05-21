@@ -24,9 +24,9 @@ import io.ballerina.jsonschema.core.diagnostic.JsonSchemaDiagnostic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -84,8 +84,14 @@ public class GeneratorUtils {
     public static final String NUMBER_CONSTRAINTS = "NumberConstraints";
     public static final String STRING_CONSTRAINTS = "StringConstraints";
     public static final String ARRAY_CONSTRAINTS = "ArrayConstraints";
+    public static final String META_DATA = "MetaData";
     public static final String PATTERN_RECORD = ANNOTATION_MODULE + COLON + "PatternPropertiesElement";
     public static final String VALUE = "value";
+
+    public static final String READ_ONLY = "@" + ANNOTATION_MODULE + ":ReadOnly";
+    public static final String WRITE_ONLY = "@" + ANNOTATION_MODULE + ":WriteOnly";
+    public static final String READ_ONLY_FIELD = "readonly ";
+    public static final String DEPRECATED = "@deprecated";
 
     public static final String ANNOTATION_FORMAT = "@%s:%s{%n\t%s%n}";
     public static final String TYPE_FORMAT = "public type %s %s;";
@@ -115,12 +121,26 @@ public class GeneratorUtils {
     public static final String MIN_PROPERTIES = "minProperties";
     public static final String PROPERTY_NAMES = "propertyNames";
 
+    public static final String TITLE = "title";
+    public static final String COMMENT = "comment";
+    public static final String EXAMPLES = "examples";
+
+    public static final String ALL_OF = "AllOf";
+    public static final String ONE_OF = "OneOf";
+    public static final String ANY_OF = "AnyOf";
+    public static final String NOT = "Not";
+
     public static final String INVALID_CHARS_PATTERN = ".*[!@$%^&*()_\\-|/\\\\\\s\\d].*";
     public static final String DIGIT_PATTERN = ".*\\d.*";
     public static final String STARTS_WITH_DIGIT_PATTERN = "^\\d.*";
     public static final String SLASH_PATTERN = "[/\\\\]";
     public static final String WHITESPACE_PATTERN = "\\s";
     public static final String SPECIAL_CHARS_PATTERN = "[!@$%^&*()_\\-|]";
+
+    public static final String STRING_ENCODING = "StringEncodedData";
+    public static final String CONTENT_ENCODING = "contentEncoding";
+    public static final String CONTENT_MEDIA_TYPE = "contentMediaType";
+    public static final String CONTENT_SCHEMA = "contentSchema";
 
     public static final String ITEM_SUFFIX = "Item";
     public static final String NAME_REST_ITEM = "RestItem";
@@ -133,6 +153,9 @@ public class GeneratorUtils {
     public static final String PATTERN_PROPERTIES = "PatternProperties";
     public static final String UNEVALUATED_ITEMS_SUFFIX = "UnevaluatedItems";
     public static final String PROPERTY_NAMES_SUFFIX = "PropertyNames";
+
+    public static final String DUMMY_SCHEME = "placeholder:/";
+    public static final String COMMENT_HEADER = "# ";
 
     static final ArrayList<String> STRING_FORMATS = new ArrayList<>(
             Arrays.asList("date", "time", "date-time", "duration", "regex", "email", "idn-email", "hostname",
@@ -150,6 +173,9 @@ public class GeneratorUtils {
         private List<String> dependentRequired;
         private String dependentSchema;
         private String defaultValue;
+        private String description;
+        private boolean readOnly;
+        private boolean deprecated;
 
         RecordField(String type, boolean required) {
             this.type = type;
@@ -157,6 +183,8 @@ public class GeneratorUtils {
             this.dependentRequired = new ArrayList<>();
             this.dependentSchema = null;
             this.defaultValue = null;
+            this.readOnly = false;
+            this.deprecated = false;
         }
 
         String getType() {
@@ -188,7 +216,7 @@ public class GeneratorUtils {
         }
 
         void setDependentRequired(List<String> dependentRequired) {
-            this.dependentRequired = dependentRequired;
+            this.dependentRequired = (dependentRequired != null) ? dependentRequired : new ArrayList<>();
         }
 
         void addDependentRequired(String dependentRequired) {
@@ -202,6 +230,30 @@ public class GeneratorUtils {
         String getDefaultValue() {
             return defaultValue;
         }
+
+        void setDescription(String description) {
+            this.description = description;
+        }
+
+        String getDescription() {
+            return description;
+        }
+
+        boolean isReadOnly() {
+            return readOnly;
+        }
+
+        void setReadOnly(boolean readOnly) {
+            this.readOnly = readOnly;
+        }
+
+        boolean isDeprecated() {
+            return deprecated;
+        }
+
+        void setDeprecated(boolean deprecated) {
+            this.deprecated = deprecated;
+        }
     }
 
     static void processRequiredFields(Map<String, RecordField> recordFields) {
@@ -214,7 +266,7 @@ public class GeneratorUtils {
                 RecordField value = entry.getValue();
 
                 List<String> dependentRequired = value.getDependentRequired();
-                if (dependentRequired == null || !keyRecord.isRequired()) {
+                if (dependentRequired.isEmpty() || !keyRecord.isRequired()) {
                     continue;
                 }
 
@@ -229,7 +281,6 @@ public class GeneratorUtils {
         }
     }
 
-    // Create a new type with the union of typedesc and return the new type name.
     static String resolveTypeNameForTypedesc(String name, String typeName, Generator generator) {
         if (!typeName.contains(PIPE)) {
             return typeName;
@@ -250,6 +301,10 @@ public class GeneratorUtils {
 
             ArrayList<String> fieldAnnotation = new ArrayList<>();
 
+            if (value.getDescription() != null) {
+                fieldAnnotation.add(COMMENT_HEADER + value.getDescription());
+            }
+
             String dependentSchema = value.getDependentSchema();
             if (dependentSchema != null) {
                 generator.addJsonDataImport();
@@ -259,7 +314,7 @@ public class GeneratorUtils {
             }
 
             List<String> dependentRequired = value.getDependentRequired();
-            if (dependentRequired != null && !dependentRequired.isEmpty()) {
+            if (!dependentRequired.isEmpty()) {
                 generator.addJsonDataImport();
                 String dependentArray = dependentRequired.stream()
                         .map(name -> DOUBLE_QUOTATION + name + DOUBLE_QUOTATION)
@@ -269,20 +324,23 @@ public class GeneratorUtils {
                 fieldAnnotation.add(dependentRequiredString);
             }
 
+            String readOnly = value.isReadOnly() ? READ_ONLY_FIELD : "";
+            String deprecated = value.isDeprecated() ? DEPRECATED + NEW_LINE : "";
+
             if (value.isRequired()) {
                 if (value.getDefaultValue() != null) {
-                    fieldAnnotation.add(String.join(WHITE_SPACE, value.getType(), key, EQUAL,
-                            value.getDefaultValue()));
+                    fieldAnnotation.add(deprecated + readOnly + String.join(WHITE_SPACE, value.getType(),
+                            key, EQUAL, value.getDefaultValue()));
                 } else {
-                    fieldAnnotation.add(value.getType() + WHITE_SPACE + key);
+                    fieldAnnotation.add(deprecated + readOnly + value.getType() + WHITE_SPACE + key);
                 }
             } else {
-                fieldAnnotation.add(value.getType() + WHITE_SPACE + key + QUESTION_MARK);
+                fieldAnnotation.add(deprecated + readOnly + value.getType() + WHITE_SPACE + key + QUESTION_MARK);
             }
 
             recordBody.add(String.join(NEW_LINE, fieldAnnotation) + SEMI_COLON);
-        }
 
+        }
         return recordBody;
     }
 
@@ -300,6 +358,12 @@ public class GeneratorUtils {
     static void addIfNotNull(List<String> list, String key, Object value) {
         if (value != null) {
             list.add(key + ": " + value);
+        }
+    }
+
+    static void addStringIfNotNull(List<String> list, String key, Object value) {
+        if (value != null) {
+            list.add(key + ": " + "\"" + value + "\"");
         }
     }
 
@@ -369,8 +433,12 @@ public class GeneratorUtils {
         return input;
     }
 
-    static boolean isCustomTypeNotRequired(Object... objects) {
-        return Arrays.stream(objects).allMatch(Objects::isNull);
+    static boolean areAllNullOrEmpty(Object... objects) {
+        return Arrays.stream(objects).allMatch(obj ->
+                obj == null
+                        || (obj instanceof Collection<?> collection && collection.isEmpty())
+                        || (obj instanceof Map<?, ?> map && map.isEmpty())
+        );
     }
 
     static void addDiagnostic(JsonSchemaDiagnostic diagnostic, Generator generator) {

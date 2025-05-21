@@ -33,6 +33,7 @@ import org.ballerinalang.formatter.core.FormatterException;
 import org.ballerinalang.formatter.core.options.ForceFormattingOptions;
 import org.ballerinalang.formatter.core.options.FormattingOptions;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,12 +44,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.ballerina.jsonschema.core.GeneratorUtils.ADDITIONAL_PROPS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.ALL_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ANNOTATION_FORMAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ANNOTATION_MODULE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.ANY_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ARRAY_CONSTRAINTS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.AT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.BACK_TICK;
 import static io.ballerina.jsonschema.core.GeneratorUtils.BAL_JSON_DATA_MODULE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.BOOLEAN;
@@ -57,12 +62,20 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CLOSE_SQUARE_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COLON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.COMMA;
+import static io.ballerina.jsonschema.core.GeneratorUtils.COMMENT;
+import static io.ballerina.jsonschema.core.GeneratorUtils.COMMENT_HEADER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.CONTAINS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_ENCODING;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_MEDIA_TYPE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.CONTENT_SCHEMA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DECIMAL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DEPENDENT_SCHEMA;
+import static io.ballerina.jsonschema.core.GeneratorUtils.DEPRECATED;
 import static io.ballerina.jsonschema.core.GeneratorUtils.DOUBLE_QUOTATION;
+import static io.ballerina.jsonschema.core.GeneratorUtils.DUMMY_SCHEME;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_ARRAY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EMPTY_RECORD;
+import static io.ballerina.jsonschema.core.GeneratorUtils.EXAMPLES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EXCLUSIVE_MAXIMUM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.EXCLUSIVE_MINIMUM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.FLOAT;
@@ -76,6 +89,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.MAX_CONTAINS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MAX_ITEMS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MAX_LENGTH;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MAX_PROPERTIES;
+import static io.ballerina.jsonschema.core.GeneratorUtils.META_DATA;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MINIMUM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MIN_CONTAINS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.MIN_ITEMS;
@@ -85,10 +99,12 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.MULTIPLE_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NAME_REST_ITEM;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NEVER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NEW_LINE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.NOT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NULL;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER;
 import static io.ballerina.jsonschema.core.GeneratorUtils.NUMBER_CONSTRAINTS;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OBJECT_CONSTRAINTS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.ONE_OF;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_BRACES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_BRACKET;
 import static io.ballerina.jsonschema.core.GeneratorUtils.OPEN_SQUARE_BRACKET;
@@ -101,6 +117,7 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.PIPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PROPERTY_NAMES;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PROPERTY_NAMES_SUFFIX;
 import static io.ballerina.jsonschema.core.GeneratorUtils.PUBLIC;
+import static io.ballerina.jsonschema.core.GeneratorUtils.READ_ONLY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.RECORD;
 import static io.ballerina.jsonschema.core.GeneratorUtils.REGEX_PREFIX;
 import static io.ballerina.jsonschema.core.GeneratorUtils.REST;
@@ -108,7 +125,10 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.REST_TYPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.SEMI_COLON;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING_CONSTRAINTS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.STRING_ENCODING;
 import static io.ballerina.jsonschema.core.GeneratorUtils.STRING_FORMATS;
+import static io.ballerina.jsonschema.core.GeneratorUtils.TAB;
+import static io.ballerina.jsonschema.core.GeneratorUtils.TITLE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.TYPE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.TYPE_FORMAT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNEVALUATED_ITEMS;
@@ -119,20 +139,26 @@ import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_ARRAY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.UNIVERSAL_OBJECT;
 import static io.ballerina.jsonschema.core.GeneratorUtils.VALUE;
 import static io.ballerina.jsonschema.core.GeneratorUtils.WHITE_SPACE;
+import static io.ballerina.jsonschema.core.GeneratorUtils.WRITE_ONLY;
 import static io.ballerina.jsonschema.core.GeneratorUtils.ZERO;
 import static io.ballerina.jsonschema.core.GeneratorUtils.addIfNotNull;
+import static io.ballerina.jsonschema.core.GeneratorUtils.addStringIfNotNull;
 import static io.ballerina.jsonschema.core.GeneratorUtils.convertToCamelCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.convertToPascalCase;
 import static io.ballerina.jsonschema.core.GeneratorUtils.getFormattedAnnotation;
 import static io.ballerina.jsonschema.core.GeneratorUtils.handleUnion;
-import static io.ballerina.jsonschema.core.GeneratorUtils.isCustomTypeNotRequired;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isInvalidNumberLimit;
+import static io.ballerina.jsonschema.core.GeneratorUtils.areAllNullOrEmpty;
 import static io.ballerina.jsonschema.core.GeneratorUtils.isPrimitiveBalType;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRecordFields;
 import static io.ballerina.jsonschema.core.GeneratorUtils.processRequiredFields;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveConstMapping;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveNameConflicts;
 import static io.ballerina.jsonschema.core.GeneratorUtils.resolveTypeNameForTypedesc;
+import static io.ballerina.jsonschema.core.Schema.deepCopy;
+import static io.ballerina.jsonschema.core.SchemaUtils.convertToAbsoluteUri;
+import static io.ballerina.jsonschema.core.SchemaUtils.fetchSchemaId;
+import static io.ballerina.jsonschema.core.SchemaUtils.getSchemaById;
 
 /**
  * Ballerina code generation handler.
@@ -153,18 +179,60 @@ public class Generator {
     final ArrayList<String> imports = new ArrayList<>();
     final List<JsonSchemaDiagnostic> diagnostics = new ArrayList<>();
 
+    final Map<URI, Schema> idToSchemaMap = new HashMap<>();
+    final Map<Schema, String> schemaToTypeMap = new HashMap<>();
+
     private int constCounter = 0;
 
     int getNextConstIndex() {
         return ++this.constCounter;
     }
 
-    public Response convertBaseSchema(Object schemaObject) throws Exception {
+    public Response convertBaseSchema(Object schema) throws Exception {
+        if (schema instanceof Schema || schema instanceof Boolean) {
+            return convertBaseSchema(new ArrayList<>(List.of(schema)));
+        }
+        throw new Exception("Schema type is invalid");
+    }
+
+    public Response convertBaseSchema(ArrayList<Object> schemaObjectList) throws Exception {
+        // If there are multiple schemas (Starting with a non-boolean schema), validate the presence of id's in all
+        // References are stored as deepCopies to avoid modifications in the later part of the code
+        ArrayList<Object> schemaCopyList = new ArrayList<>();
+        if (schemaObjectList.getFirst() instanceof Schema schema) {
+            if (schemaObjectList.size() > 1) {
+                for (Object schemaObject : schemaObjectList) {
+                    if (schemaObject instanceof Boolean) {
+                        continue;
+                    }
+                    if (schema.getIdKeyword() == null) {
+                        throw new Exception("All the schemas must have an id if there are multiple schema files.");
+                    }
+                    fetchSchemaId(schemaObject, URI.create(""), this.idToSchemaMap);
+                }
+            } else {
+                if (schema.getIdKeyword() == null) {
+                    schema.setIdKeyword(DUMMY_SCHEME);
+                }
+                fetchSchemaId(schema, URI.create(""), this.idToSchemaMap);
+            }
+
+            for (Object schemaObject : schemaObjectList) {
+                convertToAbsoluteUri(schemaObject, URI.create(DUMMY_SCHEME));
+            }
+        }
+
+        // Create a copy list to facilitate future schema mutations.
+        for (Object schemaObject : schemaObjectList) {
+            schemaCopyList.add(deepCopy(schemaObject));
+        }
+
+        // Generate the ballerina code based on the first element
+        Object schemaObject = schemaCopyList.getFirst();
         String generatedTypeName = convert(schemaObject, DEFAULT_SCHEMA_NAME);
 
         if (!generatedTypeName.equals(DEFAULT_SCHEMA_NAME)) {
-            String schemaDefinition = PUBLIC + WHITE_SPACE + TYPE + WHITE_SPACE
-                    + DEFAULT_SCHEMA_NAME + WHITE_SPACE + generatedTypeName + SEMI_COLON;
+            String schemaDefinition = String.format(TYPE_FORMAT, DEFAULT_SCHEMA_NAME, generatedTypeName);
             ModuleMemberDeclarationNode schemaNode = NodeParser.parseModuleMemberDeclaration(schemaDefinition);
             this.nodes.put(DEFAULT_SCHEMA_NAME, schemaNode);
         }
@@ -174,7 +242,25 @@ public class Generator {
         return new Response(generatedTypes, this.diagnostics);
     }
 
-    String convert(Object schemaObject, String name) throws Exception {
+    public enum AnnotationAttachmentPoint {
+        TYPE,
+        FIELD
+    }
+
+    public String convert(Object schemaObject, String name) throws Exception {
+        return convert(schemaObject, name, AnnotationAttachmentPoint.TYPE, false);
+    }
+
+    public String convert(Object schemaObject, String name, AnnotationAttachmentPoint type) throws Exception {
+        return convert(schemaObject, name, type, false);
+    }
+
+    public String convert(Object schemaObject, String name, boolean uneval) throws Exception {
+        return convert(schemaObject, name, AnnotationAttachmentPoint.TYPE, uneval);
+    }
+
+    public String convert(Object schemaObject, String name, AnnotationAttachmentPoint type, boolean uneval)
+            throws Exception {
         // JSON Schema allows a schema to be a boolean: `true` allows any value, `false` allows none.
         // It is handled here before processing object-based schemas.
         if (schemaObject instanceof Boolean boolValue) {
@@ -183,11 +269,49 @@ public class Generator {
 
         Schema schema = (Schema) schemaObject;
 
+        if (schema.getRefKeyword() != null) {
+            Object obj = getSchemaById(idToSchemaMap, schema.getRefKeyword());
+            return convert(obj, name);
+        } else if (schema.getDynamicRefKeyword() != null) {
+            Object obj = getSchemaById(idToSchemaMap, schema.getDynamicRefKeyword());
+            return convert(obj, name);
+        }
+
+        if (schemaToTypeMap.containsKey(schema)) {
+            return schemaToTypeMap.get(schema);
+        }
+
+        if (schema.getAdditionalProperties() == null && schema.getUnevaluatedProperties() != null &&
+                hasNestedPropertyKeywords(schema, true)) {
+            uneval = true;
+        }
+
+        populateCombiningSchemas(schema);
+
+        List<Object> allOf = schema.getAllOf();
+        List<Object> oneOf = schema.getOneOf();
+        List<Object> anyOf = schema.getAnyOf();
+
+        if (!allOf.isEmpty()) {
+            return generateCombinedCode(name, schema, allOf, ALL_OF,
+                    s -> s.setAllOf(new ArrayList<>()), uneval);
+        }
+        if (!oneOf.isEmpty()) {
+            return generateCombinedCode(name, schema, oneOf, ONE_OF,
+                    s -> s.setOneOf(new ArrayList<>()), uneval);
+        }
+        if (!anyOf.isEmpty()) {
+            return generateCombinedCode(name, schema, anyOf, ANY_OF,
+                    s -> s.setAnyOf(new ArrayList<>()), uneval);
+        }
+
         BalTypes balTypes = getCommonType(schema.getEnumKeyword(), schema.getConstKeyword(), schema.getType());
         List<Object> schemaType = balTypes.typeList();
 
         if (schemaType.isEmpty()) {
-            return NEVER;
+            String finalType = processCommonTypeAnnotations(schema, NEVER, name, type);
+            schemaToTypeMap.put(schema, finalType);
+            return finalType;
         }
 
         if (balTypes.types()) {
@@ -195,18 +319,22 @@ public class Generator {
                 schemaType.remove(Long.class);
             }
             if (schemaType.size() == 1) {
-                return createType(name, schema, schemaType.getFirst());
+                String typeName = createType(name, schema, schemaType.getFirst(), uneval);
+                String finalType = processCommonTypeAnnotations(schema, typeName, name, type);
+                schemaToTypeMap.put(schema, finalType);
+                return finalType;
             }
 
             Set<String> unionTypes = new LinkedHashSet<>();
 
             for (Object element : schemaType) {
-                String subtypeName = name + getBallerinaType(element);
-                unionTypes.add(createType(subtypeName, schema, element));
+                String subtypeName = name + getBallerinaTypeName(element);
+                unionTypes.add(createType(subtypeName, schema, element, uneval));
             }
-            if (unionTypes.containsAll(
-                    Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
-                return JSON;
+            if (unionTypes.containsAll(Set.of(NUMBER, BOOLEAN, STRING, UNIVERSAL_ARRAY, UNIVERSAL_OBJECT, NULL))) {
+                String finalType = processCommonTypeAnnotations(schema, JSON, name, type);
+                schemaToTypeMap.put(schema, finalType);
+                return finalType;
             }
             if (unionTypes.contains(NUMBER)) {
                 unionTypes.remove(NUMBER);
@@ -214,12 +342,14 @@ public class Generator {
                 unionTypes.add(FLOAT);
                 unionTypes.add(DECIMAL);
             }
-            return String.join(PIPE, unionTypes);
+
+            String typeName = String.join(PIPE, unionTypes);
+            String finalType = processCommonTypeAnnotations(schema, typeName, name, type);
+            schemaToTypeMap.put(schema, finalType);
+            return finalType;
         }
 
-        //TODO: Validate constraints on enums
-
-        return schemaType.stream()
+        String typeName = schemaType.stream()
                 .map(element -> {
                     try {
                         return generateStringRepresentation(element);
@@ -228,9 +358,261 @@ public class Generator {
                     }
                 })
                 .collect(Collectors.joining(PIPE));
+
+        Schema duplicateSchema = (Schema) deepCopy(schema);
+        removeMetaDataAndTypeInfo(duplicateSchema);
+
+        if (duplicateSchema.equals(new Schema())) {
+            String finalType = processCommonTypeAnnotations(schema, typeName, name, type);
+            schemaToTypeMap.put(schema, finalType);
+            return finalType;
+        }
+
+        Set<String> typeSet = new LinkedHashSet<>();
+
+        for (Object value : schemaType) {
+            if (value == null) {
+                typeSet.add("null");
+            } else {
+                Class<?> clazz = value.getClass();
+                String jsonType = getJsonType(clazz);
+                typeSet.add(jsonType);
+            }
+        }
+
+        return handleEnumWithConstraints(name, schema, typeSet);
     }
 
-    private String createType(String name, Schema schema, Object type) throws Exception {
+    private String handleEnumWithConstraints(String name, Schema schema, Set<String> typeSet) throws Exception {
+        Schema enumSchema = new Schema();
+        enumSchema.setType(new ArrayList<>(schema.getType()));
+        enumSchema.setEnumKeyword(schema.getEnumKeyword());
+        enumSchema.setConstKeyword(schema.getConstKeyword());
+
+        Schema constraintsSchema = (Schema) deepCopy(schema);
+        constraintsSchema.setType(new ArrayList<>(typeSet));
+        constraintsSchema.setEnumKeyword(new ArrayList<>());
+        constraintsSchema.setConstKeyword(null);
+
+        ArrayList<Object> enumAllOf = new ArrayList<>();
+        enumAllOf.add(enumSchema);
+        enumAllOf.add(constraintsSchema);
+
+        Schema newSchema = new Schema();
+        newSchema.setAllOf(enumAllOf);
+
+        return convert(newSchema, name);
+    }
+
+    private static void removeMetaDataAndTypeInfo(Schema schema) {
+        schema.setType(null);
+        schema.setConstKeyword(null);
+        schema.setEnumKeyword(new ArrayList<>());
+        schema.setIdKeyword(null);
+        schema.setSchemaKeyword(null);
+        schema.setAnchorKeyword(null);
+        schema.setDynamicRefKeyword(null);
+        schema.setVocabularyKeyword(null);
+        schema.setCommentKeyword(null);
+        schema.setTitle(null);
+        schema.setDescription(null);
+        schema.setExamples(new ArrayList<>());
+        schema.setDefaultKeyword(null);
+    }
+
+    private void transferType(Schema mainObj, Object subObj) {
+        if (subObj instanceof Schema schema && schema.getType().isEmpty()) {
+            List<String> typeList = mainObj.getType().isEmpty() ? new ArrayList<>() : mainObj.getType();
+            schema.setType(new ArrayList<>(typeList));
+        }
+    }
+
+    private String generateCombinedCode(String name, Schema schema, List<Object> combiningList, String combType,
+                                        Consumer<Schema> schemaMutator, boolean uneval) throws Exception {
+        schemaMutator.accept(schema);
+        name = resolveNameConflicts(name, this);
+        String mainTypeName = name + "MainType";
+        String mainType = resolveTypeNameForTypedesc(mainTypeName, convert(schema, mainTypeName, uneval), this);
+
+        List<String> allOfElements = new ArrayList<>();
+        int count = 0;
+        for (Object obj : combiningList) {
+            transferType(schema, obj);
+            String elementName;
+            do {
+                elementName = name + combType + (++count);
+            } while (this.nodes.containsKey(elementName));
+            String allOfElement = resolveTypeNameForTypedesc(elementName, convert(obj, elementName), this);
+            allOfElements.add(allOfElement);
+        }
+
+        addJsonDataImport();
+        String subTypesName = resolveNameConflicts(name + "SubTypes", this);
+        String annotSuffix = combType.equals(ANY_OF) ? "" : AT + ANNOTATION_MODULE + COLON + combType + NEW_LINE;
+        String subTypeWithAnnot = annotSuffix + String.format(TYPE_FORMAT, subTypesName,
+                String.join(PIPE, allOfElements));
+
+        ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(subTypeWithAnnot);
+        nodes.put(subTypesName, moduleNode);
+
+        String fullDeclaration = AT + ANNOTATION_MODULE + COLON + ALL_OF + NEW_LINE +
+                String.format(TYPE_FORMAT, name, mainType + PIPE + subTypesName);
+        ModuleMemberDeclarationNode moduleNodeMain = NodeParser.parseModuleMemberDeclaration(fullDeclaration);
+        nodes.put(name, moduleNodeMain);
+        return name;
+    }
+
+    private static void populateCombiningSchemas(Schema schema) {
+        // Handle if-then-else
+        List<Object> combinedSchema = new ArrayList<>(List.of());
+        int keywordCount = 0;
+
+        List<Object> ifResolved = new ArrayList<>();
+        Object ifCondition = schema.getIfKeyword();
+        Object thenCondition = schema.getThen();
+        Object elseCondition = schema.getElseKeyword();
+
+        if (ifCondition != null && (thenCondition != null || elseCondition != null)) {
+            thenCondition = thenCondition == null ? true : thenCondition;
+            elseCondition = elseCondition == null ? true : elseCondition;
+
+            List<Object> allOfList1 = new ArrayList<>();
+            allOfList1.add(ifCondition);
+            allOfList1.add(thenCondition);
+            Schema allOf1 = new Schema();
+            allOf1.setAllOf(allOfList1);
+            ifResolved.add(allOf1);
+
+            List<Object> allOfList2 = new ArrayList<>();
+            Schema notSchema = new Schema();
+            notSchema.setNot(deepCopy(ifCondition));
+            allOfList2.add(notSchema);
+            allOfList2.add(elseCondition);
+            Schema allOf2 = new Schema();
+            allOf2.setAllOf(allOfList2);
+            ifResolved.add(allOf2);
+
+            if (!schema.getOneOf().isEmpty()) {
+                Schema ifOneOf = new Schema();
+                ifOneOf.setOneOf(ifResolved);
+                combinedSchema.add(ifOneOf);
+                keywordCount++;
+            } else {
+                schema.setOneOf(ifResolved);
+            }
+
+            schema.setIfKeyword(null);
+            schema.setThen(null);
+            schema.setElseKeyword(null);
+        }
+
+        // Handle AllOf, OneOf, AnyOf
+        if (!schema.getAnyOf().isEmpty()) {
+            keywordCount++;
+            Schema anyOfSchema = new Schema();
+            anyOfSchema.setAnyOf(schema.getAnyOf());
+            combinedSchema.add(anyOfSchema);
+        }
+        if (!schema.getOneOf().isEmpty()) {
+            keywordCount++;
+            Schema oneOfSchema = new Schema();
+            oneOfSchema.setOneOf(schema.getOneOf());
+            combinedSchema.add(oneOfSchema);
+        }
+        if (!schema.getAllOf().isEmpty()) {
+            keywordCount++;
+            Schema allOfSchema = new Schema();
+            allOfSchema.setAllOf(schema.getAllOf());
+            combinedSchema.add(allOfSchema);
+        }
+
+        if (keywordCount > 1) {
+            schema.setAllOf(combinedSchema);
+            schema.setAnyOf(null);
+            schema.setOneOf(null);
+        }
+    }
+
+    private String processCommonTypeAnnotations(Schema schema, String type, String name,
+                                                AnnotationAttachmentPoint typeAnnot) throws Exception {
+        // Convert all boolean values to "null" or "true" (Default null value represents false)
+        if (Boolean.FALSE.equals(schema.getWriteOnly())) {
+            schema.setWriteOnly(null);
+        }
+        if (Boolean.FALSE.equals(schema.getReadOnly())) {
+            schema.setReadOnly(null);
+        }
+        if (Boolean.FALSE.equals(schema.getDeprecated())) {
+            schema.setDeprecated(null);
+        }
+
+        // Early return if the metadata fields, not keyword and annotations are empty
+        if (areAllNullOrEmpty(schema.getTitle(), schema.getCommentKeyword(), schema.getExamples(),
+                schema.getWriteOnly(), schema.getNot())) {
+            if (typeAnnot == AnnotationAttachmentPoint.FIELD) {
+                return type;
+            }
+            if (areAllNullOrEmpty(schema.getDescription(), schema.getReadOnly(), schema.getDeprecated())) {
+                return type;
+            }
+        }
+
+        List<String> annotations = new ArrayList<>();
+
+        if (schema.getNot() != null) {
+            annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, NOT,
+                    VALUE + COLON + resolveTypeNameForTypedesc(name + NOT,
+                            this.convert(schema.getNot(), name + NOT), this)));
+        }
+
+        if (typeAnnot != AnnotationAttachmentPoint.FIELD && schema.getDescription() != null) {
+            annotations.add(COMMENT_HEADER + schema.getDescription());
+        }
+
+        List<String> annotationParts = new ArrayList<>();
+        addStringIfNotNull(annotationParts, TITLE, schema.getTitle());
+        addStringIfNotNull(annotationParts, COMMENT, schema.getCommentKeyword());
+        if (!schema.getExamples().isEmpty()) {
+            List<String> examples = new ArrayList<>();
+            for (Object example : schema.getExamples()) {
+                examples.add(generateStringRepresentation(example));
+            }
+            String exampleString = "[" + String.join(COMMA, examples) + "]";
+            annotationParts.add(EXAMPLES + COLON + exampleString);
+        }
+        String annotationFields = String.join(COMMA + NEW_LINE + TAB, annotationParts);
+        if (!annotationFields.isEmpty()) {
+            addJsonDataImport();
+            annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, META_DATA, annotationFields));
+        }
+
+        if (schema.getDeprecated() != null && typeAnnot != AnnotationAttachmentPoint.FIELD) {
+            annotations.add(DEPRECATED);
+        }
+        if (schema.getWriteOnly() != null) {
+            addJsonDataImport();
+            annotations.add(WRITE_ONLY);
+        }
+        if (schema.getReadOnly() != null && typeAnnot != AnnotationAttachmentPoint.FIELD) {
+            addJsonDataImport();
+            annotations.add(READ_ONLY);
+        }
+
+        String annotString = String.join(NEW_LINE, annotations);
+
+        if (this.nodes.containsKey(type)) {
+            this.nodes.put(type, NodeParser.parseModuleMemberDeclaration(annotString +
+                    NEW_LINE + this.nodes.get(type)));
+            return type;
+        } else {
+            String resolvedName = resolveNameConflicts(name, this);
+            this.nodes.put(resolvedName, NodeParser.parseModuleMemberDeclaration(annotString + NEW_LINE +
+                    String.format(TYPE_FORMAT, resolvedName, type)));
+            return resolvedName;
+        }
+    }
+
+    private String createType(String name, Schema schema, Object type, boolean uneval) throws Exception {
         if (type == null) {
             return NULL;
         }
@@ -250,7 +632,7 @@ public class Generator {
             return createArray(name, schema);
         }
         if (type == Map.class) {
-            return createObject(name, schema);
+            return createObject(name, schema, uneval);
         }
         throw new RuntimeException("Type currently not supported");
     }
@@ -262,7 +644,7 @@ public class Generator {
         Double exclusiveMaximum = schema.getExclusiveMaximum();
         Double multipleOf = schema.getMultipleOf();
 
-        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (areAllNullOrEmpty(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return INTEGER;
         }
 
@@ -297,7 +679,7 @@ public class Generator {
         Double exclusiveMaximum = schema.getExclusiveMaximum();
         Double multipleOf = schema.getMultipleOf();
 
-        if (isCustomTypeNotRequired(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
+        if (areAllNullOrEmpty(minimum, exclusiveMinimum, maximum, exclusiveMaximum, multipleOf)) {
             return NUMBER;
         }
 
@@ -325,39 +707,67 @@ public class Generator {
         return type;
     }
 
-    private String createString(String name, Schema schema) {
+    private String createString(String name, Schema schema) throws Exception {
         String format = schema.getFormat();
         Long minLength = schema.getMinLength();
         Long maxLength = schema.getMaxLength();
         String pattern = schema.getPattern();
+        String contentEncoding = schema.getContentEncoding();
+        String contentMediaType = schema.getContentMediaType();
+        Object contentSchema = schema.getContentSchema();
 
-        if (isCustomTypeNotRequired(format, minLength, maxLength, pattern)) {
+        if (areAllNullOrEmpty(format, minLength, maxLength, pattern, contentEncoding, contentMediaType,
+                contentSchema)) {
             return STRING;
         }
 
         this.addJsonDataImport();
         String type = resolveNameConflicts(convertToPascalCase(name), this);
 
-        List<String> annotationParts = new ArrayList<>();
+        List<String> annotations = new ArrayList<>();
 
-        if (format != null) {
-            if (!STRING_FORMATS.contains(format)) {
-                throw new IllegalArgumentException("Invalid format: " + format);
+        if (!areAllNullOrEmpty(format, minLength, maxLength, pattern)) {
+            List<String> annotationParts = new ArrayList<>();
+
+            if (format != null) {
+                if (!STRING_FORMATS.contains(format)) {
+                    throw new IllegalArgumentException("Invalid format: " + format);
+                }
+                annotationParts.add(FORMAT + COLON + DOUBLE_QUOTATION +
+                        format + DOUBLE_QUOTATION);
             }
-            annotationParts.add(FORMAT + COLON + DOUBLE_QUOTATION +
-                    format + DOUBLE_QUOTATION);
+
+            addIfNotNull(annotationParts, MIN_LENGTH, minLength);
+            addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
+
+            if (pattern != null) {
+                annotationParts.add(PATTERN + COLON + REGEX_PREFIX +
+                        BACK_TICK + pattern + BACK_TICK);
+            }
+
+            annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, STRING_CONSTRAINTS,
+                    String.join(COMMA, annotationParts)));
         }
 
-        addIfNotNull(annotationParts, MIN_LENGTH, minLength);
-        addIfNotNull(annotationParts, MAX_LENGTH, maxLength);
+        if (!areAllNullOrEmpty(contentEncoding, contentMediaType, contentSchema)) {
+            List<String> annotationParts = new ArrayList<>();
 
-        if (pattern != null) {
-            annotationParts.add(PATTERN + COLON + REGEX_PREFIX +
-                    BACK_TICK + pattern + BACK_TICK);
+            addStringIfNotNull(annotationParts, CONTENT_ENCODING, contentEncoding);
+            addStringIfNotNull(annotationParts, CONTENT_MEDIA_TYPE, contentMediaType);
+
+            if (contentSchema != null) {
+                String contentSchemaName = type + convertToPascalCase(CONTENT_SCHEMA);
+                String contentSchemaType = this.convert(contentSchema, contentSchemaName);
+                annotationParts.add(CONTENT_SCHEMA + COLON +
+                        resolveTypeNameForTypedesc(contentSchemaName, contentSchemaType, this));
+            }
+
+            annotations.add(String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, STRING_ENCODING,
+                    String.join(COMMA, annotationParts)));
         }
 
-        String formattedAnnotation = getFormattedAnnotation(annotationParts,
-                STRING_CONSTRAINTS, type, STRING);
+        String formattedAnnotation = String.join(NEW_LINE, annotations) + NEW_LINE +
+                String.format(TYPE_FORMAT, type, STRING);
 
         ModuleMemberDeclarationNode moduleNode = NodeParser.parseModuleMemberDeclaration(formattedAnnotation);
         this.nodes.put(type, moduleNode);
@@ -377,11 +787,11 @@ public class Generator {
         Object unevaluatedItems = schema.getUnevaluatedItems();
 
         String type = resolveNameConflicts(convertToPascalCase(name), this);
-        this.nodes.put(type, NodeParser.parseModuleMemberDeclaration(""));
+        allocateTypeToSchema(type, schema);
 
         ArrayList<String> arrayItems = new ArrayList<>();
 
-        if (prefixItems != null) {
+        if (!prefixItems.isEmpty()) {
             for (int i = 0; i < prefixItems.size(); i++) {
                 Object item = prefixItems.get(i);
                 arrayItems.add(this.convert(item, type + ITEM_SUFFIX + i));
@@ -399,8 +809,6 @@ public class Generator {
                 restItem = OPEN_BRACKET + restItem + CLOSE_BRACKET;
             }
         }
-
-        //TODO: Create sub-schemas before all the early return types for schema reference implementation.
 
         if ((endPosition < startPosition) || (restItem.equals(NEVER) && arrayItems.size() < startPosition)) {
             this.nodes.remove(type);
@@ -509,7 +917,7 @@ public class Generator {
         return type;
     }
 
-    private String createObject(String name, Schema schema) throws Exception {
+    private String createObject(String name, Schema schema, boolean uneval) throws Exception {
         Object additionalProperties = schema.getAdditionalProperties();
         Map<String, Object> properties = schema.getProperties();
         Map<String, Object> patternProperties = schema.getPatternProperties();
@@ -525,7 +933,7 @@ public class Generator {
             return EMPTY_RECORD;
         }
 
-        if (isCustomTypeNotRequired(additionalProperties, properties, patternProperties,
+        if (areAllNullOrEmpty(additionalProperties, properties, patternProperties,
                 dependentSchema, propertyNames,
                 unevaluatedProperties, maxProperties, minProperties, dependentRequired, required)) {
             return UNIVERSAL_OBJECT;
@@ -536,20 +944,32 @@ public class Generator {
         }
 
         String type = resolveNameConflicts(convertToPascalCase(name), this);
-        this.nodes.put(type, NodeParser.parseModuleMemberDeclaration(""));
+        allocateTypeToSchema(type, schema);
 
         List<String> objectAnnotations = new ArrayList<>();
 
         Map<String, GeneratorUtils.RecordField> recordFields = new HashMap<>();
-        if (properties != null) {
+        if (!properties.isEmpty()) {
             properties.forEach((key, value) -> {
                 String fieldName = resolveNameConflicts(key, this);
                 try {
-                    GeneratorUtils.RecordField recordField =
-                            new GeneratorUtils.RecordField(this.convert(value, fieldName), false);
+                    GeneratorUtils.RecordField recordField = new GeneratorUtils.RecordField(
+                            this.convert(value, fieldName, AnnotationAttachmentPoint.FIELD), false);
+                    if (value instanceof Schema fieldSchema && fieldSchema.getDescription() != null) {
+                        recordField.setDescription(fieldSchema.getDescription());
+                    }
                     recordFields.put(key, recordField);
-                    if (value instanceof Schema fieldSchema && fieldSchema.getDefaultKeyword() != null) {
-                        recordField.setDefaultValue(this.generateStringRepresentation(fieldSchema.getDefaultKeyword()));
+                    if (value instanceof Schema fieldSchema) {
+                        if (fieldSchema.getDefaultKeyword() != null) {
+                            recordField.setDefaultValue(
+                                    this.generateStringRepresentation(fieldSchema.getDefaultKeyword()));
+                        }
+                        if (fieldSchema.getReadOnly() != null && fieldSchema.getReadOnly()) {
+                            recordField.setReadOnly(true);
+                        }
+                        if (fieldSchema.getDeprecated() != null && fieldSchema.getDeprecated()) {
+                            recordField.setDeprecated(true);
+                        }
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -560,7 +980,15 @@ public class Generator {
         String restType = getRecordRestType(type, additionalProperties,
                 unevaluatedProperties, this);
 
-        if (patternProperties != null && !patternProperties.isEmpty()) {
+        if (uneval) {
+            String unevalPropName = resolveNameConflicts(type + UNEVALUATED_PROPS, this);
+            String unevalAnnotation = String.format(ANNOTATION_FORMAT, ANNOTATION_MODULE, UNEVALUATED_PROPS,
+                    VALUE + COLON + resolveTypeNameForTypedesc(unevalPropName, restType, this));
+            objectAnnotations.add(unevalAnnotation);
+            restType = JSON;
+        }
+
+        if (!patternProperties.isEmpty()) {
             this.addJsonDataImport();
 
             List<String> propertyPatternTypes = new ArrayList<>();
@@ -647,7 +1075,7 @@ public class Generator {
             objectAnnotations.add(minMaxAnnotation);
         }
 
-        if (restType.equals(NEVER) && required != null) {
+        if (restType.equals(NEVER) && !required.isEmpty()) {
             try {
                 required.forEach((key) -> {
                     if (!recordFields.containsKey(key)) {
@@ -660,7 +1088,7 @@ public class Generator {
         }
 
         // Add field names that are present in the required array and are not present in the properties' keyword.
-        if (required != null) {
+        if (!required.isEmpty()) {
             String finalRestType = restType;
             required.forEach((key) -> {
                 if (!recordFields.containsKey(key)) {
@@ -672,7 +1100,7 @@ public class Generator {
         }
 
         // Add dependent schema fields that are not specified in the properties' keyword.
-        if ((dependentSchema != null) && (!restType.equals(NEVER))) {
+        if ((!dependentSchema.isEmpty()) && (!restType.equals(NEVER))) {
             String finalRestType = restType;
             dependentSchema.forEach((key, value) -> {
                 if (!recordFields.containsKey(key)) {
@@ -696,7 +1124,7 @@ public class Generator {
             });
         }
 
-        if (dependentRequired != null) {
+        if (!dependentRequired.isEmpty()) {
             String finalRestType = restType;
             dependentRequired.forEach((key, value) -> {
                 if (!recordFields.containsKey(key)) {
@@ -720,11 +1148,10 @@ public class Generator {
             fields.add(handleUnion(restType) + REST + SEMI_COLON);
         }
 
-        // Additional min/maxProperties check
         if (minProperties != null && (restType.equals(NEVER) && fields.size() < minProperties)) {
             return NEVER;
         }
-        if (maxProperties != null && required != null && required.size() > maxProperties) {
+        if (maxProperties != null && !required.isEmpty() && required.size() > maxProperties) {
             return NEVER;
         }
 
@@ -796,6 +1223,17 @@ public class Generator {
         return JSON;
     }
 
+    private void allocateTypeToSchema(String name, Object schemaObject) {
+        if (schemaObject instanceof Boolean schemaBoolean) {
+            String booleanString = schemaBoolean.toString();
+            this.nodes.put(name, NodeParser.parseModuleMemberDeclaration(booleanString));
+        }
+        if (schemaObject instanceof Schema schema) {
+            this.nodes.put(name, NodeParser.parseModuleMemberDeclaration(""));
+            this.schemaToTypeMap.put(schema, name);
+        }
+    }
+
     private static BalTypes getCommonType(List<Object> enumKeyword, Object constKeyword,
                                           List<String> type) {
         Set<Class<?>> typeList = new LinkedHashSet<>();
@@ -819,7 +1257,7 @@ public class Generator {
             typeList.add(Long.class);
         }
 
-        if (enumKeyword == null) {
+        if (enumKeyword.isEmpty()) {
             if (constKeyword == null) {
                 return new BalTypes(new ArrayList<>(typeList), true);
             }
@@ -867,7 +1305,24 @@ public class Generator {
         };
     }
 
-    private static String getBallerinaType(Object type) {
+    private static String getJsonType(Class<?> clazz) {
+        if (Long.class.isAssignableFrom(clazz)) {
+            return "integer";
+        } else if (Double.class.isAssignableFrom(clazz)) {
+            return "number";
+        } else if (Boolean.class.isAssignableFrom(clazz)) {
+            return "boolean";
+        } else if (String.class.isAssignableFrom(clazz)) {
+            return "string";
+        } else if (ArrayList.class.isAssignableFrom(clazz)) {
+            return "array";
+        } else if (Map.class.isAssignableFrom(clazz)) {
+            return "object";
+        }
+        throw new RuntimeException("Unsupported class: " + clazz);
+    }
+
+    private static String getBallerinaTypeName(Object type) {
         if (type == Long.class) {
             return "Integer";
         }
@@ -925,5 +1380,58 @@ public class Generator {
         if (!this.imports.contains(importDeclaration)) {
             this.imports.add(importDeclaration);
         }
+    }
+
+    private boolean hasNestedPropertyKeywords(Object schemaObject, boolean baseSchema) {
+        if (schemaObject instanceof Boolean) {
+            return false;
+        }
+        assert schemaObject instanceof Schema;
+        Schema schema = (Schema) schemaObject;
+
+        if (!baseSchema && (!schema.getProperties().isEmpty() || !schema.getPatternProperties().isEmpty())) {
+            return true;
+        }
+
+        List<Object> allOf = schema.getAllOf();
+        List<Object> oneOf = schema.getOneOf();
+        List<Object> anyOf = schema.getAnyOf();
+        Object ifKeyword = schema.getIfKeyword();
+        Object then = schema.getThen();
+        Object elseKeyword = schema.getElseKeyword();
+
+        if (!allOf.isEmpty()) {
+            for (Object obj : allOf) {
+                if (hasNestedPropertyKeywords(obj, false)) {
+                    return true;
+                }
+            }
+        }
+
+        if (!oneOf.isEmpty()) {
+            for (Object obj : oneOf) {
+                if (hasNestedPropertyKeywords(obj, false)) {
+                    return true;
+                }
+            }
+        }
+
+        if (!anyOf.isEmpty()) {
+            for (Object obj : anyOf) {
+                if (hasNestedPropertyKeywords(obj, false)) {
+                    return true;
+                }
+            }
+        }
+
+        if (ifKeyword != null && hasNestedPropertyKeywords(ifKeyword, false)) {
+            return true;
+        }
+
+        if (then != null && hasNestedPropertyKeywords(then, false)) {
+            return true;
+        }
+
+        return elseKeyword != null && hasNestedPropertyKeywords(elseKeyword, false);
     }
 }

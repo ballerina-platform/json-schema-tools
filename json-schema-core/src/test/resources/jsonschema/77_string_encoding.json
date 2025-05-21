@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Image Upload",
+  "type": "object",
+  "properties": {
+    "imageData": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "contentMediaType": "image/png",
+      "description": "A PNG image encoded in base64."
+    }
+  },
+  "required": ["imageData"]
+}

@@ -26,7 +26,7 @@ import com.google.gson.JsonParseException;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,7 +61,7 @@ public class SchemaDeserializers {
                                                JsonDeserializationContext jsonDeserializationContext)
                 throws JsonParseException {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
-            Map<String, Object> resultMap = new HashMap<>();
+            Map<String, Object> resultMap = new LinkedHashMap<>();
             for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
                 if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isBoolean()) {
                     resultMap.put(entry.getKey(), entry.getValue().getAsBoolean());
@@ -110,7 +110,7 @@ public class SchemaDeserializers {
                                              JsonDeserializationContext jsonDeserializationContext)
                 throws JsonParseException {
             if (jsonElement.isJsonArray()) {
-                return jsonDeserializationContext.deserialize(jsonElement, List.class);
+                return jsonDeserializationContext.deserialize(jsonElement, ArrayList.class);
             }
             if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isString()) {
                 return new ArrayList<>(List.of(jsonElement.getAsString()));

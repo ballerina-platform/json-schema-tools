@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "prefixItems": [
+    {
+      "type": "string",
+      "description": "The first item must be a string representing a username."
+    },
+    {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The second item must be a non-negative integer representing user age."
+    }
+  ],
+  "items": {
+    "type": "boolean",
+    "description": "Any additional items must be booleans representing feature flags."
+  }
+}

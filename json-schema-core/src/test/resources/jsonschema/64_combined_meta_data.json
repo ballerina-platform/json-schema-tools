@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "integer",
+  "title": "User Age",
+  "description": "The age of the user in whole years.",
+  "$comment": "This must be a non-negative integer and should represent a realistic human age.",
+  "minimum": 0,
+  "maximum": 130,
+  "examples": [0, 25, 65]
+}

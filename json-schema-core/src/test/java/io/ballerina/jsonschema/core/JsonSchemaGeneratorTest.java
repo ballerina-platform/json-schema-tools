@@ -25,6 +25,7 @@ import org.testng.annotations.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class JsonSchemaGeneratorTest {
     private static final Path RES_DIR = Paths.get("src/test/resources/").toAbsolutePath();
@@ -85,7 +86,51 @@ public class JsonSchemaGeneratorTest {
                 {"49_property_names.json", "49_property_names.bal"},
                 {"50_min_max_properties.json", "50_min_max_properties.bal"},
                 {"51_min_max_properties.json", "51_min_max_properties.bal"},
-                {"52_default_value.json", "52_default_value.bal"}
+                {"52_default_value.json", "52_default_value.bal"},
+                {"53_simple_referencing.json", "53_simple_referencing.bal"},
+                {"54_recursive_array_referencing.json", "54_recursive_array_referencing.bal"},
+                {"55_recursive_object_referencing.json", "55_recursive_object_referencing.bal"},
+                {"57_field_descriptions.json", "57_field_descriptions.bal"},
+                {"58_basic_type_description.json", "58_basic_type_description.bal"},
+                {"59_array_type_description.json", "59_array_type_description.bal"},
+                {"60_title_on_object_and_fields.json", "60_title_on_object_and_fields.bal"},
+                {"61_title_on_array_and_items.json", "61_title_on_array_and_items.bal"},
+                {"62_title_on_basic_type.json", "62_title_on_basic_type.bal"},
+                {"63_comments_and_examples.json", "63_comments_and_examples.bal"},
+                {"64_combined_meta_data.json", "64_combined_meta_data.bal"},
+                {"65_readonly_fields.json", "65_readonly_fields.bal"},
+                {"66_readonly_basic_type.json", "66_readonly_basic_type.bal"},
+                {"67_false_readonly_basic_type.json", "67_false_readonly_basic_type.bal"},
+                {"68_writeonly_basic_type.json", "68_writeonly_basic_type.bal"},
+                {"69_false_writeonly_basic_type.json", "69_false_writeonly_basic_type.bal"},
+                {"70_writeonly_fields.json", "70_writeonly_fields.bal"},
+                {"71_deprecated_basic_type.json", "71_deprecated_basic_type.bal"},
+                {"72_deprecated_fields.json", "72_deprecated_fields.bal"},
+                {"73_dynamic_anchors.json", "73_dynamic_anchors.bal"},
+                {"74_dynamic_anchors.json", "74_dynamic_anchors.bal"},
+                {"75_anchors.json", "75_anchors.bal"},
+                {"76_anchors.json", "76_anchors.bal"},
+                {"77_referencing_array_items.json", "77_referencing_array_items.bal"},
+                {"78_allof.json", "78_allof.bal"},
+                {"80_oneof.json", "80_oneof.bal"},
+                {"81_not.json", "81_not.bal"},
+                {"82_if.json", "82_if.bal"},
+                {"83_if_then.json", "83_if_then.bal"},
+                {"84_if_else.json", "84_if_else.bal"},
+                {"85_if_then_else.json", "85_if_then_else.bal"},
+                {"86_multiple_combined.json", "86_multiple_combined.bal"},
+                {"87_nested_combining_keywords.json", "87_nested_combining_keywords.bal"},
+                {"88_nested_combining_keywords.json", "88_nested_combining_keywords.bal"}
+        };
+    }
+
+    @DataProvider(name = "multiJsonSchemaProvider")
+    public Object[][] provideMultiJsonTestPaths() {
+        return new Object[][]{
+                {
+                        new String[]{"56_ref_across_files_0.json", "56_ref_across_files_1.json"},
+                        "56_ref_across_files.bal"
+                }
         };
     }
 
@@ -95,12 +140,34 @@ public class JsonSchemaGeneratorTest {
                 RES_DIR.resolve(EXPECTED_DIR).resolve(balFilePath), new Generator());
     }
 
+    @Test(dataProvider = "multiJsonSchemaProvider")
+    public void testMultipleJsonSchemasToSingleRecord(String[] jsonFilePaths, String balFilePath) throws Exception {
+        Path expectedPath = RES_DIR.resolve(EXPECTED_DIR).resolve(balFilePath);
+        validateMultiple(jsonFilePaths, expectedPath, new Generator());
+    }
+
     private void validate(Path sample, Path expected, Generator generator) throws Exception {
         String jsonSchemaFileContent = Files.readString(sample);
         Object schema = SchemaUtils.parseJsonSchema(jsonSchemaFileContent);
-        Response result = generator.convertBaseSchema(schema);
+        Response result = generator.convertBaseSchema(new ArrayList<>() {{ add(schema); }});
         Assert.assertTrue(result.getDiagnostics().isEmpty(), "Diagnostics should be empty");
         String expectedValue = Files.readString(expected);
         Assert.assertEquals(result.getTypes(), expectedValue, "Generated types do not match expected output");
+    }
+
+    private void validateMultiple(String[] jsonFilePaths, Path expected, Generator generator) throws Exception {
+        ArrayList<Object> schemas = new ArrayList<>();
+        for (String jsonFile : jsonFilePaths) {
+            Path path = RES_DIR.resolve(JSON_SCHEMA_DIR).resolve(jsonFile);
+            String content = Files.readString(path);
+            Object schema = SchemaUtils.parseJsonSchema(content);
+            schemas.add(schema);
+        }
+
+        Response result = generator.convertBaseSchema(schemas);
+
+        Assert.assertTrue(result.getDiagnostics().isEmpty(), "Diagnostics should be empty");
+        String expectedContent = Files.readString(expected);
+        Assert.assertEquals(result.getTypes(), expectedContent, "Generated types do not match expected output");
     }
 }

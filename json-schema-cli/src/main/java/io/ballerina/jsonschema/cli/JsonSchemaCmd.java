@@ -34,6 +34,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -122,7 +124,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
             if (!Files.isDirectory(Path.of(inputPath))) {
                 handleSingleFile(outputDirPath, inputPath);
             } else {
-                //TODO: Implement for Directories
+                // TODO: Implement for Directories
                 outStream.println("Creating Ballerina types for multiple schema files is not yet supported");
             }
         } catch (IOException e) {
@@ -155,6 +157,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
 
         Generator generator = new Generator();
         Response result = generator.convertBaseSchema(schema);
+
         if (!result.getDiagnostics().isEmpty()) {
             result.getDiagnostics().forEach(jsonSchemaDiagnostic ->
                     outStream.println(jsonSchemaDiagnostic.toString()));

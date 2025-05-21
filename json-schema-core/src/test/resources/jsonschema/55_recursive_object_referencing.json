@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/person.schema.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "spouse": {
+      "$ref": "https://example.com/person.schema.json"
+    }
+  },
+  "required": ["name"]
+}
