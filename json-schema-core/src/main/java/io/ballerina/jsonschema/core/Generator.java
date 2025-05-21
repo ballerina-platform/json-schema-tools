@@ -190,7 +190,7 @@ public class Generator {
 
     public Response convertBaseSchema(Object schema) throws Exception {
         if (schema instanceof Schema || schema instanceof Boolean) {
-            return convertBaseSchema(List.of(schema));
+            return convertBaseSchema(new ArrayList<>(List.of(schema)));
         }
         throw new Exception("Schema type is invalid");
     }
