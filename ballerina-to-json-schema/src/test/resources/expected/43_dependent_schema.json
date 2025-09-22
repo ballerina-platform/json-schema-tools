@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {},
+    "age": { "type": "number" },
+    "id": { "type": "integer" },
+    "occupation": { "type": "string" }
+  },
+  "required": ["id"],
+  "unevaluatedProperties": { "type": "integer" },
+  "dependentSchema": {
+    "age": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" }
+      }
+    }
+  }
+}

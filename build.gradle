@@ -70,6 +70,7 @@ tasks.register('build') {
     dependsOn(":json-schema-cli:build")
     dependsOn(":json-schema-core:build")
     dependsOn(":module-ballerina-json-schema:build")
+    dependsOn(":ballerina-to-json-schema:build")
 }
 
 def moduleVersion = project.version.replace("-SNAPSHOT", "")

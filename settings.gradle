@@ -46,11 +46,13 @@ include ':checkstyle'
 include ':module-ballerina-json-schema'
 include 'json-schema-cli'
 include ':json-schema-core'
+include ':ballerina-to-json-schema'
 
 project(':checkstyle').projectDir = file("build-config${File.separator}checkstyle")
 project(':module-ballerina-json-schema').projectDir = file('module-ballerina-json-schema')
 project(':json-schema-cli').projectDir = file('json-schema-cli')
 project(':json-schema-core').projectDir = file('json-schema-core')
+project(':ballerina-to-json-schema').projectDir = file('ballerina-to-json-schema')
 
 gradleEnterprise {
     buildScan {

@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "integer",
+  "enum": [20, 25, 30, 55.2, "hello", "world"]
+}
