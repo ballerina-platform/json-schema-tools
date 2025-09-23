@@ -79,23 +79,44 @@ public final class BallerinaToJsonSchema {
             this.typeNameFilter = Collections.unmodifiableSet(new LinkedHashSet<>(builder.typeNameFilter));
         }
 
-        public GeneratorOptions rootMeta() { return rootMeta; }
-        public boolean allowOptionalAsTypeArray() { return allowOptionalAsTypeArray; }
-        public Set<String> typeNameFilter() { return typeNameFilter; }
+        public GeneratorOptions rootMeta() {
+            return rootMeta;
+        }
 
-        public static Builder builder() { return new Builder(); }
+        public boolean allowOptionalAsTypeArray() {
+            return allowOptionalAsTypeArray;
+        }
+
+        public Set<String> typeNameFilter() {
+            return typeNameFilter;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
 
         public static final class Builder {
             private GeneratorOptions rootMeta = GeneratorOptions.builder().build();
             private boolean allowOptionalAsTypeArray = true;
             private final Set<String> typeNameFilter = new LinkedHashSet<>();
 
-            public Builder rootMeta(GeneratorOptions opts) { this.rootMeta = opts; return this; }
-            public Builder allowOptionalAsTypeArray(boolean v){ this.allowOptionalAsTypeArray = v; return this; }
-            public Builder includeTypes(String... names) {
-                this.typeNameFilter.addAll(Arrays.asList(names)); return this;
+            public Builder rootMeta(GeneratorOptions opts) {
+                this.rootMeta = opts; return this;
             }
-            public ApiOptions build() { return new ApiOptions(this); }
+
+            public Builder allowOptionalAsTypeArray(boolean v){
+                this.allowOptionalAsTypeArray = v;
+                return this;
+            }
+
+            public Builder includeTypes(String... names) {
+                this.typeNameFilter.addAll(Arrays.asList(names));
+                return this;
+            }
+
+            public ApiOptions build() {
+                return new ApiOptions(this);
+            }
         }
     }
 
@@ -123,7 +144,9 @@ public final class BallerinaToJsonSchema {
                     }
 
                     String typeName = typeDefinitionSymbol.getName().orElse(null);
-                    if (typeName == null) return;
+                    if (typeName == null) {
+                        return;
+                    }
 
                     if (!apiOptions.typeNameFilter().isEmpty()
                             && !apiOptions.typeNameFilter().contains(typeName)) {
@@ -198,7 +221,9 @@ public final class BallerinaToJsonSchema {
         try {
             Method textGetterMethod = token.getClass().getMethod("text");
             Object methodReturnValue = textGetterMethod.invoke(token);
-            if (methodReturnValue instanceof String s) return s;
+            if (methodReturnValue instanceof String s) {
+                return s;
+            }
         } catch (ReflectiveOperationException ignore) {}
         return token.toString();
     }
@@ -231,8 +256,9 @@ public final class BallerinaToJsonSchema {
                 String descriptionText = (descriptionResult instanceof Optional)
                         ? ((Optional<?>) descriptionResult).map(Object::toString).orElse(null)
                         : (descriptionResult instanceof String ? (String) descriptionResult : null);
-                if (descriptionText != null && !(descriptionText = descriptionText.trim()).isEmpty())
+                if (descriptionText != null && !(descriptionText = descriptionText.trim()).isEmpty()) {
                     return Optional.of(descriptionText);
+                }
             } catch (ReflectiveOperationException ignore) { }
         }
 
@@ -243,7 +269,9 @@ public final class BallerinaToJsonSchema {
             String rawMarkdown = markdownDocNode.toString();
             rawMarkdown = rawMarkdown.replaceAll("(?m)^@.*$", "");   // drop @param/@return lines if present
             String cleanedDescription = rawMarkdown.replaceAll("(?m)^#\\s?", "").trim();
-            if (!cleanedDescription.isEmpty()) return Optional.of(cleanedDescription);
+            if (!cleanedDescription.isEmpty()) {
+                return Optional.of(cleanedDescription);
+            }
         }
         return Optional.empty();
     }
@@ -281,8 +309,12 @@ public final class BallerinaToJsonSchema {
         JsonSchemaNode content = BalTypeAdapter.toBasicTypeSchemaNode(typeSymbol, true);
         ObjectNode root = JsonSchemaNode.mapper().createObjectNode();
         root.put(JsonSchemaConstants.K_SCHEMA, JsonSchemaConstants.DRAFT_2020_12_SCHEMA);
-        if (id != null) root.put(JsonSchemaConstants.K_ID, id.toString());
-        if (title != null && !title.isBlank()) root.put(JsonSchemaConstants.K_TITLE, title);
+        if (id != null) {
+            root.put(JsonSchemaConstants.K_ID, id.toString());
+        }
+        if (title != null && !title.isBlank()) {
+            root.put(JsonSchemaConstants.K_TITLE, title);
+        }
         root.setAll(content.toObjectNode());
         return root;
     }
