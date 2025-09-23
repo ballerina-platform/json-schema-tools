@@ -24,6 +24,12 @@ public final class JsonSchemaConstants {
     // Official 2020-12 meta-schema (dialect)
     public static final String DRAFT_2020_12_SCHEMA = "https://json-schema.org/draft/2020-12/schema";
 
+    // JsonSchemaConstants.java
+    public static final String K_PROPERTIES = "properties";
+    public static final String K_REQUIRED = "required";
+    public static final String K_ADDITIONAL_PROPERTIES = "additionalProperties";
+    public static final String K_ANY_OF = "anyOf";
+
     // Common keys
     public static final String K_SCHEMA = "$schema";
     public static final String K_ID = "$id";
@@ -31,11 +37,26 @@ public final class JsonSchemaConstants {
     public static final String K_TYPE = "type";
 
     // JSON Schema primitive names (2020-12)
-    public static final String T_OBJECT  = "object";
-    public static final String T_ARRAY   = "array";
-    public static final String T_STRING  = "string";
+    public static final String T_OBJECT = "object";
+    public static final String T_ARRAY = "array";
+    public static final String T_STRING = "string";
     public static final String T_BOOLEAN = "boolean";
     public static final String T_INTEGER = "integer";
-    public static final String T_NUMBER  = "number";
-    public static final String T_NULL    = "null";
+    public static final String T_NUMBER = "number";
+    public static final String T_NULL = "null";
+
+    // String constraints
+    public static final String K_MIN_LENGTH = "minLength";
+    public static final String K_MAX_LENGTH = "maxLength";
+    public static final String K_PATTERN = "pattern";
+
+    // Numeric constraints
+    public static final String K_MINIMUM = "minimum";
+    public static final String K_MAXIMUM = "maximum";
+    public static final String K_EXCLUSIVE_MINIMUM = "exclusiveMinimum";
+    public static final String K_EXCLUSIVE_MAXIMUM = "exclusiveMaximum";
+
+    // Array constraints
+    public static final String K_MIN_ITEMS = "minItems";
+    public static final String K_MAX_ITEMS = "maxItems";
 }
