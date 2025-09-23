@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "patternProperties": {
+    "^str_\\w+$": {
+      "type": "string"
+    },
+    "^num_\\w+$": {
+      "type": "number"
+    }
+  },
+  "additionalProperties": { "type": "boolean" }
+}
