@@ -78,21 +78,20 @@ public final class BalTypeAdapter {
         }
 
         JsonSchemaNode baseSchemaNode = switch (ballerinaTypeSymbol.typeKind()) {
-            case INT, FLOAT, DECIMAL, STRING, BOOLEAN, NIL -> mapBasicTypeToSchema(ballerinaTypeSymbol);
-            case ARRAY -> buildArraySchema(
-                    (ArrayTypeSymbol) ballerinaTypeSymbol, allowOptionalNull,
-                    typedefMetadataByName);
-            case RECORD -> buildRecordSchema(
-                    (RecordTypeSymbol) ballerinaTypeSymbol, allowOptionalNull,
-                    recordFieldMetadataByName, typedefMetadataByName);
-            case MAP -> buildMapSchema(
-                    (MapTypeSymbol) ballerinaTypeSymbol, allowOptionalNull,
-                    typedefMetadataByName);
-            case UNION -> buildUnionSchemaAnyOf(
-                    (UnionTypeSymbol) ballerinaTypeSymbol, allowOptionalNull,
-                    typedefMetadataForThisType, recordFieldMetadataByName, typedefMetadataByName);
-            default -> throw new IllegalArgumentException("Unsupported Ballerina type: "
-                    + ballerinaTypeSymbol.typeKind());
+            case INT, FLOAT, DECIMAL, STRING, BOOLEAN, NIL ->
+                    mapBasicTypeToSchema(ballerinaTypeSymbol);
+            case ARRAY ->
+                    buildArraySchema((ArrayTypeSymbol) ballerinaTypeSymbol, allowOptionalNull, typedefMetadataByName);
+            case RECORD ->
+                    buildRecordSchema((RecordTypeSymbol) ballerinaTypeSymbol, allowOptionalNull,
+                            recordFieldMetadataByName, typedefMetadataByName);
+            case MAP ->
+                    buildMapSchema((MapTypeSymbol) ballerinaTypeSymbol, allowOptionalNull, typedefMetadataByName);
+            case UNION ->
+                    buildUnionSchemaAnyOf((UnionTypeSymbol) ballerinaTypeSymbol, allowOptionalNull,
+                            typedefMetadataForThisType, recordFieldMetadataByName, typedefMetadataByName);
+            default ->
+                    throw new IllegalArgumentException("Unsupported Ballerina type: " + ballerinaTypeSymbol.typeKind());
         };
 
         // Apply typedef-level constraints (if this call corresponds to a root typedef)
@@ -107,14 +106,18 @@ public final class BalTypeAdapter {
 
     /** Convenience overloads for older call sites. */
     public static JsonSchemaNode toSchemaNode(TypeSymbol typeSymbol, boolean allowOptionalNull) {
-        return toSchemaNode(typeSymbol, allowOptionalNull, Optional.empty(), Map.of(), Map.of());
+        return toSchemaNode(typeSymbol, allowOptionalNull,
+                Optional.empty(), Map.of(), Map.of());
     }
 
     public static JsonSchemaNode toBasicTypeSchemaNode(TypeSymbol typeSymbol, boolean allowOptionalAsTypeArray) {
-        JsonSchemaNode schemaNode = toSchemaNode(typeSymbol, allowOptionalAsTypeArray, Optional.empty(), Map.of(), Map.of());
+        JsonSchemaNode schemaNode = toSchemaNode(typeSymbol, allowOptionalAsTypeArray,
+                Optional.empty(), Map.of(), Map.of());
         return switch (dereferenceTypeReferences(typeSymbol).typeKind()) {
-            case INT, FLOAT, DECIMAL, STRING, BOOLEAN, NIL, UNION -> schemaNode;
-            default -> throw new IllegalArgumentException("Unsupported type for Stage 1: " + typeSymbol.typeKind());
+            case INT, FLOAT, DECIMAL, STRING, BOOLEAN, NIL, UNION ->
+                    schemaNode;
+            default ->
+                    throw new IllegalArgumentException("Unsupported type for Stage 1: " + typeSymbol.typeKind());
         };
     }
 
@@ -269,10 +272,14 @@ public final class BalTypeAdapter {
             } else {
                 continue;
             }
-            if (!"constraint".equals(modulePrefix)) continue;
+            if (!"constraint".equals(modulePrefix)) {
+                continue;
+            }
 
             Optional<MappingConstructorExpressionNode> maybeMapping = annotationNode.annotValue();
-            if (maybeMapping.isEmpty()) continue;
+            if (maybeMapping.isEmpty()) {
+                continue;
+            }
 
             Map<String, String> keyValues = readSimpleKeyValueMapping(maybeMapping.get());
 
@@ -377,10 +384,16 @@ public final class BalTypeAdapter {
     }
 
     private static boolean parseBooleanOrDefault(String text, boolean defaultValue) {
-        if (text == null) return defaultValue;
+        if (text == null) {
+            return defaultValue;
+        }
         String s = text.trim();
-        if ("true".equalsIgnoreCase(s)) return true;
-        if ("false".equalsIgnoreCase(s)) return false;
+        if ("true".equalsIgnoreCase(s)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(s)) {
+            return false;
+        }
         return defaultValue;
     }
 
@@ -401,7 +414,9 @@ public final class BalTypeAdapter {
     private static String stripRegexOrQuotes(String raw) {
         String s = raw.trim();
         // re`...`
-        if (s.startsWith("re`") && s.endsWith("`")) return s.substring(3, s.length() - 1);
+        if (s.startsWith("re`") && s.endsWith("`")) {
+            return s.substring(3, s.length() - 1);
+        }
         // "..."/'...'
         if ((s.startsWith("\"") && s.endsWith("\"")) || (s.startsWith("'") && s.endsWith("'"))) {
             return s.substring(1, s.length() - 1);
@@ -428,7 +443,9 @@ public final class BalTypeAdapter {
         try {
             Method typeParamMethod = mapTypeSymbol.getClass().getMethod("typeParam");
             Object invocationResult = typeParamMethod.invoke(mapTypeSymbol);
-            if (invocationResult instanceof TypeSymbol typeSymbol) return typeSymbol;
+            if (invocationResult instanceof TypeSymbol typeSymbol) {
+                return typeSymbol;
+            }
         } catch (ReflectiveOperationException ignore) { /* fall back */ }
         try {
             Method typeParameterMethod = mapTypeSymbol.getClass().getMethod("typeParameter");
@@ -465,7 +482,9 @@ public final class BalTypeAdapter {
     /** If schema has `"type": "<x>"`, rewrite to `["<x>","null"]`. */
     private static void makeTypeNullableInPlace(JsonSchemaNode schemaNode) {
         ObjectNode objectNode = schemaNode.toObjectNode();
-        if (!objectNode.has(JsonSchemaConstants.K_TYPE)) return;
+        if (!objectNode.has(JsonSchemaConstants.K_TYPE)) {
+            return;
+        }
 
         if (objectNode.get(JsonSchemaConstants.K_TYPE).isTextual()) {
             String originalType = objectNode.get(JsonSchemaConstants.K_TYPE).asText();
