@@ -1,1 +1,0 @@
-public type Schema int;

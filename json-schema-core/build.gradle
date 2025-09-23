@@ -27,10 +27,6 @@
 
  test {
      useTestNG()
-
-     testLogging {
-         exceptionFormat "full"
-     }
  }
 
  checkstyle {
@@ -50,7 +46,7 @@
  compileJava {
      doFirst {
          options.compilerArgs = [
-                 '--module-path', classpath.asPath
+                 '--module-path', classpath.asPath,
          ]
          classpath = files()
      }

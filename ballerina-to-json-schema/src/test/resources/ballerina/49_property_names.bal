@@ -1,2 +1,0 @@
-public type Schema record {|
-|};
