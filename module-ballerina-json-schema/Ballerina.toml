@@ -1,7 +1,7 @@
 [package]
 org = "ballerina"
 name = "json_schema_tool"
-version = "0.1.0"
+version = "0.1.2"
 distribution = "2201.12.0"
 keywords = ["json", "json schema", "json schema to record", "json-schema-tools"]
 repository = "https://github.com/ballerina-platform/json-schema-tools"

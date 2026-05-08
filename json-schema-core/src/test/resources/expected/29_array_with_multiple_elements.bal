@@ -1,1 +1,7 @@
-public type Schema json[0]|[int]|[int, string]|[int, string, string]|[int, string, string, string];
+import ballerina/data.jsondata;
+
+@jsondata:ArrayConstraints {
+    prefixItems: [int],
+    maxItems: 4
+}
+public type Schema [(int|string)...];

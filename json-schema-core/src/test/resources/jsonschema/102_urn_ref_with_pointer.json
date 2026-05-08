@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:example:root",
+  "$defs": {
+    "thing": {
+      "type": "integer"
+    }
+  },
+  "properties": {
+    "value": {
+      "$ref": "urn:example:root#/$defs/thing"
+    }
+  }
+}

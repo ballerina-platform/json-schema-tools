@@ -1,8 +1,5 @@
 import ballerina/data.jsondata;
 
-@jsondata:AdditionalProperties {
-    value: json
-}
 @jsondata:PatternProperties {
     value: [schemaPatternElement1, schemaPatternElement2]
 }

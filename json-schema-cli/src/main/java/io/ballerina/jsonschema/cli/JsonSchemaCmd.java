@@ -25,17 +25,14 @@ import io.ballerina.jsonschema.core.SchemaUtils;
 import io.ballerina.projects.util.ProjectUtils;
 import picocli.CommandLine;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Main class to implement "json-schema" command for Ballerina.
@@ -122,8 +119,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
             if (!Files.isDirectory(Path.of(inputPath))) {
                 handleSingleFile(outputDirPath, inputPath);
             } else {
-                //TODO: Implement for Directories
-                outStream.println("Creating Ballerina types for multiple schema files is not yet supported");
+                handleMultipleFiles(outputDirPath, inputPath);
             }
         } catch (IOException e) {
             outStream.println("Error occurred while accessing the file. " + e.getLocalizedMessage());
@@ -133,6 +129,54 @@ public class JsonSchemaCmd implements BLauncherCmd {
             outStream.println("Error: " + e.getLocalizedMessage());
             exitOnError();
         }
+    }
+
+    private void handleMultipleFiles(Path outputDirPath, String inputPath) throws Exception {
+        Path dir = Path.of(inputPath);
+        ArrayList<Path> filePaths = new ArrayList<>();
+        LinkedHashMap<Object, String> schemaToFileMap = new LinkedHashMap<>();
+        // find all files with .json extension in subdirectories as well
+        try (Stream<Path> stream = Files.walk(dir)) {
+            stream.filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".json"))
+                    .forEach(filePaths::add);
+        } catch (IOException e) {
+            outStream.println("Error: " + e.getLocalizedMessage());
+            exitOnError();
+        }
+
+        if (Files.notExists(outputDirPath)) {
+            Files.createDirectories(outputDirPath);
+        }
+        ArrayList<Object> schemas = new ArrayList<>();
+        int fileCount = 0;
+        for (Path jsonFile : filePaths) {
+            try {
+                String jsonFileContent = Files.readString(jsonFile);
+                Object schema = SchemaUtils.parseJsonSchema(jsonFileContent);
+                schemas.add(schema);
+                String relativePathName = dir.relativize(jsonFile).toString();
+                schemaToFileMap.put(schema, relativePathName);
+                fileCount += 1;
+            } catch (Exception e) {
+                System.err.println(e.toString());
+            }
+        }
+
+        if (fileCount == 0) {
+            throw new Exception("None of the files within the directory are valid JSON Schema.");
+        }
+
+        Generator generator = new Generator();
+        Response result = generator.convertBaseSchema(schemas, schemaToFileMap);
+
+        if (!result.getDiagnostics().isEmpty()) {
+            result.getDiagnostics().forEach(jsonSchemaDiagnostic ->
+                    outStream.println(jsonSchemaDiagnostic.toString()));
+            exitOnError();
+            return;
+        }
+        writeSourceToFiles(outputDirPath, result, OUTPUT_FILE_NAME);
     }
 
     private void handleSingleFile(Path outputDirPath, String fileName) throws Exception {
@@ -155,6 +199,7 @@ public class JsonSchemaCmd implements BLauncherCmd {
 
         Generator generator = new Generator();
         Response result = generator.convertBaseSchema(schema);
+
         if (!result.getDiagnostics().isEmpty()) {
             result.getDiagnostics().forEach(jsonSchemaDiagnostic ->
                     outStream.println(jsonSchemaDiagnostic.toString()));

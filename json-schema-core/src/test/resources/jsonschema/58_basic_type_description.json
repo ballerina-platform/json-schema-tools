@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "integer",
+  "minimum": 0,
+  "description": "A non-negative integer representing the number of items."
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/user-profile-schema",
+  "type": "object",
+  "properties": {
+    "user": { "$ref": "#user" },
+    "preferences": { "$ref": "#prefs" }
+  },
+  "required": ["user"],
+
+  "$defs": {
+    "userInfo": {
+      "$anchor": "user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "readOnly": true,
+          "description": "System-generated user ID"
+        },
+        "name": { "$ref": "#name" },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "address": { "$ref": "#address" }
+      },
+      "required": ["id", "name", "email"]
+    },
+
+    "nameSchema": {
+      "$anchor": "name",
+      "type": "string",
+      "minLength": 1,
+      "description": "Full name of the user"
+    },
+
+    "addressSchema": {
+      "$anchor": "address",
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "postalCode": { "type": "string" }
+      },
+      "required": ["street", "city", "postalCode"]
+    },
+
+    "preferencesSchema": {
+      "$anchor": "prefs",
+      "type": "object",
+      "properties": {
+        "theme": {
+          "enum": ["light", "dark"],
+          "default": "light"
+        },
+        "notifications": {
+          "type": "object",
+          "properties": {
+            "email": { "type": "boolean", "default": true },
+            "sms": { "type": "boolean", "default": false }
+          },
+          "required": ["email"]
+        }
+      }
+    }
+  }
+}

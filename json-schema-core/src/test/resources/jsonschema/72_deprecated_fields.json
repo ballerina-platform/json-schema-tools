@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "type": "integer",
+      "description": "A unique identifier for the user."
+    },
+    "legacyScore": {
+      "type": "integer",
+      "description": "An old scoring system no longer in use.",
+      "deprecated": true
+    }
+  },
+  "required": ["userId"]
+}

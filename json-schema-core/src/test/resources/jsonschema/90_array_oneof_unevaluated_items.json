@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "unevaluatedItems": {
+    "type": "string"
+  },
+  "oneOf": [
+    {
+      "items": {
+        "type": "integer"
+      }
+    },
+    {
+      "prefixItems": [
+        { "type": "string" }
+      ]
+    }
+  ]
+}

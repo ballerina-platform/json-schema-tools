@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/bar",
+  "properties": {"foo": {"type": "string"}},
+  "unevaluatedProperties": false,
+  "$defs": {"bar": {"properties": {"bar": {"type": "string"}}}}
+}

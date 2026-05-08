@@ -1,5 +1,8 @@
 import ballerina/data.jsondata;
 
+@jsondata:UnevaluatedProperties {
+    value: int
+}
 public type Schema record {|
     string occupation?;
     json name?;
@@ -8,7 +11,7 @@ public type Schema record {|
         value: AgeDependentSchema
     }
     int|float|decimal age?;
-    int...;
+    json...;
 |};
 
 public type AgeDependentSchema record {|

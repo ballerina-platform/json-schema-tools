@@ -26,7 +26,7 @@ import com.google.gson.JsonParseException;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +36,9 @@ import java.util.Map;
  * @since 0.1.0
  */
 public class SchemaDeserializers {
+    static class RawSchema extends Schema {
+    }
+
     static class ListSchemaDeserializer implements JsonDeserializer<List<Object>> {
         @Override
         public List<Object> deserialize(JsonElement jsonElement, Type type,
@@ -61,7 +64,7 @@ public class SchemaDeserializers {
                                                JsonDeserializationContext jsonDeserializationContext)
                 throws JsonParseException {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
-            Map<String, Object> resultMap = new HashMap<>();
+            Map<String, Object> resultMap = new LinkedHashMap<>();
             for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
                 if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isBoolean()) {
                     resultMap.put(entry.getKey(), entry.getValue().getAsBoolean());
@@ -104,13 +107,25 @@ public class SchemaDeserializers {
         }
     }
 
+    static class SchemaObjectDeserializer implements JsonDeserializer<Schema> {
+        @Override
+        public Schema deserialize(JsonElement jsonElement, Type type,
+                                  JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            Schema schema = jsonDeserializationContext.deserialize(jsonElement, RawSchema.class);
+            if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().has("const")) {
+                schema.markConstKeywordPresent();
+            }
+            return schema;
+        }
+    }
+
     static class TypeDeserializer implements JsonDeserializer<List<String>> {
         @Override
         public List<String> deserialize(JsonElement jsonElement, Type type,
                                              JsonDeserializationContext jsonDeserializationContext)
                 throws JsonParseException {
             if (jsonElement.isJsonArray()) {
-                return jsonDeserializationContext.deserialize(jsonElement, List.class);
+                return jsonDeserializationContext.deserialize(jsonElement, ArrayList.class);
             }
             if (jsonElement.isJsonPrimitive() && jsonElement.getAsJsonPrimitive().isString()) {
                 return new ArrayList<>(List.of(jsonElement.getAsString()));

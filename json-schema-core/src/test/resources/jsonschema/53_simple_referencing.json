@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/employee-schema.json",
+  "type": "object",
+  "properties": {
+    "employee": {
+      "$ref": "#/$defs/person"
+    }
+  },
+  "$defs": {
+    "person": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "age": { "type": "integer" }
+      },
+      "required": ["name"]
+    }
+  }
+}

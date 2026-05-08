@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "allOf": [
+    {
+      "properties": {
+        "name": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    {
+      "anyOf": [
+        {
+          "properties": {
+            "age": { "type": "number", "minimum": 18 }
+          },
+          "required": ["age"]
+        },
+        {
+          "properties": {
+            "guardianConsent": { "type": "boolean", "const": true }
+          },
+          "required": ["guardianConsent"]
+        }
+      ]
+    },
+    {
+      "oneOf": [
+        {
+          "properties": {
+            "role": { "type": "string", "enum": ["admin"] },
+            "adminCode": { "type": "string" }
+          },
+          "required": ["role", "adminCode"]
+        },
+        {
+          "properties": {
+            "role": { "type": "string", "enum": ["user"] }
+          },
+          "required": ["role"]
+        }
+      ]
+    }
+  ]
+}

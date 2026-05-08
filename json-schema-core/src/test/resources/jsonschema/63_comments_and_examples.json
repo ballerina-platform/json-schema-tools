@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "$comments": "The user's unique identifier.",
+      "examples": ["alice123", "bob_smith"]
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0,
+      "$comment": "User age in years; must be non-negative."
+    },
+    "dummy": {
+      "type": "boolean",
+      "default": true,
+      "$comment": "This is a dummy comment.",
+      "description" : "This is a dummy description",
+      "title" : "This is a dummy title"
+    }
+  },
+  "required": ["username", "age", "dummy"],
+  "examples": [
+    {
+      "username": "alice123",
+      "age": 30
+    },
+    {
+      "username": "bob_smith",
+      "age": 45
+    }
+  ]
+}

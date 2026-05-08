@@ -9,7 +9,7 @@
   },
   "required": ["id"],
   "unevaluatedProperties": { "type": "integer" },
-  "dependentSchema": {
+  "dependentSchemas": {
     "age": {
       "type": "object",
       "properties": {
