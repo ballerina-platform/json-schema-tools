@@ -18,7 +18,7 @@
 
 plugins {
     id "com.github.spotbugs-base" version "${spotbugsPluginVersion}"
-    id "com.github.johnrengelman.shadow" version "${shadowJarPluginVersion}"
+    id "com.gradleup.shadow" version "${shadowJarPluginVersion}"
     id "de.undercouch.download" version "${downloadPluginVersion}"
     id "net.researchgate.release" version "${releasePluginVersion}"
 }
@@ -66,10 +66,18 @@ subprojects {
     }
 }
 
-tasks.register('build') {
-    dependsOn(":json-schema-cli:build")
-    dependsOn(":json-schema-core:build")
-    dependsOn(":module-ballerina-json-schema:build")
+if (tasks.names.contains('build')) {
+    tasks.named('build') {
+        dependsOn(":json-schema-cli:build")
+        dependsOn(":json-schema-core:build")
+        dependsOn(":module-ballerina-json-schema:build")
+    }
+} else {
+    tasks.register('build') {
+        dependsOn(":json-schema-cli:build")
+        dependsOn(":json-schema-core:build")
+        dependsOn(":module-ballerina-json-schema:build")
+    }
 }
 
 def moduleVersion = project.version.replace("-SNAPSHOT", "")

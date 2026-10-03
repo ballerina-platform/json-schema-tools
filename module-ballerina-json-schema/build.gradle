@@ -23,6 +23,12 @@ plugins {
     id 'io.ballerina.plugin'
 }
 
+abstract class ExecHelper {
+    @Inject
+    abstract ExecOperations getExecOperations()
+}
+def execHelper = project.objects.newInstance(ExecHelper)
+
 description = 'Ballerina - JSON Schema Tool'
 
 def packageName = "jsonschematool"
@@ -65,7 +71,7 @@ task updateTomlFiles {
 
 task commitTomlFiles {
     doLast {
-        project.exec {
+        execHelper.execOperations.exec {
             ignoreExitValue true
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                 commandLine 'cmd', '/c', "git commit -m \"[Automated] Update the native jar versions\" Ballerina.toml Dependencies.toml BalTool.toml"
